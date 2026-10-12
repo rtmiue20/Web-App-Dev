@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../core/Model.php';
+require_once __DIR__ . '/../core/Database.php';
 
-class Post extends Model {
+class Post {
     // 1. Attributes (Thuộc tính đại diện cho bảng posts)
     private $id;
     private $userId;
@@ -42,34 +42,55 @@ class Post extends Model {
     public function setCategoryName($categoryName) { $this->categoryName = $categoryName; }
 
     // 3. Functions riêng
-    public function getAll() {
+    public function getAll(?int $categoryId = null): array {
         $sql = "SELECT p.*, u.username, c.name AS category_name 
                 FROM posts p 
                 JOIN users u ON p.user_id = u.id 
-                JOIN categories c ON p.category_id = c.id 
-                ORDER BY p.created_at DESC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+                JOIN categories c ON p.category_id = c.id";
+        $params = [];
+
+        if ($categoryId !== null) {
+            $sql .= " WHERE p.category_id = :category_id";
+            $params[':category_id'] = $categoryId;
+        }
+
+        $sql .= " ORDER BY p.created_at DESC";
+        return Database::query($sql, $params);
     }
 
-    public function getById($id) {
+    public function getById(int $id): array|false {
         $sql = "SELECT p.*, u.username, c.name AS category_name 
                 FROM posts p 
                 JOIN users u ON p.user_id = u.id 
                 JOIN categories c ON p.category_id = c.id 
                 WHERE p.id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return Database::query($sql, [':id' => $id])[0] ?? false;
+    }
+
+    public function create(int $userId, int $categoryId, string $title, string $content, ?string $location): int {
+        return Database::execute(
+            "INSERT INTO posts (user_id, category_id, title, content, location)
+             VALUES (:user_id, :category_id, :title, :content, :location)",
+            [
+                ':user_id' => $userId,
+                ':category_id' => $categoryId,
+                ':title' => $title,
+                ':content' => $content,
+                ':location' => $location,
+            ]
+        );
+    }
+
+    public function userExists(int $userId): bool {
+        return Database::query(
+            'SELECT id FROM users WHERE id = :id',
+            [':id' => $userId]
+        ) !== [];
     }
 
     public function toggleLike($postId, $userId) {
-        $stmt = $this->db->prepare("CALL sp_toggle_like(:post_id, :user_id)");
-        $stmt->execute([
-            ':post_id' => $postId,
-            ':user_id' => $userId
-        ]);
+        $stmt = Database::getConnection()->prepare("CALL sp_toggle_like(:post_id, :user_id)");
+        $stmt->execute([':post_id' => $postId, ':user_id' => $userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $stmt->closeCursor();
         
