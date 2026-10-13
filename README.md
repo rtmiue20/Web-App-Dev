@@ -1,78 +1,134 @@
+# Forum Dã Ngoại – Web-App-Dev
+
+Website diễn đàn chia sẻ kiến thức và kinh nghiệm dành cho những người yêu thích dã ngoại (cắm trại, trekking, phượt, ...). Đây là đồ án nhóm môn phát triển ứng dụng web.
+
+## Mục tiêu và yêu cầu
+
+- Giao diện thiết kế bằng **Bootstrap**.
+- Backend viết theo **hướng đối tượng (OOP)**, tổ chức theo mô hình **MVC**.
+- Tích hợp **AJAX / Web service** (chỉ sử dụng service có sẵn), dữ liệu truyền qua **JSON/XML**.
+- Phần quản trị ở mức cơ bản: thêm danh mục, bài viết, ...
+- Làm việc nhóm có minh chứng: shared host cho database, GitHub quản lý theo branch, Teams để theo dõi tiến độ.
+
+## Công nghệ
+
+| Thành phần | Công nghệ |
+|---|---|
+| Backend | PHP (OOP + MVC) |
+| Frontend | HTML, CSS, JavaScript, Bootstrap |
+| Giao tiếp bất đồng bộ | AJAX (fetch/XHR) + JSON |
+| Cơ sở dữ liệu | MariaDB (XAMPP), truy vấn qua stored procedures |
+| Môi trường chạy | XAMPP (Apache + MariaDB + phpMyAdmin) |
+| Quản lý mã nguồn | Git + GitHub (làm việc theo branch) |
+| Mạng chung cho nhóm | Tailscale (LAN ảo để truy cập DB của máy host) |
+
+## Cấu trúc thư mục
+
+```
+Web-App-Dev/
+├── config/            Cấu hình ứng dụng và kết nối CSDL
+├── database/
+│   ├── schema.sql     Tạo database, bảng, khóa chính/khóa ngoại
+│   ├── routines/      Stored procedures
+│   └── seeds/         Dữ liệu mẫu
+├── app/
+│   ├── core/          App, Router, Controller, Model, Database
+│   ├── controllers/   Xử lý request (có thư mục admin/)
+│   ├── models/        Làm việc với dữ liệu
+│   ├── views/         Giao diện (layouts, partials, từng trang)
+│   ├── helpers/       Session, Validator, Response (trả JSON)
+│   └── middleware/    Kiểm tra đăng nhập, quyền admin
+├── api/               Endpoint phục vụ AJAX
+├── public/            Điểm vào (index.php), .htaccess, assets, uploads
+├── docs/
+│   ├── evidence/      Ảnh chụp minh chứng cho báo cáo
+│   └── diagrams/      Sơ đồ nghiệp vụ (BA)
+├── tests/
+├── CODEOWNERS
+├── Plan-Forum.md
+├── phan-cong-theo-tuan.md
+└── README.md
+```
+
+## Hướng dẫn cài đặt
+
+### 1. Chuẩn bị
+- Cài [XAMPP](https://www.apachefriends.org/) và bật **Apache** + **MySQL (MariaDB)**.
+- Cài Git.
+
+### 2. Lấy mã nguồn
+Đặt dự án vào thư mục `htdocs` của XAMPP:
+
+```bash
+cd C:/xampp/htdocs
+git clone <URL-repo-GitHub> Web-App-Dev
+```
+
+### 3. Tạo database
+1. Mở phpMyAdmin: http://localhost/phpmyadmin
+<<<<<<< Updated upstream
+2. Tạo database mới (ví dụ `forum_dangoai`, bảng mã `utf8mb4_unicode_ci`).
+3. Import `database/schema.sql`, sau đó các file trong `database/routines/` và (tuỳ chọn) `database/seeds/seed.sql`.
+=======
+2. Vào tab **Import**, chọn file `database/schema.sql` rồi bấm Thực hiện. File này tự tạo database `outdoor_forum`, 9 bảng, dữ liệu mẫu và các stored procedure.
+3. Nếu import lại từ đầu, hãy xóa database `outdoor_forum` trước (file không có `DROP`).
+>>>>>>> Stashed changes
+
+### 4. Cấu hình kết nối
+Mở `config/database.php` và điền thông tin kết nối:
+
+```php
 <?php
+return [
+    'host' => 'localhost',   // hoặc IP Tailscale của máy host
+    'port' => 3306,
+    'name' => 'forum_dangoai',
+    'user' => 'root',
+    'pass' => '',
+];
+```
 
-class Session {
-    public static function init() {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_set_cookie_params([
-                'httponly' => true,
-                'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-                'samesite' => 'Lax',
-                'path' => '/',
-            ]);
-            session_start();
-        }
-    }
+> `config/database.php` nằm trong `.gitignore`, mỗi thành viên tự cấu hình trên máy mình, không commit lên GitHub.
 
-    public static function set($key, $value) {
-        self::init();
-        $_SESSION[$key] = $value;
-    }
+### 5. Chạy dự án
+Truy cập: http://localhost/Web-App-Dev/public/
 
-    public static function get($key, $default = null) {
-        self::init();
-        return $_SESSION[$key] ?? $default;
-    }
+### Xác thực và vai trò
+- Import `database/schema.sql` vào database mới để tạo `roles` (`member`, `admin`) và liên kết người dùng qua `users.role_id`.
+- Nếu đang nâng cấp database cũ có `users.role` dạng ENUM, sao lưu trước rồi chạy `database/migrations/001_normalize_user_roles.sql` một lần thay vì import lại schema.
+- Mở `/register` để tạo tài khoản thành viên; mật khẩu được băm bằng `password_hash`.
+- Dùng `/login`, `/profile`; quản trị viên truy cập `/admin`; đăng xuất được gửi bằng POST có CSRF token.
+- Router hỗ trợ khai báo middleware cho từng route. Dùng `AuthMiddleware` để yêu cầu đăng nhập và `AdminMiddleware` để giới hạn vai trò `admin`.
+- Tài khoản seed hiện có mật khẩu placeholder, không dùng để đăng nhập; hãy đăng ký tài khoản mới hoặc thiết lập mật khẩu admin bằng `password_hash`.
 
-    public static function has($key) {
-        self::init();
-        return isset($_SESSION[$key]);
-    }
+## Dùng chung database trong nhóm
 
-    public static function remove($key) {
-        self::init();
-        unset($_SESSION[$key]);
-    }
+Một thành viên làm máy host (chạy XAMPP chứa database), các bạn còn lại kết nối vào:
 
-    public static function regenerate() {
-        self::init();
-        if (!session_regenerate_id(true)) {
-            throw new RuntimeException('Không thể tạo lại session ID.');
-        }
-    }
+1. Cài Tailscale, đăng nhập và cho các thành viên vào cùng một mạng (tailnet).
+2. Cấu hình XAMPP/phpMyAdmin cho phép truy cập từ mạng LAN ảo.
+3. Tạo user MariaDB riêng cho thành viên, không dùng chung `root`.
+4. Trong `config/database.php`, đặt `host` là IP Tailscale của máy host.
 
-    public static function flash($key, $value = null) {
-        self::init();
-        $flashKey = '_flash_' . $key;
+## Quy trình làm việc với Git
 
-        if (func_num_args() > 1) {
-            $_SESSION[$flashKey] = $value;
-            return null;
-        }
+- Nhánh chính: `main` (chỉ merge khi đã review).
+- Mỗi người làm trên nhánh riêng, đặt tên theo mẫu `feature/<tên-chức-năng>`, ví dụ `feature/login`, `feature/post-crud`.
+- Tạo Pull Request vào `main`, thành viên khác review rồi mới merge (xem `CODEOWNERS`).
+- Commit message ngắn gọn, nói rõ việc đã làm.
+- Công việc theo tuần được ghi trong `phan-cong-theo-tuan.md`, kế hoạch tổng thể trong `Plan-Forum.md`.
 
-        $message = $_SESSION[$flashKey] ?? null;
-        unset($_SESSION[$flashKey]);
-        return $message;
-    }
+## Thành viên nhóm (4 người)
 
-    public static function destroy() {
-        if (session_status() === PHP_SESSION_NONE) {
-            return;
-        }
+| STT | Họ tên | Vai trò | Phụ trách |
+|---|---|---|---|
+| 1 | _(điền)_ | Nhóm trưởng | _(điền)_ |
+| 2 | _(điền)_ | Thành viên | _(điền)_ |
+| 3 | _(điền)_ | Thành viên | _(điền)_ |
+| 4 | _(điền)_ | Thành viên | _(điền)_ |
 
-        $_SESSION = [];
-        if (ini_get('session.use_cookies')) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', [
-                'expires' => time() - 42000,
-                'path' => $params['path'],
-                'domain' => $params['domain'],
-                'secure' => $params['secure'],
-                'httponly' => $params['httponly'],
-                'samesite' => $params['samesite'] ?? 'Lax',
-            ]);
-        }
-        if (!session_destroy()) {
-            throw new RuntimeException('Không thể hủy session.');
-        }
-    }
-}
+Cơ sở dữ liệu được chia đều: mỗi thành viên thiết kế 2 bảng (tổng 8 bảng).
+
+## Minh chứng cho báo cáo
+
+Ảnh chụp màn hình (GitHub branch/PR, GitHub Project, Teams, phpMyAdmin, shared host) lưu trong `docs/evidence/`.
