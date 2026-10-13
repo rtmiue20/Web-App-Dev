@@ -66,8 +66,13 @@ git clone <URL-repo-GitHub> Web-App-Dev
 
 ### 3. Tạo database
 1. Mở phpMyAdmin: http://localhost/phpmyadmin
-2. Vào tab **Import**, chọn file `database/schema.sql` rồi bấm Thực hiện. File này tự tạo database `outdoor_forum`, 8 bảng, dữ liệu mẫu và các stored procedure.
+<<<<<<< Updated upstream
+2. Tạo database mới (ví dụ `forum_dangoai`, bảng mã `utf8mb4_unicode_ci`).
+3. Import `database/schema.sql`, sau đó các file trong `database/routines/` và (tuỳ chọn) `database/seeds/seed.sql`.
+=======
+2. Vào tab **Import**, chọn file `database/schema.sql` rồi bấm Thực hiện. File này tự tạo database `outdoor_forum`, 9 bảng, dữ liệu mẫu và các stored procedure.
 3. Nếu import lại từ đầu, hãy xóa database `outdoor_forum` trước (file không có `DROP`).
+>>>>>>> Stashed changes
 
 ### 4. Cấu hình kết nối
 Mở `config/database.php` và điền thông tin kết nối:
@@ -77,7 +82,7 @@ Mở `config/database.php` và điền thông tin kết nối:
 return [
     'host' => 'localhost',   // hoặc IP Tailscale của máy host
     'port' => 3306,
-    'name' => 'outdoor_forum',
+    'name' => 'forum_dangoai',
     'user' => 'root',
     'pass' => '',
 ];
@@ -87,6 +92,14 @@ return [
 
 ### 5. Chạy dự án
 Truy cập: http://localhost/Web-App-Dev/public/
+
+### Xác thực và vai trò
+- Import `database/schema.sql` vào database mới để tạo `roles` (`member`, `admin`) và liên kết người dùng qua `users.role_id`.
+- Nếu đang nâng cấp database cũ có `users.role` dạng ENUM, sao lưu trước rồi chạy `database/migrations/001_normalize_user_roles.sql` một lần thay vì import lại schema.
+- Mở `/register` để tạo tài khoản thành viên; mật khẩu được băm bằng `password_hash`.
+- Dùng `/login`, `/profile`; quản trị viên truy cập `/admin`; đăng xuất được gửi bằng POST có CSRF token.
+- Router hỗ trợ khai báo middleware cho từng route. Dùng `AuthMiddleware` để yêu cầu đăng nhập và `AdminMiddleware` để giới hạn vai trò `admin`.
+- Tài khoản seed hiện có mật khẩu placeholder, không dùng để đăng nhập; hãy đăng ký tài khoản mới hoặc thiết lập mật khẩu admin bằng `password_hash`.
 
 ## Dùng chung database trong nhóm
 

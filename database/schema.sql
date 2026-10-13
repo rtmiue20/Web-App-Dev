@@ -1,19 +1,27 @@
 -- Forum dã ngoại (bản gọn) — MariaDB / XAMPP
 -- Quy trình: tạo DB -> tạo bảng -> thiết lập cột -> tạo quan hệ (PK/FK) -> routines
--- Chia nhóm: 4 người x 2 bảng = 8 bảng
+-- Gồm 8 bảng nghiệp vụ và bảng roles dùng để phân quyền.
 
 CREATE DATABASE IF NOT EXISTS outdoor_forum
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE outdoor_forum;
 
--- ===== Người 1: users, categories =====
+-- ===== Người 1: roles, users, categories =====
+CREATE TABLE roles (
+  id   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(30) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
+INSERT INTO roles (name) VALUES ('member'), ('admin');
+
 CREATE TABLE users (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,          -- PK
   username      VARCHAR(50)  NOT NULL UNIQUE,
   email         VARCHAR(120) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('member','admin') NOT NULL DEFAULT 'member',
-  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  role_id       INT UNSIGNED NOT NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE categories (
@@ -76,10 +84,10 @@ CREATE TABLE post_tags (
 ) ENGINE=InnoDB;
 
 -- ===== Dữ liệu mẫu (để test routines) =====
-INSERT INTO users (username, email, password_hash, role) VALUES
-  ('admin', 'admin@forum.local', 'hash_demo', 'admin'),
-  ('minh',  'minh@forum.local',  'hash_demo', 'member'),
-  ('lan',   'lan@forum.local',   'hash_demo', 'member');
+INSERT INTO users (username, email, password_hash, role_id) VALUES
+  ('admin', 'admin@forum.local', 'hash_demo', 2),
+  ('minh',  'minh@forum.local',  'hash_demo', 1),
+  ('lan',   'lan@forum.local',   'hash_demo', 1);
 INSERT INTO categories (name, description) VALUES
   ('Cắm trại', 'Kinh nghiệm cắm trại'),
   ('Trekking', 'Leo núi, đi rừng'),
@@ -141,5 +149,5 @@ DELIMITER ;
 
 -- ===== (Tuỳ chọn) Cho máy khác trong LAN kết nối DB =====
 -- CREATE USER 'team'@'%' IDENTIFIED BY 'doi_mat_khau';
--- GRANT ALL PRIVILEGES ON outdoor_forum.* TO 'team'@'%';
+-- GRANT ALL PRIVILEGES ON outdoor_forum.* TO 'team'@'%' ;
 -- FLUSH PRIVILEGES;
