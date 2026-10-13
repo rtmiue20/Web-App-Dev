@@ -19,7 +19,6 @@
                         <a href="/categories" class="btn btn-secondary">Hủy</a>
                     </form>
                     
-                    <!-- Vùng chứa thông báo AJAX -->
                     <div id="alertMessage" class="mt-3"></div>
                 </div>
             </div>
@@ -29,24 +28,21 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-// Tuyệt đối sử dụng function() truyền thống, không dùng Lambda theo yêu cầu
+// Sử dụng function() truyền thống, ĐẢM BẢO KHÔNG DÙNG LAMBDA
 $(document).ready(function() {
     $('#addCategoryForm').submit(function(e) {
-        e.preventDefault(); // Chặn tải lại trang
+        e.preventDefault(); 
 
         $.ajax({
-            url: '/category/store', // Chú ý: url này phải khớp với route nhóm bạn khai báo
+            url: '/category/store', 
             type: 'POST',
-            data: $(this).serialize(), // Lấy toàn bộ input trong form
-            dataType: 'json', // Yêu cầu trả về JSON
+            data: $(this).serialize(),
+            dataType: 'json', 
             success: function(response) {
                 if(response.status === 'success') {
-                    // Thông báo thành công
                     $('#alertMessage').html('<div class="alert alert-success">' + response.message + '</div>');
-                    // Xóa trắng form
                     $('#addCategoryForm')[0].reset(); 
                 } else {
-                    // Thông báo lỗi
                     $('#alertMessage').html('<div class="alert alert-danger">' + response.message + '</div>');
                 }
             }

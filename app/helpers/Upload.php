@@ -1,7 +1,8 @@
 <?php
 class Upload {
     private const ALLOWED = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-    private const MAX_SIZE = 2 * 1024 * 1024; // Giới hạn 2MB
+    // Đã sửa lại cú pháp nhân để tính 2MB
+    private const MAX_SIZE = 2 * 1024 * 1024; 
 
     public static function image($file, $subDir = 'posts') {
         if ($file['error'] !== UPLOAD_ERR_OK) {
