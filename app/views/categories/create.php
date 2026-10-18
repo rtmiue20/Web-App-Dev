@@ -1,52 +1,76 @@
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Thêm Danh Mục Mới</h4>
-                </div>
-                <div class="card-body">
-                    <form id="addCategoryForm">
-                        <div class="form-group">
-                            <label for="name" class="font-weight-bold">Tên danh mục <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Ví dụ: Cắm trại" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="description" class="font-weight-bold">Mô tả chi tiết</label>
-                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Nhập mô tả cho danh mục..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-success">Lưu Danh Mục</button>
-                        <a href="/categories" class="btn btn-secondary">Hủy</a>
-                    </form>
-                    
-                    <div id="alertMessage" class="mt-3"></div>
-                </div>
+<?php
+$title = 'Thêm danh mục mới';
+$baseUrl = defined('BASE_URL') ? BASE_URL : '';
+?>
+<div class="app-container" style="max-width: 680px;">
+    <div class="mb-4">
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories" class="nature-btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh mục
+        </a>
+    </div>
+
+    <div class="nature-card" style="border-radius: 36px;">
+        <p class="nature-label">Quản trị nội dung</p>
+        <h1 class="h3 fw-normal mb-2" style="color: var(--color-ink);">Thêm chuyên mục mới</h1>
+        <p class="small text-muted mb-4">Tạo một chủ đề mới để người dùng phân loại và tìm kiếm bài viết dễ dàng hơn.</p>
+
+        <div id="alertMessage"></div>
+
+        <form id="addCategoryForm">
+            <div class="mb-3">
+                <label for="name" class="nature-label">Tên danh mục <span class="text-danger">*</span></label>
+                <input type="text" class="nature-input" id="name" name="name" placeholder="Ví dụ: Cắm trại, Trekking, Phượt..." required>
             </div>
-        </div>
+
+            <div class="mb-4">
+                <label for="description" class="nature-label">Mô tả chi tiết</label>
+                <textarea class="nature-textarea" id="description" name="description" rows="4" placeholder="Mô tả ngắn về chủ đề này..."></textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="nature-btn-primary py-2 px-4" style="width: auto; height: 46px;">
+                    <i class="bi bi-check-lg me-1"></i> Lưu chuyên mục
+                </button>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories" class="nature-btn-secondary py-2 px-4 text-dark border-dark-subtle" style="height: 46px;">
+                    Hủy bỏ
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-// Sử dụng function() truyền thống, ĐẢM BẢO KHÔNG DÙNG LAMBDA
-$(document).ready(function() {
-    $('#addCategoryForm').submit(function(e) {
-        e.preventDefault(); 
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('addCategoryForm');
+    const alertBox = document.getElementById('alertMessage');
+    const baseUrl = window.BASE_URL || '';
 
-        $.ajax({
-            url: '/category/store', 
-            type: 'POST',
-            data: $(this).serialize(),
-            dataType: 'json', 
-            success: function(response) {
-                if(response.status === 'success') {
-                    $('#alertMessage').html('<div class="alert alert-success">' + response.message + '</div>');
-                    $('#addCategoryForm')[0].reset(); 
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+
+            try {
+                const res = await fetch(baseUrl + '/categories/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: params.toString()
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alertBox.innerHTML = '<div class="nature-alert nature-alert-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>' + data.message + '</div>';
+                    form.reset();
                 } else {
-                    $('#alertMessage').html('<div class="alert alert-danger">' + response.message + '</div>');
+                    alertBox.innerHTML = '<div class="nature-alert nature-alert-error mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>' + (data.message || 'Có lỗi xảy ra') + '</div>';
                 }
+            } catch (err) {
+                alertBox.innerHTML = '<div class="nature-alert nature-alert-error mb-3">Lỗi kết nối máy chủ.</div>';
             }
         });
-    });
+    }
 });
 </script>

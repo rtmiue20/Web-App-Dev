@@ -1,80 +1,62 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/../app/core/Database.php';
-require_once __DIR__ . '/../app/core/Model.php';
-require_once __DIR__ . '/../app/models/Comment.php';
 require_once __DIR__ . '/../app/helpers/Session.php';
+require_once __DIR__ . '/../app/helpers/Csrf.php';
+require_once __DIR__ . '/../app/core/Database.php';
+require_once __DIR__ . '/../app/models/Comment.php';
 
 Session::init();
 
-$method = $_SERVER['REQUEST_METHOD'];
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Phương thức không được hỗ trợ.']);
+    exit;
+}
+
+if (!Session::has('user')) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để gửi bình luận.']);
+    exit;
+}
+
+$rawInput = file_get_contents('php://input');
+$json = json_decode($rawInput, true);
+
+$postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? 0);
+$content = trim((string)($json['content'] ?? $_POST['content'] ?? ''));
+$csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? null;
+
+if (!Csrf::verify($csrf)) {
+    http_response_code(419);
+    echo json_encode(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang.']);
+    exit;
+}
+
+if ($postId <= 0 || mb_strlen($content) < 2) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Nội dung bình luận phải từ 2 ký tự trở lên.']);
+    exit;
+}
+
+$user = Session::get('user');
+$userId = (int)($user['id'] ?? 0);
+
 $commentModel = new Comment();
+$result = $commentModel->create($postId, $userId, $content);
 
-// 1. LẤY DANH SÁCH BÌNH LUẬN (GET)
-if ($method === 'GET') {
-    $postId = 0;
-    if (isset($_GET['post_id'])) {
-        $postId = intval($_GET['post_id']);
-    }
-
-    if ($postId <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Bài viết không hợp lệ']);
-        exit;
-    }
-
-    $comments = $commentModel->getByPostId($postId);
+if ($result) {
     echo json_encode([
         'success' => true,
-        'data' => $comments
-    ]);
-    exit;
+        'data' => [
+            'post_id' => $postId,
+            'content' => htmlspecialchars($content, ENT_QUOTES, 'UTF-8'),
+            'username' => htmlspecialchars($user['username'] ?? 'Bạn', ENT_QUOTES, 'UTF-8'),
+            'created_at' => date('d/m/Y H:i')
+        ]
+    ], JSON_UNESCAPED_UNICODE);
+} else {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Không thể lưu bình luận vào cơ sở dữ liệu.']);
 }
-
-// 2. THÊM BÌNH LUẬN MỚI (POST)
-if ($method === 'POST') {
-    if (!isset($_SESSION['user'])) {
-        echo json_encode(['success' => false, 'message' => 'Bạn cần đăng nhập để bình luận']);
-        exit;
-    }
-
-    $rawInput = json_decode(file_get_contents('php://input'), true);
-    
-    $postId = 0;
-    if (isset($rawInput['post_id'])) {
-        $postId = intval($rawInput['post_id']);
-    } elseif (isset($_POST['post_id'])) {
-        $postId = intval($_POST['post_id']);
-    }
-
-    $content = '';
-    if (isset($rawInput['content'])) {
-        $content = trim($rawInput['content']);
-    } elseif (isset($_POST['content'])) {
-        $content = trim($_POST['content']);
-    }
-
-    $userId = $_SESSION['user']['id'];
-
-    if ($postId <= 0 || $content === '') {
-        echo json_encode(['success' => false, 'message' => 'Nội dung bình luận không được để trống']);
-        exit;
-    }
-
-    $created = $commentModel->create($postId, $userId, $content);
-
-    if ($created) {
-        echo json_encode([
-            'success' => true, 
-            'message' => 'Đã thêm bình luận',
-            'data' => [
-                'username' => $_SESSION['user']['username'],
-                'content' => htmlspecialchars($content),
-                'created_at' => date('Y-m-d H:i:s')
-            ]
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Không thể lưu bình luận']);
-    }
-    exit;
-}
+exit;

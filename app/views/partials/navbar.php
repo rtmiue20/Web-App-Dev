@@ -1,20 +1,82 @@
-<?php $currentUser = Session::get('user'); ?>
-<nav class="navbar navbar-expand-lg navbar-dark bg-success">
-    <div class="container">
-        <a class="navbar-brand" href="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/">Diễn đàn dã ngoại</a>
-        <div class="navbar-nav ms-auto align-items-lg-center">
-            <?php if (is_array($currentUser)): ?>
-                <a class="nav-link" href="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/profile">
-                    <?= htmlspecialchars($currentUser['username'], ENT_QUOTES, 'UTF-8') ?>
+<?php
+$currentUser = Session::get('user');
+$currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$baseUrl = defined('BASE_URL') ? BASE_URL : '';
+
+// Helper to check active link
+$isActive = function (string $path) use ($currentUri, $baseUrl): bool {
+    $fullPath = rtrim($baseUrl . $path, '/');
+    $current = rtrim((string) $currentUri, '/');
+    if ($path === '/' || $path === '') {
+        return $current === '' || $current === rtrim($baseUrl, '/');
+    }
+    return str_starts_with($current, $fullPath);
+};
+?>
+<header class="dock-header">
+    <nav class="dock-nav" aria-label="Điều hướng chính">
+        <!-- Brand / Tree Pine Logo -->
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" 
+           class="dock-logo" 
+           aria-label="Dã Ngoại — về trang chủ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m8 19 4-4 4 4"/>
+                <path d="M12 19V9"/>
+                <path d="M12 9 8 5l4-4 4 4-4 4Z"/>
+                <path d="m18 14 3 3-5 5H8l-5-5 3-3"/>
+            </svg>
+        </a>
+
+        <!-- Main Nav Links -->
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" 
+           class="dock-pill <?= $isActive('/') ? 'active' : '' ?>">
+            Trang chủ
+        </a>
+
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories" 
+           class="dock-pill <?= $isActive('/categories') ? 'active' : '' ?>">
+            Chuyên mục
+        </a>
+
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
+           class="dock-pill <?= $isActive('/posts') ? 'active' : '' ?>">
+            Bài viết
+        </a>
+
+        <?php if (is_array($currentUser)): ?>
+            <!-- User Profile Link -->
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
+               class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span><?= htmlspecialchars($currentUser['username'] ?? 'Cá nhân', ENT_QUOTES, 'UTF-8') ?></span>
+            </a>
+
+            <?php if (($currentUser['role_name'] ?? '') === 'admin' || (int)($currentUser['role_id'] ?? 0) === 2): ?>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
+                   class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
+                    Quản trị
                 </a>
-                <form method="post" action="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/logout" class="ms-lg-2">
-                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                    <button class="btn btn-outline-light btn-sm" type="submit">Đăng xuất</button>
-                </form>
-            <?php else: ?>
-                <a class="nav-link" href="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/login">Đăng nhập</a>
-                <a class="nav-link" href="<?= htmlspecialchars(BASE_URL, ENT_QUOTES, 'UTF-8') ?>/register">Đăng ký</a>
             <?php endif; ?>
-        </div>
-    </div>
-</nav>
+
+            <!-- Logout Button (POST with CSRF) -->
+            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/logout" style="margin: 0; display: inline;">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                <button type="submit" class="dock-pill" style="cursor: pointer; border: none;">
+                    Thoát
+                </button>
+            </form>
+        <?php else: ?>
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" 
+               class="dock-pill <?= $isActive('/login') ? 'active' : '' ?>">
+                Đăng nhập
+            </a>
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/register" 
+               class="dock-pill <?= $isActive('/register') ? 'active' : '' ?>">
+                Đăng ký
+            </a>
+        <?php endif; ?>
+    </nav>
+</header>

@@ -16,7 +16,7 @@ class Router
 
     private function add(string $method, string $path, callable $handler, array $middleware): void
     {
-        $this->routes[$method][self::normalizePath($path)] = [
+        $this->routes[strtoupper($method)][self::normalizePath($path)] = [
             'handler' => $handler,
             'middleware' => $middleware,
         ];
@@ -24,22 +24,47 @@ class Router
 
     public function dispatch(string $method, string $uri): void
     {
+        $method = strtoupper($method);
         $path = self::normalizePath((string) parse_url($uri, PHP_URL_PATH));
-        $route = $this->routes[strtoupper($method)][$path] ?? null;
 
-        if ($route === null) {
+        $matchedRoute = null;
+        $params = [];
+
+        // Exact match
+        if (isset($this->routes[$method][$path])) {
+            $matchedRoute = $this->routes[$method][$path];
+        } else {
+            // Parameterized route matching (e.g. /posts/{id})
+            foreach ($this->routes[$method] ?? [] as $routePath => $route) {
+                if (str_contains($routePath, '{')) {
+                    $pattern = '#^' . preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $routePath) . '$#';
+                    if (preg_match($pattern, $path, $matches)) {
+                        $matchedRoute = $route;
+                        $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($matchedRoute === null) {
             http_response_code(404);
-            require __DIR__ . '/../views/errors/404.php';
+            $errorFile = __DIR__ . '/../views/errors/404.php';
+            if (file_exists($errorFile)) {
+                require $errorFile;
+            } else {
+                echo '404 - Không tìm thấy trang';
+            }
             return;
         }
 
-        foreach ($route['middleware'] as $middleware) {
+        foreach ($matchedRoute['middleware'] as $middleware) {
             if (!$middleware::handle()) {
                 return;
             }
         }
 
-        ($route['handler'])();
+        call_user_func_array($matchedRoute['handler'], $params);
     }
 
     private static function normalizePath(string $path): string

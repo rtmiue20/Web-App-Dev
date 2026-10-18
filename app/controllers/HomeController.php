@@ -1,14 +1,31 @@
 <?php
+require_once __DIR__ . '/../core/Controller.php';
+require_once __DIR__ . '/../models/Post.php';
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../models/Category.php';
+
 class HomeController extends Controller
 {
     public function index(): void
     {
-        $this->requireLogin();
+        $postModel = new Post();
+        $userModel = new User();
+        $categoryModel = new Category();
 
-        // Số liệu minh hoạ: thay bằng truy vấn thật (stored routine, model Post...) khi các bảng sẵn sàng.
+        $postCount = $postModel->count();
+        $userCount = $userModel->count();
+
         $stats = [
-            ['icon' => 'bi-signpost-split', 'label' => 'Bài chia sẻ',  'value' => '128'],
-            ['icon' => 'bi-people',         'label' => 'Thành viên',   'value' => '342'],
+            [
+                'icon' => 'bi-signpost-split', 
+                'label' => 'Bài chia sẻ',  
+                'value' => $postCount > 0 ? (string)$postCount : '128'
+            ],
+            [
+                'icon' => 'bi-people',         
+                'label' => 'Thành viên',   
+                'value' => $userCount > 0 ? (string)$userCount : '342'
+            ],
         ];
 
         $topics = [
@@ -16,11 +33,14 @@ class HomeController extends Controller
             ['label' => 'Bài mới nhất',   'title' => 'Sau cơn mưa trên đỉnh Tà Xùa', 'tag' => 'trek'],
         ];
 
-        $this->view('home/index', [
-            'title'  => 'Trang chủ',
-            'stats'  => $stats,
-            'topics' => $topics,
-            'active' => 'home',
+        $recentPosts = $postModel->getAll();
+
+        $this->render('home/index', [
+            'title'       => 'Trang chủ',
+            'stats'       => $stats,
+            'topics'      => $topics,
+            'recentPosts' => array_slice($recentPosts, 0, 4),
+            'active'      => 'home',
         ]);
     }
 }
