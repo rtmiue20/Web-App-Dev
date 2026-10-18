@@ -1,22 +1,20 @@
 <?php
+require_once __DIR__ . '/../core/Model.php';
+
 class Category extends Model {
-    // 1. Attributes (Thuộc tính)
     private $id;
     private $name;
     private $description;
 
-    // 2. Getters
     public function getId() { return $this->id; }
     public function getName() { return $this->name; }
     public function getDescription() { return $this->description; }
 
-    // 3. Setters
     public function setId($id) { $this->id = $id; }
     public function setName($name) { $this->name = $name; }
     public function setDescription($description) { $this->description = $description; }
 
-    // 4. Function riêng (Không nhận tham số, dùng trực tiếp thuộc tính)
-    public function create() {
+    public function create(): bool {
         $sql = "INSERT INTO categories (name, description) VALUES (:name, :description)";
         $stmt = $this->db->prepare($sql);
         try {
@@ -25,8 +23,32 @@ class Category extends Model {
                 ':description' => $this->description
             ]);
         } catch (PDOException $e) {
-            return false; // Báo lỗi nếu trùng tên do UNIQUE
+            return false;
+        }
+    }
+
+    public function getAll(): array {
+        try {
+            $sql = "SELECT c.*, COUNT(p.id) AS post_count 
+                    FROM categories c 
+                    LEFT JOIN posts p ON p.category_id = c.id 
+                    GROUP BY c.id, c.name, c.description 
+                    ORDER BY c.name ASC";
+            $stmt = $this->db->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Error getting categories: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function count(): int {
+        try {
+            $stmt = $this->db->query("SELECT COUNT(*) AS total FROM categories");
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)($res['total'] ?? 0);
+        } catch (PDOException $e) {
+            return 0;
         }
     }
 }
-?>
