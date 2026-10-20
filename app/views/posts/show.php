@@ -48,7 +48,25 @@ $coverImg = !empty($post['image_url'])
                 <i class="bi bi-calendar-event me-1"></i>
                 <?= !empty($post['created_at']) ? date('d/m/Y H:i', strtotime($post['created_at'])) : '' ?>
             </span>
-            <span class="ms-auto">
+            <span class="ms-auto d-flex align-items-center gap-2">
+                <?php if (!empty($canManage)): ?>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/edit" 
+                       class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle"
+                       title="Chỉnh sửa bài viết">
+                        <i class="bi bi-pencil-square me-1"></i> Sửa
+                    </a>
+                    <form method="post" 
+                          action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/delete" 
+                          class="d-inline" 
+                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.');">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" 
+                                class="nature-btn-secondary py-1 px-3 text-danger border-danger-subtle"
+                                title="Xóa bài viết">
+                            <i class="bi bi-trash3 me-1"></i> Xóa
+                        </button>
+                    </form>
+                <?php endif; ?>
                 <button type="button" 
                         id="btn-like-post" 
                         class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle"
@@ -145,8 +163,12 @@ function submitComment() {
 document.addEventListener('DOMContentLoaded', () => {
     const weatherElem = document.getElementById('weather-info');
     if (weatherElem) {
-        // Sample coords for Da Lat or Northern Mountains (Ta Xua)
-        ForumAjax.fetchWeather('21.28', '104.31', weatherElem);
+        <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
+            ForumAjax.fetchWeather('<?= htmlspecialchars((string)$post['lat'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars((string)$post['lng'], ENT_QUOTES, 'UTF-8') ?>', weatherElem);
+        <?php else: ?>
+            // Sample coords for Da Lat or Northern Mountains (Ta Xua)
+            ForumAjax.fetchWeather('21.28', '104.31', weatherElem);
+        <?php endif; ?>
     }
 });
 </script>

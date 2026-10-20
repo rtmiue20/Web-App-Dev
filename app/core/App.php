@@ -34,6 +34,15 @@ class App
         $router->get('/posts/{id}', function ($id) use ($posts) {
             $posts->show((int)$id);
         });
+        $router->get('/posts/{id}/edit', function ($id) use ($posts) {
+            $posts->edit((int)$id);
+        }, [AuthMiddleware::class]);
+        $router->post('/posts/{id}/update', function ($id) use ($posts) {
+            $posts->update((int)$id);
+        }, [AuthMiddleware::class]);
+        $router->post('/posts/{id}/delete', function ($id) use ($posts) {
+            $posts->delete((int)$id);
+        }, [AuthMiddleware::class]);
         $router->post('/posts/{id}/like', function ($id) use ($posts) {
             $posts->like((int)$id);
         });
