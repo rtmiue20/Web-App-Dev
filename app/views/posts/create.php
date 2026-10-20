@@ -55,13 +55,44 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
                 <!-- Location -->
                 <div class="col-md-6">
-                    <label for="location" class="nature-label">Địa điểm / Tọa độ</label>
+                    <label for="location" class="nature-label">Địa điểm</label>
                     <input class="nature-input" 
                            id="location" 
                            name="location" 
                            type="text" 
                            placeholder="Ví dụ: Tà Xùa, Sơn La"
                            value="<?= htmlspecialchars($old['location'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <!-- Lat & Lng -->
+                <div class="col-md-6">
+                    <label for="lat" class="nature-label">Vĩ độ (Lat) <span class="text-muted small fw-normal">(để xem thời tiết & bản đồ)</span></label>
+                    <input class="nature-input" 
+                           id="lat" 
+                           name="lat" 
+                           type="number" 
+                           step="any"
+                           placeholder="Ví dụ: 21.28"
+                           value="<?= htmlspecialchars((string)($old['lat'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['lat'])): ?>
+                        <div class="text-danger small mt-1"><?= htmlspecialchars($errors['lat'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="lng" class="nature-label">Kinh độ (Lng)</label>
+                    <input class="nature-input" 
+                           id="lng" 
+                           name="lng" 
+                           type="number" 
+                           step="any"
+                           placeholder="Ví dụ: 104.31"
+                           value="<?= htmlspecialchars((string)($old['lng'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['lng'])): ?>
+                        <div class="text-danger small mt-1"><?= htmlspecialchars($errors['lng'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
 
