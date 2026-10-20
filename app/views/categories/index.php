@@ -9,8 +9,11 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
             <p class="page-subtitle">Khám phá các bài viết và kinh nghiệm theo từng chủ đề dã ngoại.</p>
         </div>
         <?php if (Session::has('user') && (((Session::get('user')['role_name'] ?? '') === 'admin') || (int)(Session::get('user')['role_id'] ?? 0) === 2)): ?>
-            <div>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories/create" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
+            <div class="d-flex gap-2">
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" class="nature-btn-secondary px-3 py-2 text-white border-white-20 d-inline-flex" style="height: 44px; font-size: 14px;">
+                    <i class="bi bi-gear me-1"></i> Quản trị danh mục
+                </a>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories/create" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
                     <i class="bi bi-plus-lg me-1"></i> Thêm chuyên mục
                 </a>
             </div>
