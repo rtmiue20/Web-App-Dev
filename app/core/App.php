@@ -38,13 +38,31 @@ class App
             $posts->like((int)$id);
         });
 
-        // 5. Categories
+        // 5. Categories (Public)
         $router->get('/categories', [$categories, 'index']);
-        $router->get('/categories/create', [$categories, 'create'], [AuthMiddleware::class]);
-        $router->post('/categories/store', [$categories, 'store'], [AuthMiddleware::class]);
 
-        // 6. Admin
-        $router->get('/admin', [$dashboard, 'index'], [AuthMiddleware::class, AdminMiddleware::class]);
+        // Legacy category creation compatibility
+        $router->get('/categories/create', function () use ($categories) {
+            $categories->create();
+        }, [AdminMiddleware::class]);
+        $router->post('/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
+
+        // 6. Admin Area (All protected by AdminMiddleware)
+        $router->get('/admin', [$dashboard, 'index'], [AdminMiddleware::class]);
+        
+        // FR11: Admin Category Management
+        $router->get('/admin/categories', [$categories, 'adminIndex'], [AdminMiddleware::class]);
+        $router->get('/admin/categories/create', [$categories, 'create'], [AdminMiddleware::class]);
+        $router->post('/admin/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
+        $router->get('/admin/categories/edit/{id}', function ($id) use ($categories) {
+            $categories->edit((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/categories/update/{id}', function ($id) use ($categories) {
+            $categories->update((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/categories/delete/{id}', function ($id) use ($categories) {
+            $categories->delete((int)$id);
+        }, [AdminMiddleware::class]);
 
         // URL parsing
         $url = $_GET['url'] ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);

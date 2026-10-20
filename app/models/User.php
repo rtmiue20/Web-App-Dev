@@ -92,6 +92,17 @@ class User extends Model
         return $this->id;
     }
 
+    public function count(): int
+    {
+        try {
+            $stmt = $this->db->query('SELECT COUNT(*) AS total FROM users');
+            $row = $stmt->fetch();
+            return (int)($row['total'] ?? 0);
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
+
     private static function fromRow(array $row): User
     {
         $user = new self();
