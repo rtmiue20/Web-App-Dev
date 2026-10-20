@@ -1,0 +1,149 @@
+<?php
+$title = 'Chỉnh sửa bài viết';
+$baseUrl = defined('BASE_URL') ? BASE_URL : '';
+$currentImage = !empty($post['image_url']) 
+    ? (str_starts_with($post['image_url'], 'http') ? $post['image_url'] : $baseUrl . '/' . ltrim($post['image_url'], '/'))
+    : null;
+?>
+<div class="app-container" style="max-width: 800px;">
+    <div class="mb-4">
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>" class="nature-btn-secondary mb-3">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại chi tiết bài viết
+        </a>
+        <h1 class="page-title">Chỉnh sửa bài viết</h1>
+        <p class="page-subtitle">Cập nhật thông tin, hình ảnh hoặc kinh nghiệm dã ngoại của bạn.</p>
+    </div>
+
+    <div class="nature-card" style="border-radius: 36px;">
+        <?php if (!empty($errors['form'])): ?>
+            <div class="nature-alert nature-alert-error mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($errors['form'], ENT_QUOTES, 'UTF-8') ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/update" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+
+            <!-- Post Title -->
+            <div class="mb-3">
+                <label for="title" class="nature-label">Tiêu đề bài viết</label>
+                <input class="nature-input" 
+                       id="title" 
+                       name="title" 
+                       type="text" 
+                       required 
+                       placeholder="Ví dụ: Lịch trình 2 ngày 1 đêm săn mây Tà Xùa"
+                       value="<?= htmlspecialchars($old['title'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                <?php if (!empty($errors['title'])): ?>
+                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['title'], ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <!-- Category Select -->
+                <div class="col-md-6">
+                    <label for="category_id" class="nature-label">Chuyên mục</label>
+                    <select class="nature-input" id="category_id" name="category_id" required>
+                        <option value="">-- Chọn chuyên mục --</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= (int)$cat['id'] ?>" <?= (($old['category_id'] ?? '') == $cat['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (!empty($errors['category_id'])): ?>
+                        <div class="text-danger small mt-1"><?= htmlspecialchars($errors['category_id'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Location -->
+                <div class="col-md-6">
+                    <label for="location" class="nature-label">Địa điểm</label>
+                    <input class="nature-input" 
+                           id="location" 
+                           name="location" 
+                           type="text" 
+                           placeholder="Ví dụ: Tà Xùa, Sơn La"
+                           value="<?= htmlspecialchars($old['location'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <!-- Lat & Lng -->
+                <div class="col-md-6">
+                    <label for="lat" class="nature-label">Vĩ độ (Lat) <span class="text-muted small fw-normal">(để xem thời tiết & bản đồ)</span></label>
+                    <input class="nature-input" 
+                           id="lat" 
+                           name="lat" 
+                           type="number" 
+                           step="any"
+                           placeholder="Ví dụ: 21.28"
+                           value="<?= htmlspecialchars((string)($old['lat'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['lat'])): ?>
+                        <div class="text-danger small mt-1"><?= htmlspecialchars($errors['lat'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="lng" class="nature-label">Kinh độ (Lng)</label>
+                    <input class="nature-input" 
+                           id="lng" 
+                           name="lng" 
+                           type="number" 
+                           step="any"
+                           placeholder="Ví dụ: 104.31"
+                           value="<?= htmlspecialchars((string)($old['lng'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($errors['lng'])): ?>
+                        <div class="text-danger small mt-1"><?= htmlspecialchars($errors['lng'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Current Image Preview & Upload New -->
+            <div class="mb-3">
+                <label for="image" class="nature-label">Ảnh bìa bài viết</label>
+                <?php if ($currentImage): ?>
+                    <div class="mb-2 d-flex align-items-center gap-3">
+                        <img src="<?= htmlspecialchars($currentImage, ENT_QUOTES, 'UTF-8') ?>" 
+                             alt="Ảnh bìa hiện tại" 
+                             style="width: 90px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                        <span class="text-muted small">Ảnh bìa hiện tại. Tải lên ảnh mới nếu muốn thay thế.</span>
+                    </div>
+                <?php endif; ?>
+                <input class="nature-input" 
+                       id="image" 
+                       name="image" 
+                       type="file" 
+                       accept="image/png, image/jpeg, image/webp" 
+                       style="padding-top: 0.55rem;">
+                <?php if (!empty($errors['image'])): ?>
+                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['image'], ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Post Content -->
+            <div class="mb-4">
+                <label for="content" class="nature-label">Nội dung bài viết</label>
+                <textarea class="nature-textarea" 
+                          id="content" 
+                          name="content" 
+                          rows="8" 
+                          required 
+                          placeholder="Chia sẻ chi tiết lịch trình, cung đường, đồ chuẩn bị, chi phí, hoặc các lưu ý an toàn..."><?= htmlspecialchars($old['content'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                <?php if (!empty($errors['content'])): ?>
+                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['content'], ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Submit buttons -->
+            <div class="d-flex align-items-center gap-3">
+                <button type="submit" class="nature-btn-primary py-3 flex-grow-1">
+                    <i class="bi bi-check-circle-fill me-2"></i> Lưu thay đổi
+                </button>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>" class="nature-btn-secondary py-3 px-4 text-center">
+                    Hủy bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
