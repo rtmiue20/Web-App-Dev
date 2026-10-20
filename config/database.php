@@ -9,6 +9,6 @@ return [
     'port'    => 3306,
     'name'    => 'outdoor_forum',
     'user'    => 'root',        // XAMPP mặc định là root
-    'pass'    => '049206',            // XAMPP mặc định không có mật khẩu
+    'pass'    => '',            // XAMPP mặc định không có mật khẩu
     'charset' => 'utf8mb4',
 ];
