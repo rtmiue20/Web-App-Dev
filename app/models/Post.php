@@ -317,20 +317,84 @@ class Post extends Model {
     }
 
     /**
-     * Đếm tổng số bài viết trong hệ thống
+     * Đếm tổng số bài viết trong hệ thống (gọi routine sp_post_count)
      */
     public function count(): int {
         try {
-            $res = Database::query("SELECT COUNT(*) AS total FROM posts");
+            $res = Database::call('sp_post_count');
             return (int)($res[0]['total'] ?? 0);
         } catch (PDOException $e) {
-            error_log('Error counting posts: ' . $e->getMessage());
-            return 0;
+            try {
+                $res = Database::query("SELECT COUNT(*) AS total FROM posts");
+                return (int)($res[0]['total'] ?? 0);
+            } catch (PDOException $ex) {
+                error_log('Error counting posts: ' . $ex->getMessage());
+                return 0;
+            }
         }
     }
 
     /**
-     * Thích hoặc bỏ thích bài viết (gọi routine sp_toggle_like)
+     * Tìm kiếm bài viết theo từ khóa và chuyên mục (gọi routine sp_post_search)
+     */
+    public function search(string $keyword, ?int $categoryId = null): array {
+        try {
+            return Database::call('sp_post_search', [$keyword, $categoryId]);
+        } catch (PDOException $e) {
+            error_log('Notice: sp_post_search fallback query: ' . $e->getMessage());
+            try {
+                $sql = "SELECT p.*, u.username, c.name AS category_name,
+                               (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                               (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+                               (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                        FROM posts p
+                        JOIN users u ON u.id = p.user_id
+                        JOIN categories c ON c.id = p.category_id
+                        WHERE (:cat IS NULL OR p.category_id = :cat)
+                          AND (p.title LIKE :kw OR p.content LIKE :kw OR p.location LIKE :kw)
+                        ORDER BY p.created_at DESC";
+                $pattern = '%' . trim($keyword) . '%';
+                return Database::query($sql, ['cat' => $categoryId, 'kw' => $pattern]);
+            } catch (PDOException $ex) {
+                return [];
+            }
+        }
+    }
+
+    /**
+     * Gợi ý từ khóa tìm kiếm khi người dùng đang gõ AJAX (gọi routine sp_post_search_suggest)
+     */
+    public function suggest(string $keyword): array {
+        try {
+            return Database::call('sp_post_search_suggest', [$keyword]);
+        } catch (PDOException $e) {
+            try {
+                $pattern = '%' . trim($keyword) . '%';
+                return Database::query(
+                    "SELECT id, title, location FROM posts WHERE title LIKE :kw OR location LIKE :kw ORDER BY created_at DESC LIMIT 8",
+                    ['kw' => $pattern]
+                );
+            } catch (PDOException $ex) {
+                return [];
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra người dùng đã thích bài viết chưa (gọi routine sp_post_is_liked)
+     */
+    public function isLiked(int $postId, int $userId): bool {
+        try {
+            $rows = Database::call('sp_post_is_liked', [$postId, $userId]);
+            return !empty($rows) && (bool)($rows[0]['is_liked'] ?? false);
+        } catch (PDOException $e) {
+            $rows = Database::query("SELECT 1 FROM post_likes WHERE post_id = :p AND user_id = :u", ['p' => $postId, 'u' => $userId]);
+            return !empty($rows);
+        }
+    }
+
+    /**
+     * Thích hoặc bỏ thích bài viết (gọi routine sp_toggle_like hoặc sp_post_toggle_like)
      */
     public function toggleLike(int $postId, int $userId): int {
         try {

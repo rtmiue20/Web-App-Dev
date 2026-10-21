@@ -1,6 +1,12 @@
 <?php
 require_once __DIR__ . '/../core/Model.php';
+require_once __DIR__ . '/../core/Database.php';
 
+/**
+ * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 & 4)
+ * Gọi các Stored Procedures: sp_user_get_by_email, sp_user_get_by_id, 
+ * sp_user_exists, sp_user_register, sp_user_count, sp_user_list
+ */
 class User extends Model
 {
     private ?int $id = null;
@@ -32,74 +38,152 @@ class User extends Model
     public function getCreatedAt(): ?string { return $this->createdAt; }
     public function setCreatedAt(?string $createdAt): void { $this->createdAt = $createdAt; }
 
+    /**
+     * Tìm người dùng qua email (gọi routine sp_user_get_by_email)
+     */
     public function findByEmail(string $email): ?User
     {
-        $stmt = $this->db->prepare(
-            'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
-             FROM users u
-             INNER JOIN roles r ON r.id = u.role_id
-             WHERE u.email = :email
-             LIMIT 1'
-        );
-        $stmt->execute([':email' => $email]);
-        $row = $stmt->fetch();
-
-        return $row ? self::fromRow($row) : null;
+        try {
+            $rows = Database::call('sp_user_get_by_email', [$email]);
+            return !empty($rows) ? self::fromRow($rows[0]) : null;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_get_by_email fallback query: ' . $e->getMessage());
+            try {
+                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+                        FROM users u
+                        INNER JOIN roles r ON r.id = u.role_id
+                        WHERE u.email = :email
+                        LIMIT 1';
+                $rows = Database::query($sql, ['email' => $email]);
+                return !empty($rows) ? self::fromRow($rows[0]) : null;
+            } catch (PDOException $ex) {
+                error_log('Error finding user by email: ' . $ex->getMessage());
+                return null;
+            }
+        }
     }
 
+    /**
+     * Tìm người dùng qua ID (gọi routine sp_user_get_by_id)
+     */
     public function findById(int $id): ?User
     {
-        $stmt = $this->db->prepare(
-            'SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.created_at
-             FROM users u
-             INNER JOIN roles r ON r.id = u.role_id
-             WHERE u.id = :id
-             LIMIT 1'
-        );
-        $stmt->execute([':id' => $id]);
-        $row = $stmt->fetch();
-
-        return $row ? self::fromRow($row) : null;
+        try {
+            $rows = Database::call('sp_user_get_by_id', [$id]);
+            return !empty($rows) ? self::fromRow($rows[0]) : null;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_get_by_id fallback query: ' . $e->getMessage());
+            try {
+                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+                        FROM users u
+                        INNER JOIN roles r ON r.id = u.role_id
+                        WHERE u.id = :id
+                        LIMIT 1';
+                $rows = Database::query($sql, ['id' => $id]);
+                return !empty($rows) ? self::fromRow($rows[0]) : null;
+            } catch (PDOException $ex) {
+                error_log('Error finding user by ID: ' . $ex->getMessage());
+                return null;
+            }
+        }
     }
 
+    /**
+     * Kiểm tra sự tồn tại của email hoặc username (gọi routine sp_user_exists)
+     */
     public function existsByEmailOrUsername(string $email, string $username): bool
     {
-        $stmt = $this->db->prepare(
-            'SELECT 1 FROM users WHERE email = :email OR username = :username LIMIT 1'
-        );
-        $stmt->execute([':email' => $email, ':username' => $username]);
-        return (bool) $stmt->fetchColumn();
+        try {
+            $rows = Database::call('sp_user_exists', [$email, $username]);
+            return !empty($rows) && (bool)($rows[0]['is_exists'] ?? false);
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_exists fallback query: ' . $e->getMessage());
+            try {
+                $sql = 'SELECT 1 FROM users WHERE email = :email OR username = :username LIMIT 1';
+                $rows = Database::query($sql, ['email' => $email, 'username' => $username]);
+                return !empty($rows);
+            } catch (PDOException $ex) {
+                error_log('Error checking user existence: ' . $ex->getMessage());
+                return false;
+            }
+        }
     }
 
+    /**
+     * Tạo tài khoản người dùng mới (gọi routine sp_user_register)
+     */
     public function create(): int
     {
         if ($this->username === null || $this->email === null || $this->passwordHash === null) {
             throw new LogicException('Username, email, and password hash must be set before creating a user.');
         }
 
-        $stmt = $this->db->prepare(
-            "INSERT INTO users (username, email, password_hash, role_id)
-             VALUES (:username, :email, :password_hash,
-                     (SELECT id FROM roles WHERE name = 'member' LIMIT 1))"
-        );
-        $stmt->execute([
-            ':username' => $this->username,
-            ':email' => $this->email,
-            ':password_hash' => $this->passwordHash,
-        ]);
+        try {
+            $rows = Database::call('sp_user_register', [$this->username, $this->email, $this->passwordHash]);
+            $this->id = (int)($rows[0]['user_id'] ?? 0);
+            return $this->id;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_register fallback query: ' . $e->getMessage());
+            try {
+                $stmt = $this->db->prepare(
+                    "INSERT INTO users (username, email, password_hash, role_id, created_at)
+                     VALUES (:username, :email, :password_hash,
+                             (SELECT id FROM roles WHERE name = 'member' LIMIT 1), NOW())"
+                );
+                $stmt->execute([
+                    ':username' => $this->username,
+                    ':email' => $this->email,
+                    ':password_hash' => $this->passwordHash,
+                ]);
 
-        $this->id = (int) $this->db->lastInsertId();
-        return $this->id;
+                $this->id = (int) $this->db->lastInsertId();
+                return $this->id;
+            } catch (PDOException $ex) {
+                error_log('Error creating user: ' . $ex->getMessage());
+                return 0;
+            }
+        }
     }
 
+    /**
+     * Đếm tổng số người dùng trong hệ thống (gọi routine sp_user_count)
+     */
     public function count(): int
     {
         try {
-            $stmt = $this->db->query('SELECT COUNT(*) AS total FROM users');
-            $row = $stmt->fetch();
-            return (int)($row['total'] ?? 0);
+            $rows = Database::call('sp_user_count');
+            return (int)($rows[0]['total'] ?? 0);
         } catch (PDOException $e) {
-            return 0;
+            try {
+                $rows = Database::query('SELECT COUNT(*) AS total FROM users');
+                return (int)($rows[0]['total'] ?? 0);
+            } catch (PDOException $ex) {
+                return 0;
+            }
+        }
+    }
+
+    /**
+     * Lấy danh sách toàn bộ người dùng kèm vai trò và số bài viết (gọi routine sp_user_list)
+     */
+    public function getAll(): array
+    {
+        try {
+            return Database::call('sp_user_list');
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_list fallback query: ' . $e->getMessage());
+            try {
+                $sql = 'SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.created_at,
+                               COUNT(p.id) AS total_posts
+                        FROM users u
+                        INNER JOIN roles r ON r.id = u.role_id
+                        LEFT JOIN posts p  ON p.user_id = u.id
+                        GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.created_at
+                        ORDER BY u.id ASC';
+                return Database::query($sql);
+            } catch (PDOException $ex) {
+                return [];
+            }
         }
     }
 
