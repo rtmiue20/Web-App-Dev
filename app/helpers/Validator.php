@@ -38,6 +38,41 @@ class Validator
         return $errors;
     }
 
+    public static function profile(array $input): array
+    {
+        $errors = [];
+        $username = trim(self::stringValue($input, 'username'));
+        $bio = trim(self::stringValue($input, 'bio'));
+
+        if (mb_strlen($username) < 3 || mb_strlen($username) > 50) {
+            $errors['username'] = 'Tên người dùng phải có từ 3 đến 50 ký tự.';
+        }
+        if (mb_strlen($bio) > 500) {
+            $errors['bio'] = 'Phần giới thiệu không được vượt quá 500 ký tự.';
+        }
+
+        return $errors;
+    }
+
+    public static function passwordChange(array $input): array
+    {
+        $errors = [];
+        $currentPassword = self::stringValue($input, 'current_password');
+        $newPassword = self::stringValue($input, 'new_password');
+
+        if ($currentPassword === '') {
+            $errors['current_password'] = 'Vui lòng nhập mật khẩu hiện tại.';
+        }
+        if (strlen($newPassword) < 8) {
+            $errors['new_password'] = 'Mật khẩu mới phải có ít nhất 8 ký tự.';
+        }
+        if ($newPassword !== self::stringValue($input, 'password_confirmation')) {
+            $errors['password_confirmation'] = 'Mật khẩu xác nhận không khớp.';
+        }
+
+        return $errors;
+    }
+
     private static function stringValue(array $input, string $key): string
     {
         return isset($input[$key]) && is_string($input[$key]) ? $input[$key] : '';

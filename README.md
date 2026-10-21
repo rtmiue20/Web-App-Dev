@@ -91,6 +91,7 @@ Truy cập: http://localhost/Web-App-Dev/public/
 ### Xác thực và vai trò
 - Import `database/schema.sql` vào database mới để tạo `roles` (`member`, `admin`) và liên kết người dùng qua `users.role_id`.
 - Nếu đang nâng cấp database cũ có `users.role` dạng ENUM, sao lưu trước rồi chạy `database/migrations/001_normalize_user_roles.sql` một lần thay vì import lại schema.
+- Với database đã có bảng `users`, chạy `database/migrations/003_add_user_profile_fields.sql` và nạp lại `sp_user_get_by_email.sql`, `sp_user_get_by_id.sql`, `sp_user_update_profile.sql`, `sp_user_change_password.sql` từ `database/routines/` để bật hồ sơ cá nhân.
 - Mở `/register` để tạo tài khoản thành viên; mật khẩu được băm bằng `password_hash`.
 - Dùng `/login`, `/profile`; quản trị viên truy cập `/admin`; đăng xuất được gửi bằng POST có CSRF token.
 - Router hỗ trợ khai báo middleware cho từng route. Dùng `AuthMiddleware` để yêu cầu đăng nhập và `AdminMiddleware` để giới hạn vai trò `admin`.
