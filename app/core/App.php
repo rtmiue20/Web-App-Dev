@@ -26,6 +26,8 @@ class App
 
         // 3. Profile
         $router->get('/profile', [$users, 'profile'], [AuthMiddleware::class]);
+        $router->post('/profile', [$users, 'updateProfile'], [AuthMiddleware::class]);
+        $router->post('/profile/password', [$users, 'changePassword'], [AuthMiddleware::class]);
 
         // 4. Posts
         $router->get('/posts', [$posts, 'index']);
