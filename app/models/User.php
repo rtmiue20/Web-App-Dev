@@ -3,9 +3,10 @@ require_once __DIR__ . '/../core/Model.php';
 require_once __DIR__ . '/../core/Database.php';
 
 /**
- * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 & 4)
+ * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 đến 4)
  * Gọi các Stored Procedures: sp_user_get_by_email, sp_user_get_by_id, 
- * sp_user_exists, sp_user_register, sp_user_count, sp_user_list
+ * sp_user_exists, sp_user_register, sp_user_update_profile,
+ * sp_user_change_password, sp_user_count, sp_user_list
  */
 class User extends Model
 {
@@ -16,6 +17,8 @@ class User extends Model
     private ?int $roleId = null;
     private ?string $roleName = null;
     private ?string $createdAt = null;
+    private ?string $bio = null;
+    private ?string $avatarPath = null;
 
     public function getId(): ?int { return $this->id; }
     public function setId(?int $id): void { $this->id = $id; }
@@ -38,6 +41,9 @@ class User extends Model
     public function getCreatedAt(): ?string { return $this->createdAt; }
     public function setCreatedAt(?string $createdAt): void { $this->createdAt = $createdAt; }
 
+    public function getBio(): ?string { return $this->bio; }
+    public function getAvatarPath(): ?string { return $this->avatarPath; }
+
     /**
      * Tìm người dùng qua email (gọi routine sp_user_get_by_email)
      */
@@ -49,7 +55,8 @@ class User extends Model
         } catch (PDOException $e) {
             error_log('Notice: sp_user_get_by_email fallback query: ' . $e->getMessage());
             try {
-                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                               u.bio, u.avatar_path, u.created_at
                         FROM users u
                         INNER JOIN roles r ON r.id = u.role_id
                         WHERE u.email = :email
@@ -74,7 +81,8 @@ class User extends Model
         } catch (PDOException $e) {
             error_log('Notice: sp_user_get_by_id fallback query: ' . $e->getMessage());
             try {
-                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                               u.bio, u.avatar_path, u.created_at
                         FROM users u
                         INNER JOIN roles r ON r.id = u.role_id
                         WHERE u.id = :id
@@ -187,6 +195,28 @@ class User extends Model
         }
     }
 
+    public function updateProfile(string $username, string $bio, ?string $avatarPath): void
+    {
+        if ($this->id === null) {
+            throw new LogicException('User ID must be set before updating a profile.');
+        }
+
+        Database::call('sp_user_update_profile', [$this->id, $username, $bio, $avatarPath]);
+        $this->username = $username;
+        $this->bio = $bio;
+        $this->avatarPath = $avatarPath;
+    }
+
+    public function changePassword(string $passwordHash): void
+    {
+        if ($this->id === null) {
+            throw new LogicException('User ID must be set before changing a password.');
+        }
+
+        Database::call('sp_user_change_password', [$this->id, $passwordHash]);
+        $this->passwordHash = $passwordHash;
+    }
+
     private static function fromRow(array $row): User
     {
         $user = new self();
@@ -197,6 +227,8 @@ class User extends Model
         $user->setRoleId((int) $row['role_id']);
         $user->setRoleName($row['role_name']);
         $user->setCreatedAt($row['created_at']);
+        $user->bio = $row['bio'] ?? null;
+        $user->avatarPath = $row['avatar_path'] ?? null;
         return $user;
     }
 }
