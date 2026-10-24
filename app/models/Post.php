@@ -94,6 +94,208 @@ class Post extends Model {
     }
 
     /**
+     * Lấy danh sách bài viết theo chuyên mục và phân trang (Tuần 4 - FR03 - Phúc)
+     * @param int|null $categoryId Lọc theo chuyên mục hoặc null nếu lấy tất cả
+     * @param int $page Số trang hiện tại (bắt đầu từ 1)
+     * @param int $limit Số lượng bài viết trên 1 trang
+     * @param string|null $status Lọc trạng thái ('published', 'pending', 'hidden') hoặc null
+     * @return array Danh sách bài viết
+     */
+    public function getPaginated(?int $categoryId = null, int $page = 1, int $limit = 6, ?string $status = 'published'): array {
+        $offset = ($page - 1) * $limit;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        try {
+            return Database::call('sp_post_list_paginated', [$categoryId, $status, $limit, $offset]);
+        } catch (PDOException $e) {
+            error_log('Notice: sp_post_list_paginated fallback query: ' . $e->getMessage());
+
+            $sql = "SELECT p.*, u.username, c.name AS category_name,
+                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+                    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                    FROM posts p 
+                    JOIN users u ON p.user_id = u.id 
+                    JOIN categories c ON p.category_id = c.id
+                    WHERE 1=1";
+            
+            $params = [];
+
+            if ($categoryId !== null) {
+                $sql .= " AND p.category_id = :category_id";
+                $params['category_id'] = $categoryId;
+            }
+
+            if ($status !== null) {
+                $sql .= " AND p.status = :status";
+                $params['status'] = $status;
+            }
+
+            $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+            try {
+                $stmt = $this->db->prepare($sql);
+                foreach ($params as $paramKey => $paramVal) {
+                    $stmt->bindValue(':' . $paramKey, $paramVal);
+                }
+                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $ex) {
+                error_log('Error getting paginated posts: ' . $ex->getMessage());
+                return [];
+            }
+        }
+    }
+
+    /**
+     * Đếm tổng số bài viết theo chuyên mục và trạng thái phục vụ phân trang (Tuần 4 - FR03 - Phúc)
+     * @param int|null $categoryId ID chuyên mục hoặc null
+     * @param string|null $status Trạng thái bài viết hoặc null
+     * @return int Tổng số bài viết
+     */
+    public function countFiltered(?int $categoryId = null, ?string $status = 'published'): int {
+        try {
+            $res = Database::call('sp_post_count_filtered', [$categoryId, $status]);
+            return (int)($res[0]['total'] ?? 0);
+        } catch (PDOException $e) {
+            error_log('Notice: sp_post_count_filtered fallback query: ' . $e->getMessage());
+
+            $sql = "SELECT COUNT(*) AS total FROM posts WHERE 1=1";
+            $params = [];
+
+            if ($categoryId !== null) {
+                $sql .= " AND category_id = :category_id";
+                $params['category_id'] = $categoryId;
+            }
+
+            if ($status !== null) {
+                $sql .= " AND status = :status";
+                $params['status'] = $status;
+            }
+
+            try {
+                $res = Database::query($sql, $params);
+                return (int)($res[0]['total'] ?? 0);
+            } catch (PDOException $ex) {
+                error_log('Error counting filtered posts: ' . $ex->getMessage());
+                return 0;
+            }
+        }
+    }
+
+    /**
+     * Cập nhật trạng thái bài viết: duyệt, ẩn (Tuần 4 - FR13 - Phúc)
+     * @param int $id ID bài viết
+     * @param string $status Trạng thái mới ('published', 'pending', 'hidden')
+     * @return bool Thành công hay thất bại
+     */
+    public function updateStatus(int $id, string $status): bool {
+        if (!in_array($status, ['published', 'pending', 'hidden'], true)) {
+            return false;
+        }
+
+        try {
+            Database::call('sp_post_update_status', [$id, $status]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_post_update_status fallback query: ' . $e->getMessage());
+            try {
+                $stmt = $this->db->prepare("UPDATE posts SET status = :status WHERE id = :id");
+                return $stmt->execute([':status' => $status, ':id' => $id]);
+            } catch (PDOException $ex) {
+                error_log('Error updating post status: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Lấy danh sách bài viết phục vụ trang quản trị Admin (Tuần 4 - FR13 - Phúc)
+     * Cho phép lọc theo trạng thái, chuyên mục và có phân trang
+     * @param string|null $status Trạng thái hoặc null/all nếu lấy tất cả
+     * @param int|null $categoryId ID chuyên mục hoặc null
+     * @param int $page Trang hiện tại
+     * @param int $limit Số dòng trên 1 trang
+     * @return array Danh sách bài viết
+     */
+    public function getAllForAdmin(?string $status = null, ?int $categoryId = null, int $page = 1, int $limit = 10): array {
+        $offset = ($page - 1) * $limit;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $sql = "SELECT p.*, u.username, c.name AS category_name,
+                (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+                (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                FROM posts p 
+                JOIN users u ON p.user_id = u.id 
+                JOIN categories c ON p.category_id = c.id
+                WHERE 1=1";
+        
+        $params = [];
+
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $sql .= " AND p.status = :status";
+            $params['status'] = $status;
+        }
+
+        if ($categoryId !== null && $categoryId > 0) {
+            $sql .= " AND p.category_id = :category_id";
+            $params['category_id'] = $categoryId;
+        }
+
+        $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $paramKey => $paramVal) {
+                $stmt->bindValue(':' . $paramKey, $paramVal);
+            }
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $ex) {
+            error_log('Error getting posts for admin: ' . $ex->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Đếm tổng số bài viết trong trang quản trị Admin theo bộ lọc (Tuần 4 - FR13 - Phúc)
+     * @param string|null $status Trạng thái hoặc null/all
+     * @param int|null $categoryId ID chuyên mục hoặc null
+     * @return int Tổng số bài viết
+     */
+    public function countForAdmin(?string $status = null, ?int $categoryId = null): int {
+        $sql = "SELECT COUNT(*) AS total FROM posts WHERE 1=1";
+        $params = [];
+
+        if ($status !== null && $status !== '' && $status !== 'all') {
+            $sql .= " AND status = :status";
+            $params['status'] = $status;
+        }
+
+        if ($categoryId !== null && $categoryId > 0) {
+            $sql .= " AND category_id = :category_id";
+            $params['category_id'] = $categoryId;
+        }
+
+        try {
+            $res = Database::query($sql, $params);
+            return (int)($res[0]['total'] ?? 0);
+        } catch (PDOException $ex) {
+            error_log('Error counting posts for admin: ' . $ex->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * Lấy chi tiết bài viết theo ID (gọi routine sp_post_get)
      * @param int $id ID bài viết
      * @return array|false Mảng dữ liệu bài viết hoặc false nếu không tìm thấy
