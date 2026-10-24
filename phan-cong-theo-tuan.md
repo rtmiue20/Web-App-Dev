@@ -107,8 +107,8 @@
 - [ ] AJAX kiểm tra email trùng khi đăng ký (`/api/check-email`, trả JSON).
 
 **Phúc** (nhánh `feature/FR03-FR13`)
-- [ ] FR03: danh sách bài theo chuyên mục, phân trang.
-- [ ] FR13: `PostAdminController` duyệt, ẩn, xóa bài.
+- [x] FR03: danh sách bài theo chuyên mục, phân trang.
+- [x] FR13: `PostAdminController` duyệt, ẩn, xóa bài.
 
 **Vương** (nhánh `feature/FR07-FR08-ajax`)
 - [ ] FR07: bình luận bằng AJAX (`CommentApi`), tải thêm bình luận, xóa bình luận của mình.

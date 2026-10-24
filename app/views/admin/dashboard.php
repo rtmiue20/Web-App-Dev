@@ -59,8 +59,8 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                     <span class="text-muted small">bài đăng diễn đàn</span>
                 </div>
                 <div class="pt-2 border-top">
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
-                        Xem tất cả bài &rarr;
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
+                        Quản lý bài viết &rarr;
                     </a>
                 </div>
             </div>

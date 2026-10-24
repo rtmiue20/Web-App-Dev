@@ -13,6 +13,7 @@ class App
         $categories = new CategoryController();
         $users = new UserController();
         $dashboard = new DashboardController();
+        $postAdmin = new PostAdminController();
 
         // 1. Home
         $router->get('/', [$home, 'index']);
@@ -71,6 +72,18 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/admin/categories/delete/{id}', function ($id) use ($categories) {
             $categories->delete((int)$id);
+        }, [AdminMiddleware::class]);
+
+        // FR13: Admin Post Management (Duyệt, Ẩn, Xóa bài)
+        $router->get('/admin/posts', [$postAdmin, 'index'], [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/approve', function ($id) use ($postAdmin) {
+            $postAdmin->approve((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/hide', function ($id) use ($postAdmin) {
+            $postAdmin->hide((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/delete', function ($id) use ($postAdmin) {
+            $postAdmin->delete((int)$id);
         }, [AdminMiddleware::class]);
 
         // URL parsing

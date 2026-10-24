@@ -130,8 +130,8 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
                    class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
                     <i class="bi bi-tags me-1"></i> Chuyên mục
                 </a>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
-                   class="dock-pill" title="Xem danh sách bài viết">
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" 
+                   class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
                 </a>
             </nav>

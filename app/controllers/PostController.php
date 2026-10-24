@@ -23,18 +23,49 @@ class PostController extends Controller {
     }
 
     /**
-     * Danh sách bài viết
+     * Danh sách bài viết theo chuyên mục và phân trang (Tuần 4 - FR03 - Phúc)
      */
     public function index(): void {
-        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
-        $postsList = $this->posts->getAll($categoryId);
+        $categoryId = null;
+        if (isset($_GET['category']) && $_GET['category'] !== '') {
+            $categoryId = (int)$_GET['category'];
+            if ($categoryId <= 0) {
+                $categoryId = null;
+            }
+        }
+
+        $page = 1;
+        if (isset($_GET['page'])) {
+            $page = (int)$_GET['page'];
+            if ($page < 1) {
+                $page = 1;
+            }
+        }
+
+        $limit = 6; // 6 bài viết mỗi trang cho người dùng
+
+        $totalPosts = $this->posts->countFiltered($categoryId, 'published');
+        $totalPages = 1;
+        if ($totalPosts > 0) {
+            $totalPages = (int)ceil($totalPosts / $limit);
+        }
+
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published');
         $categoriesList = $this->categories->getAll();
 
         $this->render('posts/index', [
             'title' => 'Bài viết dã ngoại',
             'posts' => $postsList,
             'categories' => $categoriesList,
-            'selectedCategoryId' => $categoryId
+            'selectedCategoryId' => $categoryId,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalPosts' => $totalPosts,
+            'limit' => $limit
         ]);
     }
 
