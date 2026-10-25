@@ -44,4 +44,44 @@ class Upload
 
         return 'uploads/' . $subDir . '/' . $name;
     }
+
+    /**
+     * Upload nhiều ảnh cùng lúc, trả về mảng các đường dẫn ảnh thành công
+     */
+    public static function multipleImages(array $files, string $subDir = 'posts'): array
+    {
+        $uploadedUrls = [];
+        if (!isset($files['name']) || !is_array($files['name'])) {
+            if (isset($files['name']) && !empty($files['name']) && ($files['error'] ?? null) === UPLOAD_ERR_OK) {
+                $uploadedUrls[] = self::image($files, $subDir);
+            }
+            return $uploadedUrls;
+        }
+
+        $count = count($files['name']);
+        for ($i = 0; $i < $count; $i++) {
+            if (($files['error'][$i] ?? null) !== UPLOAD_ERR_OK) {
+                continue;
+            }
+
+            $singleFile = [
+                'name'     => $files['name'][$i],
+                'type'     => $files['type'][$i] ?? '',
+                'tmp_name' => $files['tmp_name'][$i],
+                'error'    => $files['error'][$i],
+                'size'     => $files['size'][$i] ?? 0,
+            ];
+
+            try {
+                $url = self::image($singleFile, $subDir);
+                if (!empty($url)) {
+                    $uploadedUrls[] = $url;
+                }
+            } catch (Exception $e) {
+                error_log('Upload single image in batch failed: ' . $e->getMessage());
+            }
+        }
+
+        return $uploadedUrls;
+    }
 }

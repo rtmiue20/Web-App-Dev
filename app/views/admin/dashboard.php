@@ -68,21 +68,24 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
         <!-- Thành viên -->
         <div class="col-12 col-md-4">
-            <div class="nature-card h-100" style="border-radius: 28px; padding: 1.75rem;">
+            <div class="nature-card h-100 position-relative" style="border-radius: 28px; padding: 1.75rem;">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <span class="nature-label mb-0">Thành viên</span>
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 193, 7, 0.15); color: #ffb703;">
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="d-inline-flex align-items-center justify-content-center text-decoration-none" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 193, 7, 0.15); color: #ffb703;" title="Xem danh sách thành viên">
                         <i class="bi bi-people-fill fs-5"></i>
-                    </span>
+                    </a>
                 </div>
                 <div class="d-flex align-items-baseline gap-2 mb-3">
                     <span class="display-6 fw-normal" style="color: var(--color-ink);"><?= (int)($userCount ?? 0) ?></span>
                     <span class="text-muted small">tài khoản đã đăng ký</span>
                 </div>
-                <div class="pt-2 border-top">
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
-                        Trang cá nhân &rarr;
+                <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
+                        Quản lý thành viên &rarr;
                     </a>
+                    <span class="badge text-bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 11px;">
+                        <i class="bi bi-key me-1"></i>Cấp lại pass
+                    </span>
                 </div>
             </div>
         </div>
@@ -146,28 +149,4 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
         <?php endif; ?>
     </div>
 
-    <!-- Quick Actions Panel -->
-    <div class="nature-card" style="border-radius: 32px; padding: 2rem;">
-        <h2 class="h5 fw-normal mb-3" style="color: var(--color-ink);">Phân công tuần 3 — Trách nhiệm Quản trị (Leader)</h2>
-        <div class="row g-3">
-            <div class="col-12 col-md-4">
-                <div class="p-3 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.1);">
-                    <div class="fw-medium text-dark mb-1"><i class="bi bi-layout-wtf text-primary me-1"></i> Admin Layout</div>
-                    <p class="small text-muted mb-0">Đã xây dựng khung giao diện chuẩn cho phân hệ <code>/admin</code>.</p>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="p-3 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.1);">
-                    <div class="fw-medium text-dark mb-1"><i class="bi bi-shield-lock text-danger me-1"></i> Quyền truy cập</div>
-                    <p class="small text-muted mb-0">Đã khóa và kiểm tra <code>AdminMiddleware</code> cho tất cả tuyến admin.</p>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="p-3 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.1);">
-                    <div class="fw-medium text-dark mb-1"><i class="bi bi-tags text-success me-1"></i> FR11: Danh mục</div>
-                    <p class="small text-muted mb-0">Thêm, sửa, xóa danh mục an toàn có xác nhận người dùng.</p>
-                </div>
-            </div>
-        </div>
     </div>
-</div>

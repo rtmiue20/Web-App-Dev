@@ -217,6 +217,51 @@ class User extends Model
         $this->passwordHash = $passwordHash;
     }
 
+    /**
+     * Cấp lại mật khẩu cho thành viên (dành cho Admin khi thành viên quên mật khẩu)
+     */
+    public function resetPassword(int $userId, string $newPasswordHash): bool
+    {
+        try {
+            Database::call('sp_user_change_password', [$userId, $newPasswordHash]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_change_password fallback: ' . $e->getMessage());
+            try {
+                $sql = 'UPDATE users SET password_hash = :hash WHERE id = :id';
+                return Database::execute($sql, [
+                    'hash' => $newPasswordHash,
+                    'id' => $userId
+                ]) >= 0;
+            } catch (PDOException $ex) {
+                error_log('Error resetting password: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Lấy đầy đủ thông tin chi tiết một người dùng cho khu vực Admin
+     */
+    public function findUserDetail(int $userId): ?array
+    {
+        try {
+            $sql = 'SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.bio, u.avatar_path, u.created_at,
+                           COUNT(p.id) AS total_posts
+                    FROM users u
+                    INNER JOIN roles r ON r.id = u.role_id
+                    LEFT JOIN posts p  ON p.user_id = u.id
+                    WHERE u.id = :id
+                    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.bio, u.avatar_path, u.created_at
+                    LIMIT 1';
+            $rows = Database::query($sql, ['id' => $userId]);
+            return !empty($rows) ? $rows[0] : null;
+        } catch (PDOException $ex) {
+            error_log('Error finding user detail: ' . $ex->getMessage());
+            return null;
+        }
+    }
+
     private static function fromRow(array $row): User
     {
         $user = new self();
