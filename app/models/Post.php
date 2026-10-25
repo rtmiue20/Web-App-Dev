@@ -581,10 +581,6 @@ class Post extends Model {
             }
         }
     }
-
-    /**
-     * Kiểm tra người dùng đã thích bài viết chưa (gọi routine sp_post_is_liked)
-     */
     public function isLiked(int $postId, int $userId): bool {
         try {
             $rows = Database::call('sp_post_is_liked', [$postId, $userId]);
@@ -595,9 +591,6 @@ class Post extends Model {
         }
     }
 
-    /**
-     * Thích hoặc bỏ thích bài viết (gọi routine sp_toggle_like hoặc sp_post_toggle_like)
-     */
     public function toggleLike(int $postId, int $userId): int {
         try {
             $results = Database::call('sp_toggle_like', [$postId, $userId]);
@@ -617,6 +610,15 @@ class Post extends Model {
             }
             $countRes = Database::query("SELECT COUNT(*) as total FROM post_likes WHERE post_id = :p", ['p' => $postId]);
             return (int)($countRes[0]['total'] ?? 0);
+        }
+    }
+
+    public function getImagePaths(int $postId): array
+    {
+        try {
+            return Database::query('SELECT image_url FROM post_images WHERE post_id = :post_id', ['post_id' => $postId]);
+        } catch (PDOException $e) {
+            return [];
         }
     }
 }

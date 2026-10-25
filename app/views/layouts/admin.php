@@ -3,22 +3,19 @@ $currentUser = Session::get('user');
 $successMessage = $success ?? Session::flash('success');
 $errorMessage = $message ?? Session::flash('error');
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$currentUri = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
 
-$isActive = function (string $path) use ($currentUri, $baseUrl): bool {
-    $fullPath = rtrim($baseUrl . $path, '/');
-    $current = rtrim((string) $currentUri, '/');
-    if ($path === '/admin') {
-        return $current === $fullPath;
-    }
-    return str_starts_with($current, $fullPath);
-};
+$isDashboardActive = ($currentUri === rtrim($baseUrl . '/admin', '/'));
+$isAdminCategoriesActive = str_starts_with($currentUri, rtrim($baseUrl . '/admin/categories', '/'));
+$isAdminPostsActive = str_starts_with($currentUri, rtrim($baseUrl . '/admin/posts', '/'));
+$isAdminProductsActive = str_starts_with($currentUri, rtrim($baseUrl . '/admin/products', '/'));
 ?>
 <!doctype html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="csrf-token" content="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title ?? 'Bảng điều khiển Quản trị', ENT_QUOTES, 'UTF-8') ?> — Quản trị Forum Dã Ngoại</title>
     <link rel="icon" type="image/svg+xml" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon.svg">
     
@@ -103,7 +100,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         window.BASE_URL = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
     </script>
 </head>
-<body style="padding-top: 5rem; min-height: 100vh; display: flex; flex-direction: column;">
+<body class="d-flex flex-column min-vh-100" style="padding-top: 5rem;">
 
     <!-- Admin Navigation Dock -->
     <header class="admin-nav-bar d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -121,18 +118,22 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             <div class="vr mx-2 bg-secondary opacity-25 d-none d-md-block" style="height: 24px;"></div>
 
             <!-- Admin Menus -->
-            <nav class="d-flex align-items-center gap-1">
+            <nav class="d-flex align-items-center gap-1 flex-wrap">
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
-                   class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
+                   class="dock-pill <?= $isDashboardActive ? 'active' : '' ?>">
                     <i class="bi bi-speedometer2 me-1"></i> Dashboard
                 </a>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" 
-                   class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
+                   class="dock-pill <?= $isAdminCategoriesActive ? 'active' : '' ?>">
                     <i class="bi bi-tags me-1"></i> Chuyên mục
                 </a>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" 
-                   class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Quản lý bài viết">
+                   class="dock-pill <?= $isAdminPostsActive ? 'active' : '' ?>" title="Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
+                </a>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products" 
+                   class="dock-pill <?= $isAdminProductsActive ? 'active' : '' ?>" title="Quản lý sản phẩm">
+                    <i class="bi bi-box-seam me-1"></i> Sản phẩm
                 </a>
             </nav>
         </div>
@@ -151,9 +152,9 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             </div>
 
             <!-- Logout -->
-            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/logout" style="margin: 0; display: inline;">
+            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/logout" class="d-inline m-0">
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit" class="dock-pill" style="cursor: pointer; border: none; background: rgba(220, 53, 69, 0.15); color: #ff8b8b;" title="Đăng xuất quản trị">
+                <button type="submit" class="dock-pill border-0" style="background: rgba(220, 53, 69, 0.15); color: #ff8b8b;" title="Đăng xuất quản trị">
                     <i class="bi bi-box-arrow-right"></i>
                 </button>
             </form>
@@ -186,7 +187,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <!-- Footer -->
     <footer class="py-4 text-center text-white-50 small mt-auto border-top border-white-10" style="background: rgba(0,0,0,0.15);">
         <div class="container">
-            <span>Quản trị Hệ thống Diễn đàn Dã Ngoại &copy; <?= date('Y') ?> &bull; Phiên bản tuần 3</span>
+            <span>Quản trị Hệ thống Diễn đàn Dã Ngoại &copy; <?= date('Y') ?></span>
         </div>
     </footer>
 

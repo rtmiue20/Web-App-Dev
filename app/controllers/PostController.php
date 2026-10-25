@@ -5,6 +5,7 @@ require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Comment.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../models/Like.php';
 
 /**
  * Controller PostController - Quản lý chức năng bài viết (Tuần 2 & Tuần 3 - Phúc)
@@ -15,11 +16,13 @@ class PostController extends Controller {
     private Post $posts;
     private Category $categories;
     private Comment $comments;
+    private Like $likes;
 
     public function __construct() {
         $this->posts = new Post();
         $this->categories = new Category();
         $this->comments = new Comment();
+        $this->likes = new Like();
     }
 
     /**
@@ -195,12 +198,16 @@ class PostController extends Controller {
 
         $commentsList = $this->comments->getByPostId($id);
         $canManage = $this->canManagePost($post);
+        $currentUser = Session::get('user');
+        $currentUserId = is_array($currentUser) ? (int)($currentUser['id'] ?? 0) : 0;
+        $isLiked = ($currentUserId > 0) ? $this->likes->isLiked($id, $currentUserId) : false;
 
         $this->render('posts/show', [
             'title' => $post['title'],
             'post' => $post,
             'comments' => $commentsList,
-            'canManage' => $canManage
+            'canManage' => $canManage,
+            'isLiked' => $isLiked
         ]);
     }
 
@@ -375,6 +382,11 @@ class PostController extends Controller {
             return;
         }
 
+        // 1. Lấy danh sách ảnh và xóa file vật lý trước
+        $images = $this->posts->getImagePaths($id);
+        $this->deleteImageFiles($images);
+
+        // 2. Sau đó mới xóa trong Database
         $deleted = $this->posts->delete($id);
         if ($deleted) {
             Session::flash('success', 'Đã xóa bài viết thành công!');
@@ -386,29 +398,65 @@ class PostController extends Controller {
     }
 
     /**
-     * Thích bài viết qua AJAX
+     * Hàm hỗ trợ: Xóa file ảnh vật lý trên server để dọn rác
      */
-    public function like(int $id): void {
-        header('Content-Type: application/json; charset=utf-8');
+    private function deleteImageFiles(array $images): void {
+        $rootDir = dirname(__DIR__, 2);
+        $uploadDir = realpath($rootDir . '/public/uploads/posts');
+        if ($uploadDir === false) return;
 
-        if (!Session::has('user')) {
-            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bài viết.']);
-            exit;
+        foreach ($images as $image) {
+            if (empty($image['image_url']) || str_starts_with($image['image_url'], 'http')) {
+                continue;
+            }
+            
+            $filePath = realpath($rootDir . '/public/' . ltrim($image['image_url'], '/'));
+            if ($filePath !== false && str_starts_with($filePath, $uploadDir) && is_file($filePath)) {
+                unlink($filePath);
+            }
         }
+    }
 
-        $user = Session::get('user');
-        $userId = (int)($user['id'] ?? 0);
-        $newLikes = $this->posts->toggleLike($id, $userId);
+    /**
+    * Thích / bỏ thích bài viết qua AJAX
+    */
+    public function like(int $id): void {
+    header('Content-Type: application/json; charset=utf-8');
 
-        echo json_encode([
-            'success' => true,
-            'data' => [
-                'likes' => $newLikes,
-                'liked' => true
-            ]
-        ]);
+    if (!Session::has('user')) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bài viết.']);
         exit;
     }
+
+    if (!$this->verifyCsrfToken()) {
+        http_response_code(419);
+        echo json_encode(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang.']);
+        exit;
+    }
+
+    $post = $this->posts->getById($id);
+    if (!$post) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Bài viết không tồn tại.']);
+        exit;
+    }
+
+    $user = Session::get('user');
+    $userId = (int)($user['id'] ?? 0);
+
+    $newLikes = $this->likes->toggle($id, $userId);
+    $isLiked = $this->likes->isLiked($id, $userId);
+
+    echo json_encode([
+        'success' => true,
+        'data' => [
+            'likes' => $newLikes,
+            'liked' => $isLiked
+        ]
+    ]);
+    exit;
+}
 
     /**
      * Kiểm tra quyền quản lý bài viết (Chỉ tác giả hoặc admin)
