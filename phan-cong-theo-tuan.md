@@ -66,7 +66,7 @@
 - [ ] Gửi file SQL cho Leader duyệt qua PR.
 
 **Vương** (nhánh `feature/interact-models`)
-- [x] `Product`, `Comment`, `Like` model; routine `sp_product_*`, `sp_comment_add/list`, `sp_post_toggle_like`.
+- [ ] `Product`, `Comment`, `Like` model; routine `sp_product_*`, `sp_comment_add/list`, `sp_post_toggle_like`.
 - [ ] Gửi file SQL cho Leader duyệt qua PR.
 
 **Bàn giao:** đăng ký/đăng nhập chạy, trang chủ dùng layout chung, một luồng MVC mẫu chạy đầu cuối.
@@ -88,8 +88,8 @@
 - [ ] Upload ảnh an toàn; trạng thái bài theo quy tắc đã chốt.
 
 **Vương** (nhánh `feature/FR09-FR12-products`)
-- [x] FR09: `ProductController`, trang thiết bị theo danh mục.
-- [x] FR12: admin thêm, sửa, xóa sản phẩm (ảnh, mô tả, liên kết).
+- [ ] FR09: `ProductController`, trang thiết bị theo danh mục.
+- [ ] FR12: admin thêm, sửa, xóa sản phẩm (ảnh, mô tả, liên kết).
 
 **Bàn giao:** đăng và xem bài chạy được; admin thêm được danh mục và sản phẩm.
 
@@ -111,8 +111,8 @@
 - [x] FR13: `PostAdminController` duyệt, ẩn, xóa bài.
 
 **Vương** (nhánh `feature/FR07-FR08-ajax`)
-- [x] FR07: bình luận bằng AJAX (`CommentApi`), tải thêm bình luận, xóa bình luận của mình.
-- [x] FR08: thích/bỏ thích bằng AJAX (`LikeApi`), cập nhật số lượt ngay trên trang; token CSRF.
+- [ ] FR07: bình luận bằng AJAX (`CommentApi`), tải thêm bình luận, xóa bình luận của mình.
+- [ ] FR08: thích/bỏ thích bằng AJAX (`LikeApi`), cập nhật số lượt ngay trên trang; token CSRF.
 
 **Bàn giao:** forum hoàn chỉnh ở mức cơ bản (đăng nhập, đăng bài, bình luận, thích, admin).
 
