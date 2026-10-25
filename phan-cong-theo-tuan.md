@@ -76,8 +76,8 @@
 ## Tuần 3: CRUD chính
 
 **Leader** (nhánh `feature/FR11-admin-category`)
-- [ ] `layouts/admin.php`, kiểm tra quyền admin cho toàn bộ khu `/admin`.
-- [ ] FR11: thêm, sửa, xóa danh mục (có xác nhận khi xóa).
+- [x] `layouts/admin.php`, kiểm tra quyền admin cho toàn bộ khu `/admin`.
+- [x] FR11: thêm, sửa, xóa danh mục (có xác nhận khi xóa).
 
 **Khang** (nhánh `feature/FR02-profile`)
 - [x] Xem, sửa hồ sơ; upload avatar có kiểm tra định dạng và dung lượng.

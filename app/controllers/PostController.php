@@ -137,10 +137,20 @@ class PostController extends Controller {
             $errors['lng'] = 'Kinh độ (Lng) phải nằm trong khoảng -180 đến 180.';
         }
 
-        $imageUrl = null;
+        $imageUrls = [];
+        if (!empty($_FILES['images']['name'])) {
+            try {
+                $imageUrls = Upload::multipleImages($_FILES['images'], 'posts');
+            } catch (Exception $e) {
+                $errors['images'] = $e->getMessage();
+            }
+        }
         if (!empty($_FILES['image']['name'])) {
             try {
-                $imageUrl = Upload::image($_FILES['image'], 'posts');
+                $singleImg = Upload::image($_FILES['image'], 'posts');
+                if (!empty($singleImg)) {
+                    $imageUrls[] = $singleImg;
+                }
             } catch (Exception $e) {
                 $errors['image'] = $e->getMessage();
             }
@@ -166,7 +176,7 @@ class PostController extends Controller {
             $title, 
             $content, 
             $location ?: null, 
-            $imageUrl, 
+            $imageUrls, 
             $lat, 
             $lng
         );
@@ -305,10 +315,20 @@ class PostController extends Controller {
             $errors['lng'] = 'Kinh độ (Lng) phải nằm trong khoảng -180 đến 180.';
         }
 
-        $imageUrl = null;
+        $imageUrls = [];
+        if (!empty($_FILES['images']['name'])) {
+            try {
+                $imageUrls = Upload::multipleImages($_FILES['images'], 'posts');
+            } catch (Exception $e) {
+                $errors['images'] = $e->getMessage();
+            }
+        }
         if (!empty($_FILES['image']['name'])) {
             try {
-                $imageUrl = Upload::image($_FILES['image'], 'posts');
+                $singleImg = Upload::image($_FILES['image'], 'posts');
+                if (!empty($singleImg)) {
+                    $imageUrls[] = $singleImg;
+                }
             } catch (Exception $e) {
                 $errors['image'] = $e->getMessage();
             }
@@ -332,7 +352,7 @@ class PostController extends Controller {
             $title,
             $content,
             $location ?: null,
-            $imageUrl,
+            $imageUrls,
             $lat,
             $lng
         );

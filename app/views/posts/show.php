@@ -7,10 +7,28 @@ $currentUserId = is_array($currentUser) ? (int)($currentUser['id'] ?? 0) : 0;
 $isAdmin = is_array($currentUser) && ((($currentUser['role_name'] ?? '') === 'admin') || ((int)($currentUser['role_id'] ?? 0) === 2));
 $isLiked = !empty($isLiked);
 
-$coverImg = !empty($post['image_url'])
-    ? (str_starts_with($post['image_url'], 'http') ? $post['image_url'] : $baseUrl . '/' . ltrim($post['image_url'], '/'))
-    : $baseUrl . '/assets/img/ta-xua-trek.png';
+// ── Collect gallery images (Từ nhánh main) ────────────────────────
+$galleryImages = [];
+if (!empty($post['images']) && is_array($post['images'])) {
+    foreach ($post['images'] as $img) {
+        $url = $img['image_url'] ?? '';
+        if (!empty($url)) {
+            $galleryImages[] = str_starts_with($url, 'http')
+                ? $url
+                : $baseUrl . '/' . ltrim($url, '/');
+        }
+    }
+}
+if (empty($galleryImages) && !empty($post['image_url'])) {
+    $url = $post['image_url'];
+    $galleryImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+}
+if (empty($galleryImages)) {
+    $galleryImages[] = $baseUrl . '/assets/img/ta-xua-trek.png';
+}
+$galleryCount = count($galleryImages);
 
+// ── Pagination variables for comments (Từ nhánh PhucVuong) ────────
 $totalCommentsCount = count($comments ?? []);
 $pageSize = 5;
 $firstPage = array_slice($comments ?? [], 0, $pageSize);
@@ -23,12 +41,74 @@ $firstPage = array_slice($comments ?? [], 0, $pageSize);
         </a>
     </div>
 
-    <!-- Ảnh bìa bài viết -->
-    <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
-        <img src="<?= htmlspecialchars($coverImg, ENT_QUOTES, 'UTF-8') ?>"
-             alt="<?= htmlspecialchars($post['title'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-             class="w-100 object-fit-cover"
-             style="max-height: 460px;">
+<!-- ══════════════════════════════════════════
+         IMAGE CAROUSEL (Nhiều ảnh)
+    ══════════════════════════════════════════ -->
+    <div class="post-carousel-wrap mb-4" id="postCarousel">
+
+        <!-- Slide viewport -->
+        <div class="pc-viewport" id="pcViewport"
+             ontouchstart="CarouselLB.touchStart(event)"
+             ontouchmove="CarouselLB.touchMove(event)"
+             ontouchend="CarouselLB.touchEnd(event)">
+            <?php foreach ($galleryImages as $idx => $imgUrl): ?>
+                <div class="pc-slide <?= $idx === 0 ? 'active' : '' ?>" data-index="<?= $idx ?>">
+                    <img src="<?= htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8') ?>"
+                         alt="Ảnh <?= $idx + 1 ?> / <?= $galleryCount ?>"
+                         class="pc-img"
+                         onclick="CarouselLB.openLightbox(<?= $idx ?>)"
+                         title="Bấm để xem toàn màn hình">
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if ($galleryCount > 1): ?>
+        <!-- Prev / Next arrows -->
+        <button class="pc-btn pc-btn-prev" onclick="CarouselLB.prev()" aria-label="Ảnh trước">
+            <i class="bi bi-chevron-compact-left"></i>
+        </button>
+        <button class="pc-btn pc-btn-next" onclick="CarouselLB.next()" aria-label="Ảnh sau">
+            <i class="bi bi-chevron-compact-right"></i>
+        </button>
+
+        <!-- Counter & play/pause -->
+        <div class="pc-footer">
+            <span class="pc-counter" id="pcCounter">1 / <?= $galleryCount ?></span>
+            <button class="pc-playpause" id="pcPlayPause" onclick="CarouselLB.togglePlay()" title="Tự động / Dừng">
+                <i class="bi bi-pause-circle-fill" id="pcPlayIcon"></i>
+            </button>
+        </div>
+
+        <!-- Dot indicators -->
+        <div class="pc-dots" id="pcDots">
+            <?php for ($i = 0; $i < $galleryCount; $i++): ?>
+                <span class="pc-dot <?= $i === 0 ? 'active' : '' ?>"
+                      onclick="CarouselLB.goTo(<?= $i ?>)"
+                      aria-label="Ảnh <?= $i + 1 ?>"></span>
+            <?php endfor; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         LIGHTBOX MODAL
+    ══════════════════════════════════════════ -->
+    <div class="lb-overlay" id="lbOverlay" onclick="CarouselLB.closeLightbox()" style="display:none;">
+        <div class="lb-box" onclick="event.stopPropagation()">
+            <button class="lb-close" onclick="CarouselLB.closeLightbox()" aria-label="Đóng">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <?php if ($galleryCount > 1): ?>
+            <button class="lb-nav lb-nav-prev" onclick="CarouselLB.lbPrev()" aria-label="Ảnh trước">
+                <i class="bi bi-chevron-compact-left"></i>
+            </button>
+            <button class="lb-nav lb-nav-next" onclick="CarouselLB.lbNext()" aria-label="Ảnh sau">
+                <i class="bi bi-chevron-compact-right"></i>
+            </button>
+            <?php endif; ?>
+            <img src="" alt="" id="lbImg" class="lb-img">
+            <div class="lb-caption" id="lbCaption"></div>
+        </div>
     </div>
 
     <!-- Nội dung bài viết (Bootstrap Card) -->
@@ -195,7 +275,7 @@ $firstPage = array_slice($comments ?? [], 0, $pageSize);
     </section>
 </div>
 
-<!-- Template Bootstrap cho 1 bình luận mới / tải thêm -->
+<!-- Template Bootstrap cho 1 bình luận mới / tải thêm (Từ nhánh PhucVuong) -->
 <template id="comment-template">
     <div class="card border-0 shadow-sm rounded-4 bg-dark bg-opacity-50 text-white comment-card" data-comment-id="">
         <div class="card-body p-3 px-4">
@@ -214,3 +294,373 @@ $firstPage = array_slice($comments ?? [], 0, $pageSize);
         </div>
     </div>
 </template>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CAROUSEL + LIGHTBOX STYLES (Từ nhánh main)
+══════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Carousel Wrapper ── */
+.post-carousel-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    background: #0d0d0d;
+    user-select: none;
+}
+
+/* ── Viewport ── */
+.pc-viewport {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    cursor: grab;
+}
+.pc-viewport:active { cursor: grabbing; }
+
+/* ── Slides ── */
+.pc-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+}
+.pc-slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.pc-slide.slide-out-left {
+    opacity: 0;
+    transform: translateX(-60px);
+}
+.pc-slide.slide-out-right {
+    opacity: 0;
+    transform: translateX(60px);
+}
+.pc-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    cursor: zoom-in;
+}
+
+/* ── Prev / Next Buttons ── */
+.pc-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.55);
+    border: none;
+    color: #fff;
+    font-size: 1.6rem;
+    width: 44px;
+    height: 64px;
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+}
+.pc-btn:hover { background: rgba(0,0,0,0.8); transform: translateY(-50%) scale(1.08); }
+.pc-btn-prev { left: 10px; }
+.pc-btn-next { right: 10px; }
+
+/* ── Footer (counter + play/pause) ── */
+.pc-footer {
+    position: absolute;
+    bottom: 48px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
+.pc-counter {
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 0.78rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-variant-numeric: tabular-nums;
+}
+.pc-playpause {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s, transform 0.15s;
+}
+.pc-playpause:hover { color: #fff; transform: scale(1.15); }
+
+/* ── Dot Indicators ── */
+.pc-dots {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+}
+.pc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+.pc-dot.active {
+    background: #fff;
+    transform: scale(1.35);
+}
+
+/* ══ LIGHTBOX ══════════════════════════════════════ */
+.lb-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: lbFadeIn 0.22s ease;
+}
+@keyframes lbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.lb-box {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.lb-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    display: block;
+}
+.lb-close {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    color: #fff;
+    font-size: 1.35rem;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    transition: background 0.2s;
+}
+.lb-close:hover { background: rgba(220,50,50,0.8); }
+
+.lb-nav {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.55);
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    width: 52px;
+    height: 80px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    transition: background 0.2s;
+}
+.lb-nav:hover { background: rgba(0,0,0,0.85); }
+.lb-nav-prev { left: 12px; }
+.lb-nav-next { right: 12px; }
+
+.lb-caption {
+    margin-top: 12px;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.82rem;
+    text-align: center;
+}
+</style>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CAROUSEL + LIGHTBOX JAVASCRIPT (Đã lược bỏ Ajax rác)
+══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    'use strict';
+
+    const IMAGES  = <?= json_encode($galleryImages, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const TOTAL   = IMAGES.length;
+    const AUTO_MS = 1000; // 1 second auto-cycle
+
+    let current   = 0;
+    let playing   = TOTAL > 1;
+    let timer     = null;
+    let touchX0   = 0;
+    let isDragging = false;
+
+    // ── DOM refs ──────────────────────────────────────────────────
+    const slides    = document.querySelectorAll('.pc-slide');
+    const dots      = document.querySelectorAll('.pc-dot');
+    const counter   = document.getElementById('pcCounter');
+    const playIcon  = document.getElementById('pcPlayIcon');
+    const viewport  = document.getElementById('pcViewport');
+    const lbOverlay = document.getElementById('lbOverlay');
+    const lbImg     = document.getElementById('lbImg');
+    const lbCaption = document.getElementById('lbCaption');
+
+    // ── Core: go to slide index ───────────────────────────────────
+    function goToSlide(next, dir) {
+        if (TOTAL <= 1) return;
+        if (next === current) return;
+
+        const outClass = dir === 'left' ? 'slide-out-left' : 'slide-out-right';
+
+        // Animate out current
+        slides[current].classList.remove('active');
+        slides[current].classList.add(outClass);
+        setTimeout(() => slides[current]?.classList.remove(outClass), 450);
+
+        current = (next + TOTAL) % TOTAL;
+
+        // Animate in next
+        slides[current].classList.add('active');
+
+        // Update dots + counter
+        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
+    }
+
+    // ── Public API (called from onclick) ──────────────────────────
+    window.CarouselLB = {
+        goTo(idx) {
+            const dir = idx > current ? 'left' : 'right';
+            goToSlide(idx, dir);
+        },
+        next() {
+            goToSlide(current + 1, 'left');
+        },
+        prev() {
+            goToSlide(current - 1, 'right');
+        },
+        togglePlay() {
+            playing = !playing;
+            if (playIcon) {
+                playIcon.className = playing
+                    ? 'bi bi-pause-circle-fill'
+                    : 'bi bi-play-circle-fill';
+            }
+            if (playing) startTimer(); else stopTimer();
+        },
+
+        // ── Lightbox ──
+        openLightbox(idx) {
+            if (!lbOverlay || !lbImg) return;
+            current = (idx + TOTAL) % TOTAL;
+            lbImg.src = IMAGES[current];
+            lbImg.alt = 'Ảnh ' + (current + 1) + ' / ' + TOTAL;
+            if (lbCaption) lbCaption.textContent = TOTAL > 1 ? (current + 1) + ' / ' + TOTAL : '';
+            lbOverlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            stopTimer();
+        },
+        closeLightbox() {
+            if (!lbOverlay) return;
+            lbOverlay.style.display = 'none';
+            document.body.style.overflow = '';
+            if (playing) startTimer();
+        },
+        lbPrev() {
+            current = (current - 1 + TOTAL) % TOTAL;
+            if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
+            if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
+        },
+        lbNext() {
+            current = (current + 1) % TOTAL;
+            if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
+            if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
+        },
+
+        // ── Touch/swipe handlers ──
+        touchStart(e) {
+            touchX0 = e.touches[0].clientX;
+            isDragging = true;
+        },
+        touchMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+        },
+        touchEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            const delta = e.changedTouches[0].clientX - touchX0;
+            if (Math.abs(delta) > 40) {
+                delta < 0 ? CarouselLB.next() : CarouselLB.prev();
+            }
+        }
+    };
+
+    // ── Auto-play timer ───────────────────────────────────────────
+    function startTimer() {
+        stopTimer();
+        if (TOTAL <= 1) return;
+        timer = setInterval(() => {
+            goToSlide(current + 1, 'left');
+        }, AUTO_MS);
+    }
+    function stopTimer() {
+        if (timer) { clearInterval(timer); timer = null; }
+    }
+
+    // ── Pause on hover ────────────────────────────────────────────
+    if (viewport) {
+        viewport.addEventListener('mouseenter', stopTimer);
+        viewport.addEventListener('mouseleave', () => { if (playing) startTimer(); });
+    }
+
+    // ── Keyboard navigation ───────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+        if (lbOverlay && lbOverlay.style.display !== 'none') {
+            if (e.key === 'ArrowLeft')  CarouselLB.lbPrev();
+            if (e.key === 'ArrowRight') CarouselLB.lbNext();
+            if (e.key === 'Escape')     CarouselLB.closeLightbox();
+        } else {
+            if (e.key === 'ArrowLeft')  CarouselLB.prev();
+            if (e.key === 'ArrowRight') CarouselLB.next();
+        }
+    });
+
+    if (playing) startTimer();
+})();
+</script>

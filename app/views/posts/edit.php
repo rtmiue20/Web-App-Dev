@@ -1,9 +1,21 @@
 <?php
 $title = 'Chỉnh sửa bài viết';
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$currentImage = !empty($post['image_url']) 
-    ? (str_starts_with($post['image_url'], 'http') ? $post['image_url'] : $baseUrl . '/' . ltrim($post['image_url'], '/'))
-    : null;
+
+// Collect current images for thumbnail previews
+$editImages = [];
+if (!empty($post['images']) && is_array($post['images'])) {
+    foreach ($post['images'] as $img) {
+        $url = $img['image_url'] ?? '';
+        if (!empty($url)) {
+            $editImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+        }
+    }
+}
+if (empty($editImages) && !empty($post['image_url'])) {
+    $url = $post['image_url'];
+    $editImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+}
 ?>
 <div class="app-container" style="max-width: 800px;">
     <div class="mb-4">
@@ -56,22 +68,30 @@ $currentImage = !empty($post['image_url'])
                     <?php endif; ?>
                 </div>
 
-                <!-- Location -->
+                <!-- Location with Map Picker -->
                 <div class="col-md-6">
                     <label for="location" class="nature-label">Địa điểm</label>
-                    <input class="nature-input" 
-                           id="location" 
-                           name="location" 
-                           type="text" 
-                           placeholder="Ví dụ: Tà Xùa, Sơn La"
-                           value="<?= htmlspecialchars($old['location'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="loc-input-wrap">
+                        <input class="nature-input loc-input"
+                               id="location" 
+                               name="location" 
+                               type="text" 
+                               placeholder="Ví dụ: Tà Xùa, Sơn La"
+                               value="<?= htmlspecialchars($old['location'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="button"
+                                class="loc-map-btn"
+                                onclick="MapPicker.open()"
+                                title="Chọn vị trí trên bản đồ">
+                            <i class="bi bi-map-fill"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div class="row g-3 mb-3">
                 <!-- Lat & Lng -->
                 <div class="col-md-6">
-                    <label for="lat" class="nature-label">Vĩ độ (Lat) <span class="text-muted small fw-normal">(để xem thời tiết & bản đồ)</span></label>
+                    <label for="lat" class="nature-label">Vĩ độ (Lat) <span class="text-muted small fw-normal">(để xem thời tiết &amp; bản đồ)</span></label>
                     <input class="nature-input" 
                            id="lat" 
                            name="lat" 
@@ -99,26 +119,55 @@ $currentImage = !empty($post['image_url'])
                 </div>
             </div>
 
-            <!-- Current Image Preview & Upload New -->
-            <div class="mb-3">
-                <label for="image" class="nature-label">Ảnh bìa bài viết</label>
-                <?php if ($currentImage): ?>
-                    <div class="mb-2 d-flex align-items-center gap-3">
-                        <img src="<?= htmlspecialchars($currentImage, ENT_QUOTES, 'UTF-8') ?>" 
-                             alt="Ảnh bìa hiện tại" 
-                             style="width: 90px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
-                        <span class="text-muted small">Ảnh bìa hiện tại. Tải lên ảnh mới nếu muốn thay thế.</span>
+            <!-- ── Images Section ──────────────────────────────────────── -->
+            <div class="mb-4">
+                <label class="nature-label">Ảnh bài viết</label>
+
+                <?php if (!empty($editImages)): ?>
+                    <!-- Current images thumbnails -->
+                    <div class="mb-3">
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-images me-1"></i>
+                            Ảnh hiện tại (<?= count($editImages) ?> ảnh) — tải lên ảnh mới sẽ <strong>thêm vào</strong> bên cạnh:
+                        </p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php foreach ($editImages as $imgSrc): ?>
+                                <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
+                                     alt="Ảnh bài viết"
+                                     style="width: 90px; height: 64px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(255,255,255,0.15); cursor: zoom-in;"
+                                     onclick="window.open(this.src,'_blank')">
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
-                <input class="nature-input" 
-                       id="image" 
-                       name="image" 
-                       type="file" 
-                       accept="image/png, image/jpeg, image/webp" 
-                       style="padding-top: 0.55rem;">
-                <?php if (!empty($errors['image'])): ?>
-                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['image'], ENT_QUOTES, 'UTF-8') ?></div>
+
+                <!-- Multi-image dropzone -->
+                <div id="editDropzone"
+                     style="border: 2px dashed rgba(255,255,255,0.25); border-radius: 16px; padding: 1.5rem 1rem;
+                            text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;"
+                     onclick="document.getElementById('editImagesInput').click()"
+                     ondragover="event.preventDefault(); this.style.borderColor='var(--color-moss)'; this.style.background='rgba(107,142,35,0.08)';"
+                     ondragleave="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.background='';"
+                     ondrop="handleEditDrop(event)">
+                    <i class="bi bi-cloud-arrow-up fs-3 d-block mb-2" style="color: rgba(255,255,255,0.45);"></i>
+                    <span class="text-muted small">Kéo &amp; thả ảnh vào đây hoặc <strong>bấm để chọn</strong></span><br>
+                    <span class="text-muted" style="font-size: 0.72rem;">JPG, PNG, WEBP — tối đa 2 MB mỗi ảnh</span>
+                </div>
+
+                <input type="file"
+                       id="editImagesInput"
+                       name="images[]"
+                       multiple
+                       accept="image/jpeg, image/png, image/webp"
+                       style="display:none;"
+                       onchange="previewEditImages(this.files)">
+
+                <?php if (!empty($errors['images'])): ?>
+                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['images'], ENT_QUOTES, 'UTF-8') ?></div>
                 <?php endif; ?>
+
+                <!-- New image previews -->
+                <div id="editPreviewGrid" class="d-flex flex-wrap gap-2 mt-3"></div>
             </div>
 
             <!-- Post Content -->
@@ -147,3 +196,251 @@ $currentImage = !empty($post['image_url'])
         </form>
     </div>
 </div>
+
+<script>
+function previewEditImages(files) {
+    const grid = document.getElementById('editPreviewGrid');
+    grid.innerHTML = '';
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach((file, i) => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:relative; display:inline-block;';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:90px;height:64px;object-fit:cover;border-radius:10px;border:2px solid var(--color-moss);';
+            const badge = document.createElement('span');
+            badge.textContent = (i + 1);
+            badge.style.cssText = 'position:absolute;top:3px;right:3px;background:var(--color-moss);color:#fff;font-size:0.62rem;padding:1px 5px;border-radius:6px;';
+            wrap.appendChild(img);
+            wrap.appendChild(badge);
+            grid.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Update dropzone text
+    const dz = document.getElementById('editDropzone');
+    if (dz) {
+        const span = dz.querySelector('span');
+        if (span) span.textContent = files.length + ' ảnh đã chọn — bấm để thay đổi';
+    }
+}
+
+function handleEditDrop(e) {
+    e.preventDefault();
+    const dz = document.getElementById('editDropzone');
+    if (dz) { dz.style.borderColor = 'rgba(255,255,255,0.25)'; dz.style.background = ''; }
+
+    const input = document.getElementById('editImagesInput');
+    if (!input || !e.dataTransfer?.files?.length) return;
+
+    // Assign dropped files to input
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    input.files = dt.files;
+    previewEditImages(input.files);
+}
+</script>
+
+<!-- ════════════════════════════════════════════════
+     MAP PICKER MODAL (OpenStreetMap + Nominatim)
+════════════════════════════════════════════════ -->
+<div id="mapPickerModal" style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+    <div style="background:#1a1a1a; border-radius:24px; width:min(640px,96vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+        <div style="padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+            <i class="bi bi-map-fill" style="color:var(--color-moss, #7aab3a); font-size:1.1rem;"></i>
+            <strong style="color:#fff; flex:1;">Chọn địa điểm</strong>
+            <button onclick="MapPicker.close()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.2rem;cursor:pointer;padding:0;line-height:1;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div style="padding:0.85rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; gap:8px;">
+            <input type="text" id="mapSearchInput"
+                   placeholder="Nhập tên địa điểm, ví dụ: Đỉnh Fansipan..."
+                   style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:10px;
+                          color:#fff; padding:0.5rem 0.85rem; font-size:0.92rem; outline:none;"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();MapPicker.search();}">
+            <button onclick="MapPicker.search()"
+                    style="background:var(--color-moss,#7aab3a); border:none; border-radius:10px; color:#fff;
+                           padding:0.5rem 1.1rem; cursor:pointer; font-size:0.88rem; white-space:nowrap;">
+                <i class="bi bi-search me-1"></i> Tìm
+            </button>
+        </div>
+        <div id="mapSearchResults" style="max-height:220px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.07);"></div>
+        <div id="mapSelectedInfo" style="padding:0.65rem 1.25rem; background:rgba(122,171,58,0.08); display:none; align-items:center; gap:8px;">
+            <i class="bi bi-geo-alt-fill" style="color:var(--color-moss,#7aab3a);"></i>
+            <span id="mapSelectedText" style="color:#ccc; font-size:0.86rem; flex:1;"></span>
+        </div>
+        <div style="padding:0.85rem 1.25rem; display:flex; justify-content:flex-end; gap:8px;">
+            <button onclick="MapPicker.close()"
+                    style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:10px;
+                           color:#ccc; padding:0.5rem 1.1rem; cursor:pointer;">
+                Hủy
+            </button>
+            <button id="mapConfirmBtn" onclick="MapPicker.confirm()" disabled
+                    style="background:var(--color-moss,#7aab3a); border:none; border-radius:10px; color:#fff;
+                           padding:0.5rem 1.25rem; cursor:pointer; opacity:0.5;">
+                <i class="bi bi-check-lg me-1"></i> Xác nhận
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Location input with inline map icon ── */
+.loc-input-wrap {
+    position: relative;
+    display: block;
+}
+.loc-input-wrap .loc-input {
+    padding-right: 44px !important;
+}
+.loc-map-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-moss, #7aab3a);
+    font-size: 1.05rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 8px;
+    line-height: 1;
+    transition: color 0.18s, background 0.18s, transform 0.15s;
+    z-index: 5;
+}
+.loc-map-btn:hover {
+    color: #4d7a1f;
+    background: rgba(122,171,58,0.12);
+    transform: translateY(-50%) scale(1.15);
+}
+
+/* ── Map result items ── */
+.map-result-item {
+    padding: 0.65rem 1.25rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.15s;
+    color: #ccc;
+    font-size: 0.86rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.map-result-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.map-result-item.selected { background: rgba(122,171,58,0.15); }
+.map-result-item i { color: var(--color-moss,#7aab3a); margin-top:2px; flex-shrink:0; }
+.map-result-item strong { display:block; font-size:0.9rem; color:#fff; }
+.map-result-item span { font-size: 0.78rem; color: #999; }
+.map-spinner { padding:1rem; text-align:center; color:rgba(255,255,255,0.45); font-size:0.85rem; }
+</style>
+
+<script>
+const MapPicker = (() => {
+    let selected = null;
+    const modal        = () => document.getElementById('mapPickerModal');
+    const searchInput  = () => document.getElementById('mapSearchInput');
+    const resultsBox   = () => document.getElementById('mapSearchResults');
+    const selectedInfo = () => document.getElementById('mapSelectedInfo');
+    const selectedText = () => document.getElementById('mapSelectedText');
+    const confirmBtn   = () => document.getElementById('mapConfirmBtn');
+
+    function open() {
+        selected = null;
+        if (resultsBox()) resultsBox().innerHTML = '';
+        if (selectedInfo()) selectedInfo().style.display = 'none';
+        if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
+        if (searchInput()) searchInput().value = document.getElementById('location')?.value || '';
+        modal().style.display = 'flex';
+        setTimeout(() => searchInput()?.focus(), 80);
+    }
+
+    function close() { modal().style.display = 'none'; }
+
+    async function search() {
+        const q = searchInput()?.value?.trim();
+        if (!q) return;
+        resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-hourglass-split me-1"></i>Đang tìm kiếm...</div>';
+        if (selectedInfo()) selectedInfo().style.display = 'none';
+        if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
+        selected = null;
+        try {
+            const url = new URL('https://nominatim.openstreetmap.org/search');
+            url.searchParams.set('format', 'json');
+            url.searchParams.set('q', q);
+            url.searchParams.set('limit', '8');
+            url.searchParams.set('addressdetails', '1');
+            url.searchParams.set('accept-language', 'vi,en');
+
+            const res = await fetch(url.toString(), {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                signal: AbortSignal.timeout(8000)
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (!data || data.length === 0) {
+                resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-search me-1"></i>Không tìm thấy địa điểm. Thử từ khóa khác hoặc thêm tên quốc gia.</div>';
+                return;
+            }
+            resultsBox().innerHTML = '';
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'map-result-item';
+                const shortName = item.display_name.split(',')[0].trim();
+                div.innerHTML = `<i class="bi bi-geo-alt-fill"></i><div><strong>${shortName}</strong><span>${item.display_name}</span></div>`;
+                div.addEventListener('click', () => selectResult(item, div));
+                resultsBox().appendChild(div);
+            });
+        } catch (err) {
+            console.error('Nominatim error:', err);
+            if (err.name === 'TimeoutError') {
+                resultsBox().innerHTML = '<div class="map-spinner" style="color:#f99;">Yêu cầu quá thời gian. Kiểm tra kết nối mạng và thử lại.</div>';
+            } else {
+                resultsBox().innerHTML = `<div class="map-spinner" style="color:#f99;">
+                    <i class="bi bi-wifi-off me-1"></i>Không thể kết nối đến dịch vụ bản đồ.<br>
+                    <small class="d-block mt-1 opacity-75">Bạn có thể nhập tọa độ thủ công vào ô Vĩ độ / Kinh độ bên dưới.</small>
+                </div>`;
+            }
+        }
+    }
+
+    function selectResult(item, el) {
+        selected = {
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+            short_name: item.display_name.split(',').slice(0, 2).join(',').trim()
+        };
+        document.querySelectorAll('.map-result-item').forEach(e => e.classList.remove('selected'));
+        if (el) el.classList.add('selected');
+        if (selectedInfo()) selectedInfo().style.display = 'flex';
+        if (selectedText()) selectedText().textContent = `${selected.short_name}  ·  ${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`;
+        if (confirmBtn()) { confirmBtn().disabled = false; confirmBtn().style.opacity = '1'; }
+    }
+
+    function confirm() {
+        if (!selected) return;
+        const locInput = document.getElementById('location');
+        const latInput = document.getElementById('lat');
+        const lngInput = document.getElementById('lng');
+        if (locInput) locInput.value = selected.short_name;
+        if (latInput) latInput.value = selected.lat.toFixed(7);
+        if (lngInput) lngInput.value = selected.lng.toFixed(7);
+        close();
+    }
+
+    document.getElementById('mapPickerModal')?.addEventListener('click', function(e) {
+        if (e.target === this) close();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal()?.style.display === 'flex') close();
+    });
+
+    return { open, close, search, confirm };
+})();
+</script>

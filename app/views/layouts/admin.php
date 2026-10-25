@@ -131,9 +131,14 @@ $isAdminProductsActive = str_starts_with($currentUri, rtrim($baseUrl . '/admin/p
                    class="dock-pill <?= $isAdminPostsActive ? 'active' : '' ?>" title="Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
                 </a>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products" 
+<a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products" 
                    class="dock-pill <?= $isAdminProductsActive ? 'active' : '' ?>" title="Quản lý sản phẩm">
                     <i class="bi bi-box-seam me-1"></i> Sản phẩm
+                </a>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" 
+                   class="dock-pill <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên & Cấp lại mật khẩu">
+                    <i class="bi bi-people me-1"></i> Thành viên
+                </a>
                 </a>
             </nav>
         </div>

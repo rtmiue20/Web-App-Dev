@@ -35,6 +35,7 @@ require_once __DIR__ . '/../app/controllers/UserController.php';
 require_once __DIR__ . '/../app/controllers/admin/DashboardController.php';
 require_once __DIR__ . '/../app/controllers/admin/PostAdminController.php';
 require_once __DIR__ . '/../app/controllers/admin/ProductAdminController.php';
+require_once __DIR__ . '/../app/controllers/admin/UserAdminController.php';
 require_once __DIR__ . '/../app/controllers/api/LikeApi.php';
 require_once __DIR__ . '/../app/controllers/api/CommentApi.php';
 

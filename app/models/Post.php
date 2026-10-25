@@ -301,9 +301,10 @@ class Post extends Model {
      * @return array|false Mảng dữ liệu bài viết hoặc false nếu không tìm thấy
      */
     public function getById(int $id): array|false {
+        $post = false;
         try {
             $posts = Database::call('sp_post_get', [$id]);
-            return $posts[0] ?? false;
+            $post = $posts[0] ?? false;
         } catch (PDOException $e) {
             error_log('Notice: sp_post_get fallback query: ' . $e->getMessage());
 
@@ -316,12 +317,22 @@ class Post extends Model {
                     WHERE p.id = :id";
             try {
                 $posts = Database::query($sql, ['id' => $id]);
-                return $posts[0] ?? false;
+                $post = $posts[0] ?? false;
             } catch (PDOException $ex) {
                 error_log('Error getting post by ID: ' . $ex->getMessage());
                 return false;
             }
         }
+
+        if ($post) {
+            $images = $this->getImages($id);
+            if (empty($images) && !empty($post['image_url'])) {
+                $images = [['id' => 0, 'post_id' => $id, 'image_url' => $post['image_url']]];
+            }
+            $post['images'] = $images;
+        }
+
+        return $post;
     }
 
     /**
@@ -331,7 +342,7 @@ class Post extends Model {
      * @param string $title Tiêu đề
      * @param string $content Nội dung
      * @param string|null $location Địa điểm
-     * @param string|null $imageUrl Đường dẫn ảnh bìa
+     * @param string|array|null $imageUrl Đường dẫn ảnh bìa (string hoặc mảng đường dẫn)
      * @param float|null $lat Vĩ độ
      * @param float|null $lng Kinh độ
      * @param string $status Trạng thái bài viết ('published', 'pending', 'hidden')
@@ -343,7 +354,7 @@ class Post extends Model {
         string $title, 
         string $content, 
         ?string $location = null, 
-        ?string $imageUrl = null,
+        string|array|null $imageUrl = null,
         ?float $lat = null,
         ?float $lng = null,
         string $status = 'published'
@@ -392,14 +403,12 @@ class Post extends Model {
             }
         }
 
-        // Lưu ảnh bìa vào bảng post_images nếu có
-        if ($imageUrl && $postId > 0) {
-            try {
-                $sqlImg = "INSERT INTO post_images (post_id, image_url) VALUES (:post_id, :image_url)";
-                $stmtImg = $this->db->prepare($sqlImg);
-                $stmtImg->execute([':post_id' => $postId, ':image_url' => $imageUrl]);
-            } catch (PDOException $ex) {
-                error_log('Error saving post image: ' . $ex->getMessage());
+        // Lưu ảnh vào bảng post_images nếu có (hỗ trợ 1 hoặc nhiều ảnh)
+        if ($postId > 0 && !empty($imageUrl)) {
+            if (is_array($imageUrl)) {
+                $this->addImages($postId, $imageUrl);
+            } elseif (is_string($imageUrl)) {
+                $this->addImages($postId, [$imageUrl]);
             }
         }
 
@@ -416,7 +425,7 @@ class Post extends Model {
         string $title,
         string $content,
         ?string $location = null,
-        ?string $imageUrl = null,
+        string|array|null $imageUrl = null,
         ?float $lat = null,
         ?float $lng = null,
         ?string $status = null
@@ -474,24 +483,10 @@ class Post extends Model {
             }
         }
 
-        // Cập nhật ảnh bìa mới nếu được tải lên
-        if ($imageUrl) {
-            try {
-                $exists = Database::query("SELECT id FROM post_images WHERE post_id = :post_id LIMIT 1", ['post_id' => $id]);
-                if (!empty($exists)) {
-                    Database::execute("UPDATE post_images SET image_url = :image_url WHERE post_id = :post_id", [
-                        'image_url' => $imageUrl,
-                        'post_id' => $id
-                    ]);
-                } else {
-                    Database::execute("INSERT INTO post_images (post_id, image_url) VALUES (:post_id, :image_url)", [
-                        'post_id' => $id,
-                        'image_url' => $imageUrl
-                    ]);
-                }
-            } catch (PDOException $ex) {
-                error_log('Error updating post image: ' . $ex->getMessage());
-            }
+        // Cập nhật ảnh mới nếu được tải lên (hỗ trợ 1 hoặc nhiều ảnh)
+        if (!empty($imageUrl)) {
+            $urls = is_array($imageUrl) ? $imageUrl : [$imageUrl];
+            $this->addImages($id, $urls);
         }
 
         return $updated;
@@ -613,12 +608,52 @@ class Post extends Model {
         }
     }
 
-    public function getImagePaths(int $postId): array
+public function getImagePaths(int $postId): array
     {
         try {
             return Database::query('SELECT image_url FROM post_images WHERE post_id = :post_id', ['post_id' => $postId]);
         } catch (PDOException $e) {
             return [];
+        }
+    }
+
+    /**
+     * Lay toan bo danh sach anh cua bai viet tu bang post_images
+     * @param int $postId
+     * @return array Danh sach anh
+     */
+    public function getImages(int $postId): array {
+        try {
+            $sql = "SELECT id, post_id, image_url FROM post_images WHERE post_id = :post_id ORDER BY id ASC";
+            return Database::query($sql, ['post_id' => $postId]);
+        } catch (PDOException $e) {
+            error_log('Error getting post images: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Them nhieu anh vao bang post_images cho bai viet
+     * @param int $postId
+     * @param array $imageUrls Mang duong dan anh
+     * @return bool
+     */
+    public function addImages(int $postId, array $imageUrls): bool {
+        if (empty($imageUrls)) {
+            return true;
+        }
+        try {
+            $sql = "INSERT INTO post_images (post_id, image_url) VALUES (:post_id, :image_url)";
+            $stmt = $this->db->prepare($sql);
+            foreach ($imageUrls as $url) {
+                if (!empty($url)) {
+                    $stmt->execute([':post_id' => $postId, ':image_url' => $url]);
+                }
+            }
+            return true;
+        } catch (PDOException $e) {
+            error_log('Error adding post images: ' . $e->getMessage());
+            return false;
         }
     }
 }

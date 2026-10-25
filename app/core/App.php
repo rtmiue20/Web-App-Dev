@@ -16,6 +16,7 @@ class App
         $users = new UserController();
         $dashboard = new DashboardController();
         $postAdmin = new PostAdminController();
+        $userAdmin = new UserAdminController();
 
         // Controller Sản phẩm (FR09 & FR12 - Vương)
         $products = new ProductController();
@@ -91,6 +92,15 @@ class App
         $router->get('/api/posts/{id}/comments', [$commentApi, 'list']);
         $router->post('/api/posts/{id}/comments', [$commentApi, 'store']);
         $router->post('/api/comments/{id}/delete', [$commentApi, 'delete']);
+
+        // FR14: Admin User Management & Password Reset (Xem thông tin & Cấp lại mật khẩu)
+        $router->get('/admin/users', [$userAdmin, 'index'], [AdminMiddleware::class]);
+        $router->get('/admin/users/{id}', function ($id) use ($userAdmin) {
+            $userAdmin->show((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/users/{id}/reset-password', function ($id) use ($userAdmin) {
+            $userAdmin->resetPassword((int)$id);
+        }, [AdminMiddleware::class]);
 
         // URL parsing
         $url = $_GET['url'] ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
