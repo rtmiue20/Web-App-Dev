@@ -2,7 +2,7 @@
 class Upload
 {
     private const ALLOWED = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
-    private const MAX_SIZE = 2 * 1024 * 1024; // Đã sửa lỗi mất dấu nhân (*)
+    private const MAX_SIZE = 2 * 1024 * 1024;
 
     public static function image(array $file, string $subDir = 'posts'): string
     {

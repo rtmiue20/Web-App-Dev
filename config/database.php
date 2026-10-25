@@ -5,10 +5,10 @@
  * Mẫu để commit: config/database.example.php
  */
 return [
-    'host'    => '127.0.0.1',
+    'host'    => '127.0.0.1',   // máy host DB: dùng IP Tailscale của máy host thay cho localhost
     'port'    => 3306,
     'name'    => 'outdoor_forum',
-    'user'    => 'root',
-    'pass'    => '',
+    'user'    => 'root',        // XAMPP mặc định là root
+    'pass'    => '049206',      // Mật khẩu root MariaDB
     'charset' => 'utf8mb4',
 ];
