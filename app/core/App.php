@@ -14,6 +14,7 @@ class App
         $users = new UserController();
         $dashboard = new DashboardController();
         $postAdmin = new PostAdminController();
+        $userAdmin = new UserAdminController();
 
         // 1. Home
         $router->get('/', [$home, 'index']);
@@ -86,6 +87,15 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/admin/posts/{id}/delete', function ($id) use ($postAdmin) {
             $postAdmin->delete((int)$id);
+        }, [AdminMiddleware::class]);
+
+        // FR14: Admin User Management & Password Reset (Xem thông tin & Cấp lại mật khẩu)
+        $router->get('/admin/users', [$userAdmin, 'index'], [AdminMiddleware::class]);
+        $router->get('/admin/users/{id}', function ($id) use ($userAdmin) {
+            $userAdmin->show((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/users/{id}/reset-password', function ($id) use ($userAdmin) {
+            $userAdmin->resetPassword((int)$id);
         }, [AdminMiddleware::class]);
 
         // URL parsing

@@ -31,6 +31,7 @@ require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
 require_once __DIR__ . '/../app/controllers/admin/DashboardController.php';
 require_once __DIR__ . '/../app/controllers/admin/PostAdminController.php';
+require_once __DIR__ . '/../app/controllers/admin/UserAdminController.php';
 
 require_once __DIR__ . '/../app/core/App.php';
 
