@@ -3,10 +3,12 @@ require_once __DIR__ . '/../core/Model.php';
 require_once __DIR__ . '/../core/Database.php';
 
 /**
- * Model Comment - Quản lý bình luận bài viết (Vương - Tuần 2 & 4)
- * Gọi các Stored Procedures: sp_comment_list, sp_comment_create, sp_comment_delete, sp_comment_count_by_post
+ * Model Comment - Quản lý bình luận bài viết (Vương - Tuần 2 & Tuần 4: FR07)
+ * Gọi các Stored Procedures: sp_comment_list, sp_comment_list_paged, sp_comment_create,
+ * sp_comment_get, sp_comment_delete, sp_comment_count_by_post
  */
-class Comment extends Model {
+class Comment extends Model
+{
     private ?int $id = null;
     private ?int $postId = null;
     private ?int $userId = null;
@@ -35,17 +37,18 @@ class Comment extends Model {
     /**
      * Lấy danh sách bình luận theo ID bài viết (gọi routine sp_comment_list)
      */
-    public function getByPostId(int $postId): array {
+    public function getByPostId(int $postId): array
+    {
         try {
             return Database::call('sp_comment_list', [$postId]);
         } catch (PDOException $e) {
             error_log('Notice: sp_comment_list fallback query: ' . $e->getMessage());
             try {
-                $sql = "SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username 
-                        FROM comments c 
-                        JOIN users u ON c.user_id = u.id 
-                        WHERE c.post_id = :post_id 
-                        ORDER BY c.created_at DESC";
+                $sql = 'SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+                        FROM comments c
+                        JOIN users u ON c.user_id = u.id
+                        WHERE c.post_id = :post_id
+                        ORDER BY c.created_at DESC, c.id DESC';
                 return Database::query($sql, ['post_id' => $postId]);
             } catch (PDOException $ex) {
                 error_log('Error getting comments: ' . $ex->getMessage());
@@ -55,9 +58,39 @@ class Comment extends Model {
     }
 
     /**
+     * Lấy bình luận theo trang phục vụ Load More AJAX (gọi routine sp_comment_list_paged)
+     */
+    public function getByPostIdPaged(int $postId, int $limit, int $offset): array
+    {
+        try {
+            return Database::call('sp_comment_list_paged', [$postId, $limit, $offset]);
+        } catch (PDOException $e) {
+            error_log('Notice: sp_comment_list_paged fallback query: ' . $e->getMessage());
+            try {
+                $sql = 'SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+                        FROM comments c
+                        JOIN users u ON u.id = c.user_id
+                        WHERE c.post_id = :post_id
+                        ORDER BY c.created_at DESC, c.id DESC
+                        LIMIT :limit OFFSET :offset';
+                $stmt = $this->db->prepare($sql);
+                $stmt->bindValue(':post_id', $postId, PDO::PARAM_INT);
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $ex) {
+                error_log('Error getting paged comments: ' . $ex->getMessage());
+                return [];
+            }
+        }
+    }
+
+    /**
      * Thêm bình luận mới vào bài viết (gọi routine sp_comment_create)
      */
-    public function create(int $postId, int $userId, string $content): int {
+    public function create(int $postId, int $userId, string $content): int
+    {
         try {
             $rows = Database::call('sp_comment_create', [$postId, $userId, $content]);
             $commentId = (int)($rows[0]['comment_id'] ?? 0);
@@ -68,15 +101,19 @@ class Comment extends Model {
         } catch (PDOException $e) {
             error_log('Notice: sp_comment_create fallback query: ' . $e->getMessage());
             try {
-                $sql = "INSERT INTO comments (post_id, user_id, content, created_at) 
-                        VALUES (:post_id, :user_id, :content, NOW())";
+                $sql = 'INSERT INTO comments (post_id, user_id, content, created_at)
+                        VALUES (:post_id, :user_id, :content, NOW())';
                 $stmt = $this->db->prepare($sql);
                 $ok = $stmt->execute([
                     ':post_id' => $postId,
                     ':user_id' => $userId,
                     ':content' => $content
                 ]);
-                return $ok ? (int)$this->db->lastInsertId() : 0;
+                $commentId = $ok ? (int)$this->db->lastInsertId() : 0;
+                if ($commentId > 0) {
+                    $this->id = $commentId;
+                }
+                return $commentId;
             } catch (PDOException $ex) {
                 error_log('Error creating comment: ' . $ex->getMessage());
                 return 0;
@@ -85,9 +122,37 @@ class Comment extends Model {
     }
 
     /**
+     * Tìm bình luận theo id (gọi routine sp_comment_get), trả về null nếu không có
+     */
+    public function findById(int $id): ?array
+    {
+        try {
+            $rows = Database::call('sp_comment_get', [$id]);
+            return !empty($rows) ? $rows[0] : null;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_comment_get fallback query: ' . $e->getMessage());
+            try {
+                $rows = Database::query(
+                    'SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+                     FROM comments c
+                     LEFT JOIN users u ON u.id = c.user_id
+                     WHERE c.id = :id
+                     LIMIT 1',
+                    ['id' => $id]
+                );
+                return !empty($rows) ? $rows[0] : null;
+            } catch (PDOException $ex) {
+                error_log('Error finding comment: ' . $ex->getMessage());
+                return null;
+            }
+        }
+    }
+
+    /**
      * Xóa bình luận (gọi routine sp_comment_delete)
      */
-    public function delete(int $id, int $userId, bool $isAdmin = false): bool {
+    public function delete(int $id, int $userId, bool $isAdmin = false): bool
+    {
         try {
             Database::call('sp_comment_delete', [$id, $userId, $isAdmin ? 1 : 0]);
             return true;
@@ -95,10 +160,10 @@ class Comment extends Model {
             error_log('Notice: sp_comment_delete fallback query: ' . $e->getMessage());
             try {
                 if ($isAdmin) {
-                    $sql = "DELETE FROM comments WHERE id = :id";
+                    $sql = 'DELETE FROM comments WHERE id = :id';
                     return Database::execute($sql, ['id' => $id]) > 0;
                 }
-                $sql = "DELETE FROM comments WHERE id = :id AND user_id = :user_id";
+                $sql = 'DELETE FROM comments WHERE id = :id AND user_id = :user_id';
                 return Database::execute($sql, ['id' => $id, 'user_id' => $userId]) > 0;
             } catch (PDOException $ex) {
                 return false;
@@ -109,13 +174,17 @@ class Comment extends Model {
     /**
      * Đếm số bình luận của bài viết (gọi routine sp_comment_count_by_post)
      */
-    public function countByPost(int $postId): int {
+    public function countByPost(int $postId): int
+    {
         try {
             $rows = Database::call('sp_comment_count_by_post', [$postId]);
             return (int)($rows[0]['total'] ?? 0);
         } catch (PDOException $e) {
             try {
-                $res = Database::query("SELECT COUNT(*) AS total FROM comments WHERE post_id = :post_id", ['post_id' => $postId]);
+                $res = Database::query(
+                    'SELECT COUNT(*) AS total FROM comments WHERE post_id = :post_id',
+                    ['post_id' => $postId]
+                );
                 return (int)($res[0]['total'] ?? 0);
             } catch (PDOException $ex) {
                 return 0;

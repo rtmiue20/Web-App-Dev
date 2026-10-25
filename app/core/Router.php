@@ -64,7 +64,7 @@ class Router
             }
         }
 
-        call_user_func_array($matchedRoute['handler'], $params);
+        call_user_func_array($matchedRoute['handler'], array_values($params));
     }
 
     private static function normalizePath(string $path): string
