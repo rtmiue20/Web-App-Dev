@@ -831,3 +831,222 @@ body {
     transform: none;
   }
 }
+
+
+/* ===== INTRO: hiệu ứng logo reveal chạy trong lúc xử lý đăng nhập (Prototype Outdoor Forum) ===== */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Màu nền trùng khớp với màu app / dashboard (#4a4d44 -> #464940 -> #383b34) */
+  background: radial-gradient(ellipse 120% 100% at 55% 45%, #4a4d44 0%, #464940 45%, #383b34 100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.intro.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lock {
+  display: flex;
+  align-items: center;
+}
+
+.m {
+  position: relative;
+  width: 100px;
+  height: 106px;
+  display: grid;
+  place-items: center;
+}
+
+.m img.mk {
+  height: 106px;
+  display: block;
+  object-fit: contain;
+}
+
+.disc {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--color-logo, #f2efd9);
+  opacity: 0;
+}
+
+.ring {
+  position: absolute;
+  inset: -22px;
+  width: calc(100% + 44px);
+  height: calc(100% + 44px);
+  overflow: visible;
+}
+
+.ring circle {
+  fill: none;
+  stroke: var(--color-logo, #f2efd9);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 22 78;
+  stroke-dashoffset: 22;
+  opacity: 0;
+}
+
+.w {
+  overflow: hidden;
+  max-width: 0;
+  margin-left: 0;
+}
+
+.w img {
+  height: 34px;
+  display: block;
+  max-width: none;
+}
+
+.tag {
+  margin-top: 18px;
+  color: var(--color-logo, #f2efd9);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0;
+  font-weight: 500;
+}
+
+.status {
+  display: none !important;
+}
+
+.play .disc {
+  animation: intro-disc var(--d, 2200ms) linear both;
+}
+
+.play .mk {
+  animation: intro-mk var(--d, 2200ms) linear both;
+}
+
+.play .m {
+  animation: intro-shr var(--d, 2200ms) linear both;
+}
+
+.play .ring circle {
+  animation: intro-ring var(--d, 2200ms) linear both;
+}
+
+.play .w {
+  animation: intro-wd var(--d, 2200ms) linear both;
+}
+
+.play .tag {
+  animation: intro-tg var(--d, 2200ms) linear both;
+}
+
+.mk {
+  opacity: 0;
+}
+
+@keyframes intro-disc {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  15% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  30%, 100% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes intro-mk {
+  0%, 10% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-140deg);
+    clip-path: circle(0%);
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  35%, 100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    clip-path: circle(75%);
+  }
+}
+
+@keyframes intro-ring {
+  0%, 20% {
+    opacity: 1;
+    stroke-dashoffset: 22;
+    animation-timing-function: ease-in-out;
+  }
+  45% {
+    opacity: 1;
+    stroke-dashoffset: -78;
+  }
+  50%, 100% {
+    opacity: 0;
+    stroke-dashoffset: -78;
+  }
+}
+
+@keyframes intro-shr {
+  0%, 35% {
+    transform: scale(1.35);
+    animation-timing-function: ease-in-out;
+  }
+  55%, 100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes intro-wd {
+  0%, 35% {
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+  }
+  42% {
+    opacity: 1;
+  }
+  75%, 100% {
+    max-width: 320px;
+    margin-left: 18px;
+    opacity: 1;
+  }
+}
+
+@keyframes intro-tg {
+  0%, 60% {
+    opacity: 0;
+    transform: translateY(8px);
+    animation-timing-function: ease-out;
+  }
+  80%, 100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nature-card-wrap.out {
+  opacity: 0;
+  transform: scale(0.96) translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.nature-input::placeholder {
+  color: #9A9E93;
+  opacity: 0.65;
+  font-weight: 300;
+}

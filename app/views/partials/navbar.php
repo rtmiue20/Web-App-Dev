@@ -15,16 +15,13 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
 ?>
 <header class="dock-header">
     <nav class="dock-nav" aria-label="Điều hướng chính">
-        <!-- Brand / Tree Pine Logo -->
+        <!-- Brand / Celtic Knot Logo -->
         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" 
            class="dock-logo" 
-           aria-label="Dã Ngoại — về trang chủ">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m8 19 4-4 4 4"/>
-                <path d="M12 19V9"/>
-                <path d="M12 9 8 5l4-4 4 4-4 4Z"/>
-                <path d="m18 14 3 3-5 5H8l-5-5 3-3"/>
-            </svg>
+           aria-label="Outdoor Forum — về trang chủ">
+            <img src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/img/celtic-logo.png" 
+                 alt="Outdoor Forum Logo" 
+                 style="width: 26px; height: 26px; filter: brightness(0); opacity: 0.85; object-fit: contain;">
         </a>
 
         <!-- Main Nav Links -->
