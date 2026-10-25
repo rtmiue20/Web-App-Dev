@@ -73,6 +73,26 @@ class User extends Model
     /**
      * Tìm người dùng qua ID (gọi routine sp_user_get_by_id)
      */
+    /**
+     * Tìm người dùng qua username
+     */
+    public function findByUsername(string $username): ?User
+    {
+        try {
+            $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                           u.bio, u.avatar_path, u.created_at
+                    FROM users u
+                    INNER JOIN roles r ON r.id = u.role_id
+                    WHERE u.username = :username
+                    LIMIT 1';
+            $rows = Database::query($sql, ['username' => $username]);
+            return !empty($rows) ? self::fromRow($rows[0]) : null;
+        } catch (PDOException $ex) {
+            error_log('Error finding user by username: ' . $ex->getMessage());
+            return null;
+        }
+    }
+
     public function findById(int $id): ?User
     {
         try {

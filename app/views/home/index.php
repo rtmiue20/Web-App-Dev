@@ -83,11 +83,26 @@ $featureCards = [
     <main class="hero-content frame-in">
         <!-- Left: Headline, Description, CTA, Stats -->
         <section class="parallax" style="--depth: 6px; max-width: 580px;">
-            <h1 class="headline">
-                <span class="rise-in" style="--delay: 100ms;">Bước ra</span>
-                <span class="rise-in" style="--delay: 200ms;">thiên nhiên,</span>
-                <span class="rise-in" style="--delay: 300ms;">kể cho nhau nghe</span>
-            </h1>
+            <?php 
+            $currentUser = Session::get('user');
+            $isLoggedIn = is_array($currentUser);
+            ?>
+            <?php if ($isLoggedIn): ?>
+                <div class="rise-in mb-2" style="--delay: 50ms; display: inline-flex; align-items: center; gap: 8px; background: rgba(241,241,236,0.12); padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #9bbd55; box-shadow: 0 0 6px #9bbd55; display: inline-block;"></span>
+                    <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.85); font-weight: 500;">Đã đăng nhập</span>
+                </div>
+                <h1 class="headline">
+                    <span class="rise-in" style="--delay: 100ms;">Chào mừng trở lại,</span>
+                    <span class="rise-in" style="--delay: 200ms; color: var(--color-moss);"><?= htmlspecialchars($currentUser['username'] ?? 'rt.miue20', ENT_QUOTES, 'UTF-8') ?> 👋</span>
+                </h1>
+            <?php else: ?>
+                <h1 class="headline">
+                    <span class="rise-in" style="--delay: 100ms;">Bước ra</span>
+                    <span class="rise-in" style="--delay: 200ms;">thiên nhiên,</span>
+                    <span class="rise-in" style="--delay: 300ms;">kể cho nhau nghe</span>
+                </h1>
+            <?php endif; ?>
 
             <p class="lede rise-in" style="--delay: 400ms;">
                 Nơi chia sẻ kinh nghiệm, địa điểm và mẹo hay cho người yêu dã ngoại.
