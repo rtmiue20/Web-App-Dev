@@ -1,17 +1,17 @@
 <?php
 $currentUser = Session::get('user');
-$currentUri = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
+$currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$baseClean = rtrim($baseUrl, '/');
 
-$isHomeActive = ($currentUri === '' || $currentUri === $baseClean);
-$isCategoriesActive = str_starts_with($currentUri, rtrim($baseUrl . '/categories', '/'));
-$isPostsActive = str_starts_with($currentUri, rtrim($baseUrl . '/posts', '/'));
-$isProductsActive = str_starts_with($currentUri, rtrim($baseUrl . '/products', '/'));
-$isProfileActive = str_starts_with($currentUri, rtrim($baseUrl . '/profile', '/'));
-$isAdminActive = str_starts_with($currentUri, rtrim($baseUrl . '/admin', '/'));
-$isLoginActive = str_starts_with($currentUri, rtrim($baseUrl . '/login', '/'));
-$isRegisterActive = str_starts_with($currentUri, rtrim($baseUrl . '/register', '/'));
+// Helper to check active link
+$isActive = function (string $path) use ($currentUri, $baseUrl): bool {
+    $fullPath = rtrim($baseUrl . $path, '/');
+    $current = rtrim((string) $currentUri, '/');
+    if ($path === '/' || $path === '') {
+        return $current === '' || $current === rtrim($baseUrl, '/');
+    }
+    return str_starts_with($current, $fullPath);
+};
 ?>
 <header class="dock-header">
     <nav class="dock-nav" aria-label="Điều hướng chính">
@@ -29,29 +29,24 @@ $isRegisterActive = str_starts_with($currentUri, rtrim($baseUrl . '/register', '
 
         <!-- Main Nav Links -->
         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" 
-           class="dock-pill <?= $isHomeActive ? 'active' : '' ?>">
+           class="dock-pill <?= $isActive('/') ? 'active' : '' ?>">
             Trang chủ
         </a>
 
         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories" 
-           class="dock-pill <?= $isCategoriesActive ? 'active' : '' ?>">
+           class="dock-pill <?= $isActive('/categories') ? 'active' : '' ?>">
             Chuyên mục
         </a>
 
         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
-           class="dock-pill <?= $isPostsActive ? 'active' : '' ?>">
+           class="dock-pill <?= $isActive('/posts') ? 'active' : '' ?>">
             Bài viết
-        </a>
-
-        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products" 
-           class="dock-pill <?= $isProductsActive ? 'active' : '' ?>">
-            Thiết bị
         </a>
 
         <?php if (is_array($currentUser)): ?>
             <!-- User Profile Link -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
-               class="dock-user-badge <?= $isProfileActive ? 'active' : '' ?>">
+               class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
@@ -61,25 +56,25 @@ $isRegisterActive = str_starts_with($currentUri, rtrim($baseUrl . '/register', '
 
             <?php if (($currentUser['role_name'] ?? '') === 'admin' || (int)($currentUser['role_id'] ?? 0) === 2): ?>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
-                   class="dock-pill <?= $isAdminActive ? 'active' : '' ?>">
+                   class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
                     Quản trị
                 </a>
             <?php endif; ?>
 
             <!-- Logout Button (POST with CSRF) -->
-            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/logout" class="d-inline m-0">
+            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/logout" style="margin: 0; display: inline;">
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit" class="dock-pill border-0">
+                <button type="submit" class="dock-pill" style="cursor: pointer; border: none;">
                     Thoát
                 </button>
             </form>
         <?php else: ?>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" 
-               class="dock-pill <?= $isLoginActive ? 'active' : '' ?>">
+               class="dock-pill <?= $isActive('/login') ? 'active' : '' ?>">
                 Đăng nhập
             </a>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/register" 
-               class="dock-pill <?= $isRegisterActive ? 'active' : '' ?>">
+               class="dock-pill <?= $isActive('/register') ? 'active' : '' ?>">
                 Đăng ký
             </a>
         <?php endif; ?>
