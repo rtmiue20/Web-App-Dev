@@ -508,4 +508,105 @@ BEGIN
     ORDER BY total_posts DESC;
 END$$
 
+DROP PROCEDURE IF EXISTS sp_comment_list_paged$$
+CREATE PROCEDURE sp_comment_list_paged(
+    IN p_post_id INT,
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+    FROM comments c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = p_post_id
+    ORDER BY c.created_at DESC, c.id DESC
+    LIMIT p_limit OFFSET p_offset;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_comment_get$$
+CREATE PROCEDURE sp_comment_get(IN p_id INT)
+BEGIN
+    SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+    FROM comments c
+    LEFT JOIN users u ON u.id = c.user_id
+    WHERE c.id = p_id
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_like_count$$
+CREATE PROCEDURE sp_post_like_count(IN p_post_id INT)
+BEGIN
+    SELECT COUNT(*) AS total FROM post_likes WHERE post_id = p_post_id;
+END$$
+
+-- ==============================================================================
+-- 8. SẢN PHẨM / THIẾT BỊ DÃ NGOẠI (PRODUCTS - FR09 & FR12)
+-- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_product_list_by_category$$
+CREATE PROCEDURE sp_product_list_by_category(IN p_category_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p_category_id IS NULL OR p.category_id = p_category_id
+    ORDER BY p.id DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_get$$
+CREATE PROCEDURE sp_product_get(IN p_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.id = p_id
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_create$$
+CREATE PROCEDURE sp_product_create(
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description VARCHAR(255),
+    IN p_link VARCHAR(255)
+)
+BEGIN
+    INSERT INTO products (category_id, name, price, image_url, description, link)
+    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link);
+    SELECT LAST_INSERT_ID() AS product_id;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_update$$
+CREATE PROCEDURE sp_product_update(
+    IN p_id INT,
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description VARCHAR(255),
+    IN p_link VARCHAR(255)
+)
+BEGIN
+    UPDATE products
+    SET category_id = p_category_id,
+        name = p_name,
+        price = p_price,
+        image_url = COALESCE(p_image_url, image_url),
+        description = p_description,
+        link = p_link
+    WHERE id = p_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_delete$$
+CREATE PROCEDURE sp_product_delete(IN p_id INT)
+BEGIN
+    DELETE FROM products WHERE id = p_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
 DELIMITER ;
