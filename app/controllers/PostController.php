@@ -166,6 +166,12 @@ class PostController extends Controller {
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 1);
+        $roleName = $user['role_name'] ?? '';
+        $roleId = (int)($user['role_id'] ?? 0);
+        $isAdmin = ($roleName === 'admin' || $roleId === 2);
+
+        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt). Admin đăng thì được 'published' trực tiếp.
+        $status = $isAdmin ? 'published' : 'pending';
 
         $postId = $this->posts->create(
             $userId, 
@@ -175,11 +181,16 @@ class PostController extends Controller {
             $location ?: null, 
             $imageUrls, 
             $lat, 
-            $lng
+            $lng,
+            $status
         );
 
         if ($postId > 0) {
-            Session::flash('success', 'Đăng bài viết thành công!');
+            if ($status === 'pending') {
+                Session::flash('success', 'Đăng bài viết thành công! Bài viết của bạn đang ở trạng thái Chờ duyệt (Pending) và sẽ được hiển thị công khai sau khi Quản trị viên phê duyệt.');
+            } else {
+                Session::flash('success', 'Đăng bài viết thành công!');
+            }
             $this->redirect('/posts/' . $postId);
         } else {
             $categoriesList = $this->categories->getAll();
@@ -200,6 +211,20 @@ class PostController extends Controller {
         if (!$post) {
             http_response_code(404);
             $this->render('errors/404', ['title' => 'Không tìm thấy bài viết']);
+            return;
+        }
+
+        $canManage = $this->canManagePost($post);
+        $postStatus = $post['status'] ?? 'published';
+
+        // Nếu bài viết chưa duyệt (pending), bị từ chối (rejected), hoặc bị ẩn (hidden)
+        // Chỉ tác giả bài viết hoặc Admin mới có quyền xem trước
+        if ($postStatus !== 'published' && !$canManage) {
+            http_response_code(404);
+            $this->render('errors/404', [
+                'title' => 'Bài viết chưa được xuất bản',
+                'message' => 'Bài viết này đang chờ duyệt hoặc tạm thời không khả dụng.'
+            ]);
             return;
         }
 

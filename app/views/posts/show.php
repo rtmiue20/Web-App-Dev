@@ -35,6 +35,34 @@ $galleryCount = count($galleryImages);
         </a>
     </div>
 
+    <?php 
+    $currentPostStatus = $post['status'] ?? 'published';
+    if ($currentPostStatus === 'pending'): ?>
+        <div class="alert alert-warning d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-warning" role="alert">
+            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+            <div>
+                <strong class="d-block mb-1">Bài viết đang chờ duyệt (Pending)</strong>
+                <span class="small text-muted">Bài viết này hiện chưa hiển thị công khai trên diễn đàn. Chỉ bạn (tác giả) và Quản trị viên mới có thể xem được nội dung này cho đến khi được duyệt.</span>
+            </div>
+        </div>
+    <?php elseif ($currentPostStatus === 'rejected'): ?>
+        <div class="alert alert-danger d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-danger" role="alert">
+            <i class="bi bi-x-circle-fill fs-3 text-danger"></i>
+            <div>
+                <strong class="d-block mb-1">Bài viết bị từ chối (Rejected)</strong>
+                <span class="small text-muted">Bài viết này không được Quản trị viên duyệt và không xuất hiện trên diễn đàn.</span>
+            </div>
+        </div>
+    <?php elseif ($currentPostStatus === 'hidden'): ?>
+        <div class="alert alert-secondary d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-secondary" role="alert">
+            <i class="bi bi-eye-slash-fill fs-3 text-secondary"></i>
+            <div>
+                <strong class="d-block mb-1">Bài viết đã bị ẩn (Hidden)</strong>
+                <span class="small text-muted">Bài viết này đã được tạm ẩn khỏi diễn đàn công khai.</span>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- ══════════════════════════════════════════
          IMAGE CAROUSEL
     ══════════════════════════════════════════ -->

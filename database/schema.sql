@@ -42,7 +42,7 @@ CREATE TABLE posts (
   location    VARCHAR(150),
   lat         DECIMAL(10, 7) NULL,
   lng         DECIMAL(10, 7) NULL,
-  status      ENUM('pending', 'published', 'hidden') NOT NULL DEFAULT 'published',
+  status      ENUM('pending', 'published', 'rejected', 'hidden') NOT NULL DEFAULT 'pending',
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id)     REFERENCES users(id)      ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
@@ -330,7 +330,7 @@ CREATE PROCEDURE sp_post_create(
 )
 BEGIN
     INSERT INTO posts (user_id, category_id, title, content, location, lat, lng, status, created_at)
-    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'published'), NOW());
+    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'pending'), NOW());
     
     SELECT LAST_INSERT_ID() AS post_id;
 END$$
