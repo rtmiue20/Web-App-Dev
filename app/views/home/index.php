@@ -94,7 +94,7 @@ $featureCards = [
                 </div>
                 <h1 class="headline">
                     <span class="rise-in" style="--delay: 100ms;">Chào mừng trở lại,</span>
-                    <span class="rise-in" style="--delay: 200ms; color: var(--color-moss);"><?= htmlspecialchars($currentUser['username'] ?? 'rt.miue20', ENT_QUOTES, 'UTF-8') ?> 👋</span>
+                    <span class="rise-in" style="--delay: 200ms; color: var(--color-moss);"><?= htmlspecialchars($currentUser['username'] ?? 'rt.miue20', ENT_QUOTES, 'UTF-8') ?></span>
                 </h1>
             <?php else: ?>
                 <h1 class="headline">
