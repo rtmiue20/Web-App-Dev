@@ -86,6 +86,25 @@ CREATE TABLE post_tags (
   PRIMARY KEY (post_id, tag_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (tag_id)  REFERENCES tags(id)  ON DELETE CASCADE
+-- ===== Người 5: products, post_products (Dụng cụ & Dụng cụ chuyến đi) =====
+CREATE TABLE products (
+  id          INT AUTO_INCREMENT PRIMARY KEY,                     -- PK
+  category_id INT UNSIGNED NULL,                                  -- FK -> categories
+  name        VARCHAR(150) NOT NULL,
+  price       DECIMAL(10, 0) NOT NULL DEFAULT 0,
+  image_url   VARCHAR(255) NULL,
+  description TEXT NULL,
+  link        VARCHAR(255) NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE post_products (
+  post_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> posts
+  product_id INT NOT NULL,                                        -- PK + FK -> products
+  PRIMARY KEY (post_id, product_id),
+  FOREIGN KEY (post_id)    REFERENCES posts(id)    ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ===== Dữ liệu mẫu (để test routines) =====
@@ -568,6 +587,103 @@ BEGIN
     LEFT JOIN posts p ON p.user_id = u.id
     GROUP BY u.id, u.username
     ORDER BY total_posts DESC;
+END$$
+
+-- ==============================================================================
+-- 8. DỤNG CỤ & THIẾT BỊ CHUYẾN ĐI (PRODUCTS & POST TOOLS)
+-- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_product_list_by_category$$
+CREATE PROCEDURE sp_product_list_by_category(IN p_category_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p_category_id IS NULL OR p.category_id = p_category_id
+    ORDER BY p.id DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_get$$
+CREATE PROCEDURE sp_product_get(IN p_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.id = p_id
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_create$$
+CREATE PROCEDURE sp_product_create(
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description TEXT,
+    IN p_link VARCHAR(255)
+)
+BEGIN
+    INSERT INTO products (category_id, name, price, image_url, description, link)
+    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link);
+
+    SELECT LAST_INSERT_ID() AS product_id;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_update$$
+CREATE PROCEDURE sp_product_update(
+    IN p_id INT,
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description TEXT,
+    IN p_link VARCHAR(255)
+)
+BEGIN
+    UPDATE products
+    SET category_id = p_category_id,
+        name = p_name,
+        price = p_price,
+        image_url = COALESCE(p_image_url, image_url),
+        description = p_description,
+        link = p_link
+    WHERE id = p_id;
+
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_delete$$
+CREATE PROCEDURE sp_product_delete(IN p_id INT)
+BEGIN
+    DELETE FROM products WHERE id = p_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_products_get$$
+CREATE PROCEDURE sp_post_products_get(IN p_post_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link,
+           c.name AS category_name
+    FROM post_products pp
+    JOIN products p ON p.id = pp.product_id
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE pp.post_id = p_post_id
+    ORDER BY p.name ASC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_product_add$$
+CREATE PROCEDURE sp_post_product_add(IN p_post_id INT, IN p_product_id INT)
+BEGIN
+    INSERT IGNORE INTO post_products (post_id, product_id)
+    VALUES (p_post_id, p_product_id);
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_products_clear$$
+CREATE PROCEDURE sp_post_products_clear(IN p_post_id INT)
+BEGIN
+    DELETE FROM post_products WHERE post_id = p_post_id;
 END$$
 
 DELIMITER ;

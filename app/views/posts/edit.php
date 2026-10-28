@@ -184,6 +184,82 @@ if (empty($editImages) && !empty($post['image_url'])) {
                 <?php endif; ?>
             </div>
 
+            <!-- Tools & Gear Selector (Dụng cụ & Trang thiết bị chuyến đi) -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <div>
+                        <label class="nature-label mb-0">
+                            <i class="bi bi-tools me-1 text-success"></i>Dụng cụ &amp; Thiết bị sử dụng trong chuyến đi (Tools)
+                        </label>
+                        <div class="text-muted" style="font-size: 12px;">
+                            Chọn những dụng cụ hoặc thiết bị bạn đã mang theo để chia sẻ kinh nghiệm cùng cộng đồng.
+                        </div>
+                    </div>
+                    <span class="badge rounded-pill text-bg-light border px-3 py-1 text-muted" style="font-size: 11.5px;">
+                        Đã chọn: <strong id="selectedToolsCount" class="text-success"><?= count($selectedProductIds ?? []) ?></strong> dụng cụ
+                    </span>
+                </div>
+
+                <?php if (!empty($products)): ?>
+                    <div class="rounded-4 p-3 border" style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12) !important;">
+                        <!-- Filter search box -->
+                        <div class="mb-3">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" 
+                                       id="toolSearchInput" 
+                                       class="form-control form-control-sm border-start-0 rounded-end-pill" 
+                                       placeholder="Tìm nhanh dụng cụ (ví dụ: lều, balo, bếp, gậy leo núi, đèn pin...)" 
+                                       oninput="filterToolsList(this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Checkbox grid -->
+                        <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 280px; overflow-y: auto; padding-right: 4px;">
+                            <?php foreach ($products as $prod):
+                                $pId = (int)$prod['id'];
+                                $isChecked = in_array($pId, $selectedProductIds ?? [], true);
+                                $rawToolImg = trim((string)($prod['image_url'] ?? ''));
+                                if ($rawToolImg === '' || str_starts_with($rawToolImg, 'bi-')) {
+                                    $toolImg = $baseUrl . '/assets/img/tent-forest.png';
+                                } elseif (str_starts_with($rawToolImg, 'http://') || str_starts_with($rawToolImg, 'https://')) {
+                                    $toolImg = $rawToolImg;
+                                } else {
+                                    $toolImg = $baseUrl . '/' . ltrim($rawToolImg, '/');
+                                }
+                            ?>
+                                <div class="col tool-item" data-name="<?= htmlspecialchars(mb_strtolower($prod['name']), ENT_QUOTES, 'UTF-8') ?>">
+                                    <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative" 
+                                           style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important;">
+                                        <input type="checkbox" 
+                                               name="product_ids[]" 
+                                               value="<?= $pId ?>" 
+                                               class="form-check-input mt-0 tool-checkbox flex-shrink-0" 
+                                               style="cursor: pointer;"
+                                               <?= $isChecked ? 'checked' : '' ?>
+                                               onchange="updateSelectedToolsCounter()">
+                                        <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
+                                             alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>" 
+                                             class="rounded-2 object-fit-cover flex-shrink-0" 
+                                             style="width: 44px; height: 44px; border: 1px solid rgba(0,0,0,0.06);">
+                                        <div class="min-w-0 flex-grow-1" style="font-size: 13px;">
+                                            <div class="fw-semibold text-truncate text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 11px;">
+                                                <span><?= htmlspecialchars($prod['category_name'] ?? 'Dụng cụ', ENT_QUOTES, 'UTF-8') ?></span>
+                                                <span class="text-success fw-bold"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+
             <!-- Submit buttons -->
             <div class="d-flex align-items-center gap-3">
                 <button type="submit" class="nature-btn-primary py-3 flex-grow-1">
@@ -443,4 +519,31 @@ const MapPicker = (() => {
 
     return { open, close, search, confirm };
 })();
+
+// Xử lý bộ chọn Dụng cụ (Tools Selection)
+function updateSelectedToolsCounter() {
+    var checkedBoxes = document.querySelectorAll('.tool-checkbox:checked');
+    var badge = document.getElementById('selectedToolsCount');
+    if (badge) {
+        badge.textContent = checkedBoxes.length;
+    }
+}
+
+function filterToolsList(keyword) {
+    var query = (keyword || '').toLowerCase().trim();
+    var items = document.querySelectorAll('#toolsCheckboxGrid .tool-item');
+    items.forEach(function(item) {
+        var name = item.getAttribute('data-name') || '';
+        if (query === '' || name.indexOf(query) !== -1) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedToolsCounter();
+});
 </script>
+

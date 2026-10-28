@@ -60,6 +60,13 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
 
+        // 5b. Products / Tools (Public)
+        $products = new ProductController();
+        $router->get('/products', [$products, 'index']);
+        $router->get('/products/{id}', function ($id) use ($products) {
+            $products->show((int)$id);
+        });
+
         // 6. Admin Area (All protected by AdminMiddleware)
         $router->get('/admin', [$dashboard, 'index'], [AdminMiddleware::class]);
         
