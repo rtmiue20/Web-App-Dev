@@ -16,7 +16,7 @@ class Post extends Model {
     private ?string $location = null;
     private ?float $lat = null;
     private ?float $lng = null;
-    private ?string $status = 'published';
+    private ?string $status = 'pending';
     private ?string $createdAt = null;
     private ?string $username = null;
     private ?string $categoryName = null;
@@ -194,7 +194,7 @@ class Post extends Model {
      * @return bool Thành công hay thất bại
      */
     public function updateStatus(int $id, string $status): bool {
-        if (!in_array($status, ['published', 'pending', 'hidden'], true)) {
+        if (!in_array($status, ['published', 'pending', 'rejected', 'hidden'], true)) {
             return false;
         }
 
@@ -357,7 +357,7 @@ class Post extends Model {
         string|array|null $imageUrl = null,
         ?float $lat = null,
         ?float $lng = null,
-        string $status = 'published'
+        string $status = 'pending'
     ): int {
         $postId = 0;
 

@@ -40,6 +40,11 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             Bài viết
         </a>
 
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products" 
+           class="dock-pill <?= $isActive('/products') ? 'active' : '' ?>">
+            Dụng cụ
+        </a>
+
         <?php if (is_array($currentUser)): ?>
             <!-- User Profile Link -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 

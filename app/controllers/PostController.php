@@ -3,6 +3,7 @@ require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Comment.php';
+require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
 
@@ -15,11 +16,13 @@ class PostController extends Controller {
     private Post $posts;
     private Category $categories;
     private Comment $comments;
+    private Product $products;
 
     public function __construct() {
         $this->posts = new Post();
         $this->categories = new Category();
         $this->comments = new Comment();
+        $this->products = new Product();
     }
 
     /**
@@ -80,9 +83,12 @@ class PostController extends Controller {
         }
 
         $categoriesList = $this->categories->getAll();
+        $allProducts = $this->products->getAll();
         $this->render('posts/create', [
             'title' => 'Viết bài chia sẻ',
             'categories' => $categoriesList,
+            'products' => $allProducts,
+            'selectedProductIds' => [],
             'errors' => [],
             'old' => []
         ]);
@@ -98,12 +104,26 @@ class PostController extends Controller {
             return;
         }
 
+        // Lấy danh sách dụng cụ đã chọn (nếu có, không dùng lambda)
+        $selectedProductIds = [];
+        if (!empty($_POST['product_ids']) && is_array($_POST['product_ids'])) {
+            foreach ($_POST['product_ids'] as $pId) {
+                $cleanId = (int)$pId;
+                if ($cleanId > 0) {
+                    $selectedProductIds[] = $cleanId;
+                }
+            }
+        }
+
         if (!$this->verifyCsrfToken()) {
             http_response_code(419);
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/create', [
                 'title' => 'Viết bài chia sẻ',
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
@@ -155,9 +175,12 @@ class PostController extends Controller {
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/create', [
                 'title' => 'Viết bài chia sẻ',
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => $errors,
                 'old' => $_POST
             ]);
@@ -166,6 +189,12 @@ class PostController extends Controller {
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 1);
+        $roleName = $user['role_name'] ?? '';
+        $roleId = (int)($user['role_id'] ?? 0);
+        $isAdmin = ($roleName === 'admin' || $roleId === 2);
+
+        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt). Admin đăng thì được 'published' trực tiếp.
+        $status = $isAdmin ? 'published' : 'pending';
 
         $postId = $this->posts->create(
             $userId, 
@@ -175,17 +204,30 @@ class PostController extends Controller {
             $location ?: null, 
             $imageUrls, 
             $lat, 
-            $lng
+            $lng,
+            $status
         );
 
         if ($postId > 0) {
-            Session::flash('success', 'Đăng bài viết thành công!');
+            // Lưu liên kết dụng cụ của chuyến đi vào bảng post_products
+            if (!empty($selectedProductIds)) {
+                $this->products->syncPostProducts($postId, $selectedProductIds);
+            }
+
+            if ($status === 'pending') {
+                Session::flash('success', 'Đăng bài viết thành công! Bài viết của bạn đang ở trạng thái Chờ duyệt (Pending) và sẽ được hiển thị công khai sau khi Quản trị viên phê duyệt.');
+            } else {
+                Session::flash('success', 'Đăng bài viết thành công!');
+            }
             $this->redirect('/posts/' . $postId);
         } else {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/create', [
                 'title' => 'Viết bài chia sẻ',
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Không thể lưu bài viết. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
@@ -203,12 +245,28 @@ class PostController extends Controller {
             return;
         }
 
+        $canManage = $this->canManagePost($post);
+        $postStatus = $post['status'] ?? 'published';
+
+        // Nếu bài viết chưa duyệt (pending), bị từ chối (rejected), hoặc bị ẩn (hidden)
+        // Chỉ tác giả bài viết hoặc Admin mới có quyền xem trước
+        if ($postStatus !== 'published' && !$canManage) {
+            http_response_code(404);
+            $this->render('errors/404', [
+                'title' => 'Bài viết chưa được xuất bản',
+                'message' => 'Bài viết này đang chờ duyệt hoặc tạm thời không khả dụng.'
+            ]);
+            return;
+        }
+
         $commentsList = $this->comments->getByPostId($id);
         $canManage = $this->canManagePost($post);
+        $tools = $this->products->getByPostId($id);
 
         $this->render('posts/show', [
             'title' => $post['title'],
             'post' => $post,
+            'tools' => $tools,
             'comments' => $commentsList,
             'canManage' => $canManage
         ]);
@@ -239,10 +297,20 @@ class PostController extends Controller {
         }
 
         $categoriesList = $this->categories->getAll();
+        $allProducts = $this->products->getAll();
+        $tools = $this->products->getByPostId($id);
+
+        $selectedProductIds = [];
+        foreach ($tools as $tool) {
+            $selectedProductIds[] = (int)($tool['id'] ?? 0);
+        }
+
         $this->render('posts/edit', [
             'title' => 'Chỉnh sửa bài viết',
             'post' => $post,
             'categories' => $categoriesList,
+            'products' => $allProducts,
+            'selectedProductIds' => $selectedProductIds,
             'errors' => [],
             'old' => $post
         ]);
@@ -271,13 +339,27 @@ class PostController extends Controller {
             return;
         }
 
+        // Lấy danh sách dụng cụ đã chọn từ form (không dùng lambda)
+        $selectedProductIds = [];
+        if (!empty($_POST['product_ids']) && is_array($_POST['product_ids'])) {
+            foreach ($_POST['product_ids'] as $pId) {
+                $cleanId = (int)$pId;
+                if ($cleanId > 0) {
+                    $selectedProductIds[] = $cleanId;
+                }
+            }
+        }
+
         if (!$this->verifyCsrfToken()) {
             http_response_code(419);
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/edit', [
                 'title' => 'Chỉnh sửa bài viết',
                 'post' => $post,
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
@@ -329,10 +411,13 @@ class PostController extends Controller {
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/edit', [
                 'title' => 'Chỉnh sửa bài viết',
                 'post' => $post,
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => $errors,
                 'old' => array_merge($post, $_POST)
             ]);
@@ -351,19 +436,26 @@ class PostController extends Controller {
         );
 
         if ($updated) {
+            // Cập nhật danh sách dụng cụ của bài viết trong post_products
+            $this->products->syncPostProducts($id, $selectedProductIds);
+
             Session::flash('success', 'Cập nhật bài viết thành công!');
             $this->redirect('/posts/' . $id);
         } else {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/edit', [
                 'title' => 'Chỉnh sửa bài viết',
                 'post' => $post,
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Không thể lưu thay đổi. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
         }
     }
+
 
     /**
      * Xử lý xóa bài viết (Tuần 3 - Phúc)

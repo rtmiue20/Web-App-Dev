@@ -50,28 +50,35 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
             <!-- Tab Tất cả -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts?status=all<?= $selectedCategoryId ? '&category=' . (int)$selectedCategoryId : '' ?>" 
                class="dock-pill <?= ($selectedStatus === 'all') ? 'active' : '' ?>">
-                Tất cả <span class="badge rounded-pill bg-light text-dark ms-1"><?= (int)($countAll ?? 0) ?></span>
+                Tất cả <span class="badge rounded-pill bg-light text-dark ms-1" id="filterCountAll"><?= (int)($countAll ?? 0) ?></span>
             </a>
 
             <!-- Tab Đã duyệt / Công khai -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts?status=published<?= $selectedCategoryId ? '&category=' . (int)$selectedCategoryId : '' ?>" 
                class="dock-pill <?= ($selectedStatus === 'published') ? 'active' : '' ?>">
                 <i class="bi bi-check-circle-fill text-success me-1"></i> Đã duyệt
-                <span class="badge rounded-pill bg-success ms-1"><?= (int)($countPublished ?? 0) ?></span>
+                <span class="badge rounded-pill bg-success ms-1" id="filterCountPublished"><?= (int)($countPublished ?? 0) ?></span>
             </a>
 
             <!-- Tab Chờ duyệt -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts?status=pending<?= $selectedCategoryId ? '&category=' . (int)$selectedCategoryId : '' ?>" 
                class="dock-pill <?= ($selectedStatus === 'pending') ? 'active' : '' ?>">
                 <i class="bi bi-hourglass-split text-warning me-1"></i> Chờ duyệt
-                <span class="badge rounded-pill bg-warning text-dark ms-1"><?= (int)($countPending ?? 0) ?></span>
+                <span class="badge rounded-pill bg-warning text-dark ms-1" id="filterCountPending"><?= (int)($countPending ?? 0) ?></span>
+            </a>
+
+            <!-- Tab Từ chối -->
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts?status=rejected<?= $selectedCategoryId ? '&category=' . (int)$selectedCategoryId : '' ?>" 
+               class="dock-pill <?= ($selectedStatus === 'rejected') ? 'active' : '' ?>">
+                <i class="bi bi-x-circle-fill text-danger me-1"></i> Từ chối
+                <span class="badge rounded-pill bg-danger ms-1" id="filterCountRejected"><?= (int)($countRejected ?? 0) ?></span>
             </a>
 
             <!-- Tab Đã ẩn -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts?status=hidden<?= $selectedCategoryId ? '&category=' . (int)$selectedCategoryId : '' ?>" 
                class="dock-pill <?= ($selectedStatus === 'hidden') ? 'active' : '' ?>">
                 <i class="bi bi-eye-slash-fill text-secondary me-1"></i> Đã ẩn
-                <span class="badge rounded-pill bg-secondary ms-1"><?= (int)($countHidden ?? 0) ?></span>
+                <span class="badge rounded-pill bg-secondary ms-1" id="filterCountHidden"><?= (int)($countHidden ?? 0) ?></span>
             </a>
         </div>
 
@@ -130,7 +137,7 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
                             <th scope="col" style="width: 80px;">Ảnh bìa</th>
                             <th scope="col" style="min-width: 250px;">Tiêu đề & Tác giả</th>
                             <th scope="col" style="width: 150px;">Chuyên mục</th>
-                            <th scope="col" class="text-center" style="width: 130px;">Trạng thái</th>
+                            <th scope="col" class="text-center" style="width: 160px;">Trạng thái</th>
                             <th scope="col" class="text-center" style="width: 100px;">Tương tác</th>
                             <th scope="col" class="text-end" style="width: 170px;">Thao tác</th>
                         </tr>
@@ -173,19 +180,113 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <?php if ($postStatus === 'published'): ?>
-                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-2">
-                                            <i class="bi bi-check-circle-fill me-1"></i>Đã duyệt
-                                        </span>
-                                    <?php elseif ($postStatus === 'pending'): ?>
-                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2">
-                                            <i class="bi bi-hourglass-split me-1"></i>Chờ duyệt
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2">
-                                            <i class="bi bi-eye-slash-fill me-1"></i>Đã ẩn
-                                        </span>
-                                    <?php endif; ?>
+                                    <?php
+                                    // Thiết lập style và nhãn cho trạng thái hiện tại
+                                    $badgeClass = 'bg-secondary-subtle text-secondary border-secondary-subtle';
+                                    $badgeIcon  = 'bi-eye-slash-fill';
+                                    $badgeText  = 'Đã ẩn';
+
+                                    if ($postStatus === 'published') {
+                                        $badgeClass = 'bg-success-subtle text-success border-success-subtle';
+                                        $badgeIcon  = 'bi-check-circle-fill';
+                                        $badgeText  = 'Đã duyệt';
+                                    } elseif ($postStatus === 'pending') {
+                                        $badgeClass = 'bg-warning-subtle text-warning-emphasis border-warning-subtle';
+                                        $badgeIcon  = 'bi-hourglass-split';
+                                        $badgeText  = 'Chờ duyệt';
+                                    } elseif ($postStatus === 'rejected') {
+                                        $badgeClass = 'bg-danger-subtle text-danger border-danger-subtle';
+                                        $badgeIcon  = 'bi-x-circle-fill';
+                                        $badgeText  = 'Từ chối';
+                                    }
+                                    ?>
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn btn-sm dropdown-toggle rounded-pill px-3 py-1 fw-medium border shadow-none d-inline-flex align-items-center gap-1 post-status-btn <?= $badgeClass ?>" 
+                                                type="button" 
+                                                id="statusDropdown_<?= (int)$post['id'] ?>"
+                                                data-bs-toggle="dropdown" 
+                                                data-bs-popper-config='{"strategy":"fixed"}'
+                                                aria-expanded="false"
+                                                title="Nhấp để thay đổi trạng thái bài viết">
+                                            <i class="bi <?= $badgeIcon ?> me-1 status-btn-icon"></i>
+                                            <span class="status-btn-text"><?= $badgeText ?></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2 rounded-4" 
+                                            aria-labelledby="statusDropdown_<?= (int)$post['id'] ?>" 
+                                            style="min-width: 200px; z-index: 1060;">
+                                            <li class="dropdown-header text-uppercase small fw-bold px-3 py-1 text-muted" style="font-size: 0.72rem; letter-spacing: 0.04em;">
+                                                Chuyển trạng thái
+                                            </li>
+
+                                            <!-- 1. Chờ duyệt (Pending) -->
+                                            <li>
+                                                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts/<?= (int)$post['id'] ?>/status" class="status-change-form m-0" data-post-id="<?= (int)$post['id'] ?>">
+                                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <input type="hidden" name="status" value="pending">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 <?= ($postStatus === 'pending') ? 'active' : '' ?>">
+                                                        <span class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-hourglass-split text-warning"></i>
+                                                            <span>Chờ duyệt (Pending)</span>
+                                                        </span>
+                                                        <?php if ($postStatus === 'pending'): ?>
+                                                            <i class="bi bi-check2 fw-bold text-success status-check-icon"></i>
+                                                        <?php endif; ?>
+                                                    </button>
+                                                </form>
+                                            </li>
+
+                                            <!-- 2. Đã duyệt (Approved) -->
+                                            <li>
+                                                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts/<?= (int)$post['id'] ?>/status" class="status-change-form m-0" data-post-id="<?= (int)$post['id'] ?>">
+                                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <input type="hidden" name="status" value="published">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 <?= ($postStatus === 'published') ? 'active' : '' ?>">
+                                                        <span class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                            <span>Đã duyệt (Approved)</span>
+                                                        </span>
+                                                        <?php if ($postStatus === 'published'): ?>
+                                                            <i class="bi bi-check2 fw-bold text-success status-check-icon"></i>
+                                                        <?php endif; ?>
+                                                    </button>
+                                                </form>
+                                            </li>
+
+                                            <!-- 3. Từ chối (Reject) -->
+                                            <li>
+                                                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts/<?= (int)$post['id'] ?>/status" class="status-change-form m-0" data-post-id="<?= (int)$post['id'] ?>">
+                                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <input type="hidden" name="status" value="rejected">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 <?= ($postStatus === 'rejected') ? 'active' : '' ?>">
+                                                        <span class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                                            <span>Từ chối (Reject)</span>
+                                                        </span>
+                                                        <?php if ($postStatus === 'rejected'): ?>
+                                                            <i class="bi bi-check2 fw-bold text-success status-check-icon"></i>
+                                                        <?php endif; ?>
+                                                    </button>
+                                                </form>
+                                            </li>
+
+                                            <!-- 4. Đã ẩn (Hidden) -->
+                                            <li>
+                                                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts/<?= (int)$post['id'] ?>/status" class="status-change-form m-0" data-post-id="<?= (int)$post['id'] ?>">
+                                                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <input type="hidden" name="status" value="hidden">
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 px-3 <?= ($postStatus === 'hidden') ? 'active' : '' ?>">
+                                                        <span class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-eye-slash-fill text-secondary"></i>
+                                                            <span>Đã ẩn (Hidden)</span>
+                                                        </span>
+                                                        <?php if ($postStatus === 'hidden'): ?>
+                                                            <i class="bi bi-check2 fw-bold text-success status-check-icon"></i>
+                                                        <?php endif; ?>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </td>
                                 <td class="text-center small text-muted">
                                     <div class="d-inline-flex align-items-center gap-2">
@@ -369,6 +470,125 @@ document.addEventListener('DOMContentLoaded', function () {
             if (countEl) {
                 countEl.textContent = matchCount;
             }
+        });
+    }
+
+    // 3. Xử lý đổi trạng thái bài viết nhanh qua AJAX (Không dùng Lambda)
+    var statusForms = document.querySelectorAll('.status-change-form');
+    for (var k = 0; k < statusForms.length; k++) {
+        statusForms[k].addEventListener('submit', function (e) {
+            e.preventDefault();
+            var form = this;
+            var postId = form.getAttribute('data-post-id');
+            var formData = new FormData(form);
+            var newStatus = formData.get('status');
+
+            // Hiển thị trạng thái đang xử lý trên nút
+            var dropdownBtn = document.getElementById('statusDropdown_' + postId);
+            if (!dropdownBtn) {
+                form.submit();
+                return;
+            }
+
+            var originalHtml = dropdownBtn.innerHTML;
+            dropdownBtn.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (res) {
+                dropdownBtn.disabled = false;
+                if (res.status === 'success') {
+                    // Cập nhật giao diện nút dropdown theo trạng thái mới
+                    var btnClasses = [
+                        'bg-success-subtle', 'text-success', 'border-success-subtle',
+                        'bg-warning-subtle', 'text-warning-emphasis', 'border-warning-subtle',
+                        'bg-danger-subtle', 'text-danger', 'border-danger-subtle',
+                        'bg-secondary-subtle', 'text-secondary', 'border-secondary-subtle'
+                    ];
+                    for (var c = 0; c < btnClasses.length; c++) {
+                        dropdownBtn.classList.remove(btnClasses[c]);
+                    }
+
+                    var newIcon = 'bi-check-circle-fill';
+                    var newText = 'Đã duyệt';
+                    if (newStatus === 'published') {
+                        dropdownBtn.classList.add('bg-success-subtle', 'text-success', 'border-success-subtle');
+                        newIcon = 'bi-check-circle-fill';
+                        newText = 'Đã duyệt';
+                    } else if (newStatus === 'pending') {
+                        dropdownBtn.classList.add('bg-warning-subtle', 'text-warning-emphasis', 'border-warning-subtle');
+                        newIcon = 'bi-hourglass-split';
+                        newText = 'Chờ duyệt';
+                    } else if (newStatus === 'rejected') {
+                        dropdownBtn.classList.add('bg-danger-subtle', 'text-danger', 'border-danger-subtle');
+                        newIcon = 'bi-x-circle-fill';
+                        newText = 'Từ chối';
+                    } else if (newStatus === 'hidden') {
+                        dropdownBtn.classList.add('bg-secondary-subtle', 'text-secondary', 'border-secondary-subtle');
+                        newIcon = 'bi-eye-slash-fill';
+                        newText = 'Đã ẩn';
+                    }
+
+                    dropdownBtn.innerHTML = '<i class="bi ' + newIcon + ' me-1 status-btn-icon"></i><span class="status-btn-text">' + newText + '</span>';
+
+                    // Cập nhật trạng thái active và checkmark trong menu
+                    var dropdownMenu = dropdownBtn.nextElementSibling;
+                    if (dropdownMenu) {
+                        var items = dropdownMenu.querySelectorAll('.dropdown-item');
+                        for (var m = 0; m < items.length; m++) {
+                            items[m].classList.remove('active');
+                            var checkIcon = items[m].querySelector('.status-check-icon');
+                            if (checkIcon) {
+                                checkIcon.remove();
+                            }
+                        }
+                        var activeBtn = form.querySelector('.dropdown-item');
+                        if (activeBtn) {
+                            activeBtn.classList.add('active');
+                            activeBtn.insertAdjacentHTML('beforeend', '<i class="bi bi-check2 fw-bold text-success status-check-icon"></i>');
+                        }
+                    }
+
+                    // Đóng dropdown menu qua Bootstrap API
+                    if (typeof bootstrap !== 'undefined') {
+                        var bsDropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+                        if (bsDropdown) {
+                            bsDropdown.hide();
+                        }
+                    }
+
+                    // Cập nhật số lượng trên các tab bộ lọc nếu có trả về
+                    if (res.counts) {
+                        var elAll = document.getElementById('filterCountAll');
+                        var elPub = document.getElementById('filterCountPublished');
+                        var elPen = document.getElementById('filterCountPending');
+                        var elRej = document.getElementById('filterCountRejected');
+                        var elHid = document.getElementById('filterCountHidden');
+                        if (elAll) elAll.textContent = res.counts.all;
+                        if (elPub) elPub.textContent = res.counts.published;
+                        if (elPen) elPen.textContent = res.counts.pending;
+                        if (elRej) elRej.textContent = res.counts.rejected;
+                        if (elHid) elHid.textContent = res.counts.hidden;
+                    }
+                } else {
+                    alert(res.message || 'Có lỗi xảy ra khi cập nhật trạng thái.');
+                }
+            })
+            .catch(function (err) {
+                dropdownBtn.disabled = false;
+                dropdownBtn.innerHTML = originalHtml;
+                // Fallback: nếu lỗi fetch thì submit form bình thường
+                form.submit();
+            });
         });
     }
 });

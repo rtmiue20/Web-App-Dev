@@ -45,7 +45,12 @@ class UserAdminController extends Controller
 
         // 2. Thống kê nhanh
         $totalCount = count($allUsers);
-        $adminCount = count(array_filter($allUsers, fn($u) => ($u['role_name'] ?? '') === 'admin'));
+        $adminCount = 0;
+        foreach ($allUsers as $u) {
+            if (($u['role_name'] ?? '') === 'admin') {
+                $adminCount++;
+            }
+        }
         $memberCount = $totalCount - $adminCount;
 
         $this->render('admin/users/index', [
