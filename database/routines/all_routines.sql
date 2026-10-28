@@ -111,7 +111,8 @@ END$$
 DROP PROCEDURE IF EXISTS sp_user_get_by_email$$
 CREATE PROCEDURE sp_user_get_by_email(IN p_email VARCHAR(120))
 BEGIN
-    SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+    SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+           u.bio, u.avatar_path, u.created_at
     FROM users u
     INNER JOIN roles r ON r.id = u.role_id
     WHERE u.email = p_email
@@ -121,11 +122,34 @@ END$$
 DROP PROCEDURE IF EXISTS sp_user_get_by_id$$
 CREATE PROCEDURE sp_user_get_by_id(IN p_id INT)
 BEGIN
-    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.created_at
+    SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+           u.bio, u.avatar_path, u.created_at
     FROM users u
     INNER JOIN roles r ON r.id = u.role_id
     WHERE u.id = p_id
     LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_user_update_profile$$
+CREATE PROCEDURE sp_user_update_profile(
+    IN p_user_id INT,
+    IN p_username VARCHAR(50),
+    IN p_bio VARCHAR(500),
+    IN p_avatar_path VARCHAR(255)
+)
+BEGIN
+    UPDATE users
+    SET username = p_username, bio = p_bio, avatar_path = p_avatar_path
+    WHERE id = p_user_id;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_user_change_password$$
+CREATE PROCEDURE sp_user_change_password(
+    IN p_user_id INT,
+    IN p_password_hash VARCHAR(255)
+)
+BEGIN
+    UPDATE users SET password_hash = p_password_hash WHERE id = p_user_id;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_user_exists$$
@@ -145,12 +169,12 @@ END$$
 DROP PROCEDURE IF EXISTS sp_user_list$$
 CREATE PROCEDURE sp_user_list()
 BEGIN
-    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.created_at,
+    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.bio, u.avatar_path, u.created_at,
            COUNT(p.id) AS total_posts
     FROM users u
     INNER JOIN roles r ON r.id = u.role_id
     LEFT JOIN posts p  ON p.user_id = u.id
-    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.created_at
+    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.bio, u.avatar_path, u.created_at
     ORDER BY u.id ASC;
 END$$
 

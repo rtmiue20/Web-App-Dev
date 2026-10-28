@@ -24,7 +24,15 @@ class AuthController extends Controller
 
     public function login(): void
     {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || isset($_POST['ajax']);
+
         if (!$this->verifyCsrfToken()) {
+            if ($isAjax) {
+                Response::fail('Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại.', 419);
+                return;
+            }
             http_response_code(419);
             $this->render('auth/login', [
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
@@ -37,14 +45,27 @@ class AuthController extends Controller
         $email = trim(is_string($_POST['email'] ?? null) ? $_POST['email'] : '');
         $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
         if ($errors !== []) {
+            if ($isAjax) {
+                Response::fail((string) reset($errors), 422, ['errors' => $errors]);
+                return;
+            }
             $this->render('auth/login', ['errors' => $errors, 'old' => ['email' => $email]]);
             return;
         }
 
+        // Tìm người dùng qua email hoặc username
         $user = $this->users->findByEmail($email);
+        if ($user === null) {
+            $user = $this->users->findByUsername($email);
+        }
+
         if ($user === null || !password_verify($password, (string) $user->getPasswordHash())) {
+            if ($isAjax) {
+                Response::fail('Tài khoản hoặc mật khẩu không chính xác.', 401);
+                return;
+            }
             $this->render('auth/login', [
-                'errors' => ['form' => 'Email hoặc mật khẩu không chính xác.'],
+                'errors' => ['form' => 'Tài khoản hoặc mật khẩu không chính xác.'],
                 'old' => ['email' => $email],
             ]);
             return;
@@ -58,7 +79,20 @@ class AuthController extends Controller
             'role_id' => $user->getRoleId(),
             'role_name' => $user->getRoleName(),
         ]);
-        $this->redirect('/profile');
+
+        if ($isAjax) {
+            $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+            Response::ok([
+                'user' => [
+                    'username' => $user->getUsername(),
+                    'email' => $user->getEmail(),
+                ],
+                'redirect' => $baseUrl . '/',
+            ], 'Đăng nhập thành công');
+            return;
+        }
+
+        $this->redirect('/');
     }
 
     public function showRegister(): void

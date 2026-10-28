@@ -134,6 +134,10 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
                    class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
                 </a>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" 
+                   class="dock-pill <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên & Cấp lại mật khẩu">
+                    <i class="bi bi-people me-1"></i> Thành viên
+                </a>
             </nav>
         </div>
 

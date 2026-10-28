@@ -3,9 +3,10 @@ require_once __DIR__ . '/../core/Model.php';
 require_once __DIR__ . '/../core/Database.php';
 
 /**
- * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 & 4)
+ * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 đến 4)
  * Gọi các Stored Procedures: sp_user_get_by_email, sp_user_get_by_id, 
- * sp_user_exists, sp_user_register, sp_user_count, sp_user_list
+ * sp_user_exists, sp_user_register, sp_user_update_profile,
+ * sp_user_change_password, sp_user_count, sp_user_list
  */
 class User extends Model
 {
@@ -16,6 +17,8 @@ class User extends Model
     private ?int $roleId = null;
     private ?string $roleName = null;
     private ?string $createdAt = null;
+    private ?string $bio = null;
+    private ?string $avatarPath = null;
 
     public function getId(): ?int { return $this->id; }
     public function setId(?int $id): void { $this->id = $id; }
@@ -38,6 +41,9 @@ class User extends Model
     public function getCreatedAt(): ?string { return $this->createdAt; }
     public function setCreatedAt(?string $createdAt): void { $this->createdAt = $createdAt; }
 
+    public function getBio(): ?string { return $this->bio; }
+    public function getAvatarPath(): ?string { return $this->avatarPath; }
+
     /**
      * Tìm người dùng qua email (gọi routine sp_user_get_by_email)
      */
@@ -49,7 +55,8 @@ class User extends Model
         } catch (PDOException $e) {
             error_log('Notice: sp_user_get_by_email fallback query: ' . $e->getMessage());
             try {
-                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                               u.bio, u.avatar_path, u.created_at
                         FROM users u
                         INNER JOIN roles r ON r.id = u.role_id
                         WHERE u.email = :email
@@ -66,6 +73,26 @@ class User extends Model
     /**
      * Tìm người dùng qua ID (gọi routine sp_user_get_by_id)
      */
+    /**
+     * Tìm người dùng qua username
+     */
+    public function findByUsername(string $username): ?User
+    {
+        try {
+            $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                           u.bio, u.avatar_path, u.created_at
+                    FROM users u
+                    INNER JOIN roles r ON r.id = u.role_id
+                    WHERE u.username = :username
+                    LIMIT 1';
+            $rows = Database::query($sql, ['username' => $username]);
+            return !empty($rows) ? self::fromRow($rows[0]) : null;
+        } catch (PDOException $ex) {
+            error_log('Error finding user by username: ' . $ex->getMessage());
+            return null;
+        }
+    }
+
     public function findById(int $id): ?User
     {
         try {
@@ -74,7 +101,8 @@ class User extends Model
         } catch (PDOException $e) {
             error_log('Notice: sp_user_get_by_id fallback query: ' . $e->getMessage());
             try {
-                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name, u.created_at
+                $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                               u.bio, u.avatar_path, u.created_at
                         FROM users u
                         INNER JOIN roles r ON r.id = u.role_id
                         WHERE u.id = :id
@@ -187,6 +215,73 @@ class User extends Model
         }
     }
 
+    public function updateProfile(string $username, string $bio, ?string $avatarPath): void
+    {
+        if ($this->id === null) {
+            throw new LogicException('User ID must be set before updating a profile.');
+        }
+
+        Database::call('sp_user_update_profile', [$this->id, $username, $bio, $avatarPath]);
+        $this->username = $username;
+        $this->bio = $bio;
+        $this->avatarPath = $avatarPath;
+    }
+
+    public function changePassword(string $passwordHash): void
+    {
+        if ($this->id === null) {
+            throw new LogicException('User ID must be set before changing a password.');
+        }
+
+        Database::call('sp_user_change_password', [$this->id, $passwordHash]);
+        $this->passwordHash = $passwordHash;
+    }
+
+    /**
+     * Cấp lại mật khẩu cho thành viên (dành cho Admin khi thành viên quên mật khẩu)
+     */
+    public function resetPassword(int $userId, string $newPasswordHash): bool
+    {
+        try {
+            Database::call('sp_user_change_password', [$userId, $newPasswordHash]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_change_password fallback: ' . $e->getMessage());
+            try {
+                $sql = 'UPDATE users SET password_hash = :hash WHERE id = :id';
+                return Database::execute($sql, [
+                    'hash' => $newPasswordHash,
+                    'id' => $userId
+                ]) >= 0;
+            } catch (PDOException $ex) {
+                error_log('Error resetting password: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Lấy đầy đủ thông tin chi tiết một người dùng cho khu vực Admin
+     */
+    public function findUserDetail(int $userId): ?array
+    {
+        try {
+            $sql = 'SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.bio, u.avatar_path, u.created_at,
+                           COUNT(p.id) AS total_posts
+                    FROM users u
+                    INNER JOIN roles r ON r.id = u.role_id
+                    LEFT JOIN posts p  ON p.user_id = u.id
+                    WHERE u.id = :id
+                    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.bio, u.avatar_path, u.created_at
+                    LIMIT 1';
+            $rows = Database::query($sql, ['id' => $userId]);
+            return !empty($rows) ? $rows[0] : null;
+        } catch (PDOException $ex) {
+            error_log('Error finding user detail: ' . $ex->getMessage());
+            return null;
+        }
+    }
+
     private static function fromRow(array $row): User
     {
         $user = new self();
@@ -197,6 +292,8 @@ class User extends Model
         $user->setRoleId((int) $row['role_id']);
         $user->setRoleName($row['role_name']);
         $user->setCreatedAt($row['created_at']);
+        $user->bio = $row['bio'] ?? null;
+        $user->avatarPath = $row['avatar_path'] ?? null;
         return $user;
     }
 }

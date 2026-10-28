@@ -76,12 +76,12 @@
 ## Tuần 3: CRUD chính
 
 **Leader** (nhánh `feature/FR11-admin-category`)
-- [ ] `layouts/admin.php`, kiểm tra quyền admin cho toàn bộ khu `/admin`.
-- [ ] FR11: thêm, sửa, xóa danh mục (có xác nhận khi xóa).
+- [x] `layouts/admin.php`, kiểm tra quyền admin cho toàn bộ khu `/admin`.
+- [x] FR11: thêm, sửa, xóa danh mục (có xác nhận khi xóa).
 
 **Khang** (nhánh `feature/FR02-profile`)
-- [ ] `ProfileController`: xem, sửa hồ sơ, upload avatar (kiểm tra loại và kích thước).
-- [ ] Đổi mật khẩu (xác nhận mật khẩu cũ).
+- [x] Xem, sửa hồ sơ; upload avatar có kiểm tra định dạng và dung lượng.
+- [x] Đổi mật khẩu và xác nhận mật khẩu hiện tại.
 
 **Phúc** (nhánh `feature/FR05-post-crud`)
 - [ ] `PostController`: đăng bài (tiêu đề, nội dung, chuyên mục, ảnh bìa, địa điểm, lat/lng), sửa, xóa; chỉ tác giả hoặc admin.
