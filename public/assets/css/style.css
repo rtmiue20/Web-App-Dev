@@ -315,6 +315,102 @@ body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
+/* ── Category Slidebar (FR03) ─────────────────────────── */
+.category-slidebar-wrapper {
+  width: 100%;
+}
+
+.category-slidebar-inner {
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.category-slidebar-track {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  padding: 2px 4px;
+  cursor: grab;
+}
+
+.category-slidebar-track:active {
+  cursor: grabbing;
+}
+
+.category-slidebar-track::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.category-slidebar-track .dock-pill {
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.category-slide-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(34, 40, 31, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.85);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.22s ease-out;
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 3;
+}
+
+.category-slide-btn:hover:not(:disabled) {
+  background: var(--color-moss, #9bbd55);
+  color: #1a1e17;
+  border-color: var(--color-moss, #9bbd55);
+  transform: scale(1.08);
+}
+
+.category-slide-btn:disabled,
+.category-slide-btn.is-disabled {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+  transform: none !important;
+}
+
+.category-slide-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.25s ease;
+}
+
+.category-slide-fade-start {
+  left: 0;
+  background: linear-gradient(to right, rgba(26, 32, 24, 0.95), transparent);
+  opacity: 0;
+}
+
+.category-slide-fade-end {
+  right: 0;
+  background: linear-gradient(to left, rgba(26, 32, 24, 0.95), transparent);
+  opacity: 1;
+}
+
 .dock-user-badge {
   display: inline-flex;
   align-items: center;

@@ -19,24 +19,56 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
         </div>
     </div>
 
-    <!-- Category filter buttons (FR03) -->
+    <!-- Category Slidebar (FR03 - Tuần 4 - Phúc) -->
     <?php if (!empty($categories)): ?>
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 pb-2" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-            <div class="d-flex flex-wrap gap-2">
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
-                   class="dock-pill <?= empty($selectedCategoryId) ? 'active' : '' ?>">
-                    Tất cả
-                </a>
-                <?php foreach ($categories as $cat): ?>
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?category=<?= (int)$cat['id'] ?>" 
-                       class="dock-pill <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
-                        <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-            
-            <div class="text-white-50 small">
-                <i class="bi bi-collection me-1"></i> Tổng cộng: <strong><?= $totalPosts ?></strong> bài viết
+        <div class="category-slidebar-container mb-4 pb-2" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="row align-items-center g-3">
+                <div class="col-12 col-lg">
+                    <div class="category-slidebar-wrapper position-relative d-flex align-items-center">
+                        <!-- Nút trượt sang trái -->
+                        <button type="button" 
+                                class="category-slide-btn category-slide-prev me-2" 
+                                id="catSlidePrev" 
+                                aria-label="Cuộn sang trái" 
+                                title="Xem các chuyên mục trước">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+
+                        <div class="category-slidebar-inner position-relative flex-grow-1 overflow-hidden">
+                            <!-- Gradient mờ 2 đầu báo hiệu còn danh mục -->
+                            <div class="category-slide-fade category-slide-fade-start" id="catFadeStart"></div>
+                            
+                            <!-- Track trượt ngang chứa các danh mục -->
+                            <div class="category-slidebar-track d-flex align-items-center gap-2" id="catSlideTrack">
+                                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
+                                   class="dock-pill <?= empty($selectedCategoryId) ? 'active' : '' ?>">
+                                    Tất cả
+                                </a>
+                                <?php foreach ($categories as $cat): ?>
+                                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?category=<?= (int)$cat['id'] ?>" 
+                                       class="dock-pill <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
+                                        <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div class="category-slide-fade category-slide-fade-end" id="catFadeEnd"></div>
+                        </div>
+
+                        <!-- Nút trượt sang phải -->
+                        <button type="button" 
+                                class="category-slide-btn category-slide-next ms-2" 
+                                id="catSlideNext" 
+                                aria-label="Cuộn sang phải" 
+                                title="Xem thêm chuyên mục">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-auto text-lg-end text-white-50 small text-nowrap">
+                    <i class="bi bi-collection me-1"></i> Tổng cộng: <strong><?= $totalPosts ?></strong> bài viết
+                </div>
             </div>
         </div>
     <?php endif; ?>
@@ -114,3 +146,115 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
         </style>
     <?php endif; ?>
 </div>
+
+<!-- JavaScript điều khiển Thanh Slidebar Chuyên mục (Không dùng Lambda) -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var track = document.getElementById('catSlideTrack');
+    var btnPrev = document.getElementById('catSlidePrev');
+    var btnNext = document.getElementById('catSlideNext');
+    var fadeStart = document.getElementById('catFadeStart');
+    var fadeEnd = document.getElementById('catFadeEnd');
+
+    if (!track) {
+        return;
+    }
+
+    var step = 260; // Số pixel cuộn mỗi lần nhấn nút
+
+    function updateSlidebarState() {
+        var scrollLeft = track.scrollLeft;
+        var maxScroll = track.scrollWidth - track.clientWidth;
+
+        // Nếu tổng chiều rộng nội dung không tràn, ẩn nút hoặc disable
+        if (maxScroll <= 2) {
+            if (btnPrev) { btnPrev.disabled = true; btnPrev.classList.add('is-disabled'); }
+            if (btnNext) { btnNext.disabled = true; btnNext.classList.add('is-disabled'); }
+            if (fadeStart) { fadeStart.style.opacity = '0'; }
+            if (fadeEnd) { fadeEnd.style.opacity = '0'; }
+            return;
+        }
+
+        // Trạng thái nút trái
+        if (scrollLeft <= 5) {
+            if (btnPrev) { btnPrev.disabled = true; btnPrev.classList.add('is-disabled'); }
+            if (fadeStart) { fadeStart.style.opacity = '0'; }
+        } else {
+            if (btnPrev) { btnPrev.disabled = false; btnPrev.classList.remove('is-disabled'); }
+            if (fadeStart) { fadeStart.style.opacity = '1'; }
+        }
+
+        // Trạng thái nút phải
+        if (scrollLeft >= maxScroll - 5) {
+            if (btnNext) { btnNext.disabled = true; btnNext.classList.add('is-disabled'); }
+            if (fadeEnd) { fadeEnd.style.opacity = '0'; }
+        } else {
+            if (btnNext) { btnNext.disabled = false; btnNext.classList.remove('is-disabled'); }
+            if (fadeEnd) { fadeEnd.style.opacity = '1'; }
+        }
+    }
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', function () {
+            track.scrollBy({ left: -step, behavior: 'smooth' });
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener('click', function () {
+            track.scrollBy({ left: step, behavior: 'smooth' });
+        });
+    }
+
+    track.addEventListener('scroll', updateSlidebarState);
+    window.addEventListener('resize', updateSlidebarState);
+
+    // Hỗ trợ kéo trượt ngang bằng chuột (Drag-to-scroll)
+    var isDown = false;
+    var startX = 0;
+    var scrollLeftStart = 0;
+
+    track.addEventListener('mousedown', function (e) {
+        isDown = true;
+        startX = e.pageX - track.offsetLeft;
+        scrollLeftStart = track.scrollLeft;
+    });
+
+    track.addEventListener('mouseleave', function () {
+        isDown = false;
+    });
+
+    track.addEventListener('mouseup', function () {
+        isDown = false;
+    });
+
+    track.addEventListener('mousemove', function (e) {
+        if (!isDown) {
+            return;
+        }
+        e.preventDefault();
+        var x = e.pageX - track.offsetLeft;
+        var walk = (x - startX) * 1.5;
+        track.scrollLeft = scrollLeftStart - walk;
+    });
+
+    // Cuộn ngang bằng con lăn chuột
+    track.addEventListener('wheel', function (e) {
+        if (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) > 0) {
+            track.scrollLeft += e.deltaY;
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // Tự động cuộn đến danh mục đang active để người dùng thấy ngay
+    var activePill = track.querySelector('.dock-pill.active');
+    if (activePill) {
+        setTimeout(function () {
+            activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            updateSlidebarState();
+        }, 120);
+    } else {
+        updateSlidebarState();
+    }
+});
+</script>
