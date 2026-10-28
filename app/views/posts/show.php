@@ -35,6 +35,34 @@ $galleryCount = count($galleryImages);
         </a>
     </div>
 
+    <?php 
+    $currentPostStatus = $post['status'] ?? 'published';
+    if ($currentPostStatus === 'pending'): ?>
+        <div class="alert alert-warning d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-warning" role="alert">
+            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+            <div>
+                <strong class="d-block mb-1">Bài viết đang chờ duyệt (Pending)</strong>
+                <span class="small text-muted">Bài viết này hiện chưa hiển thị công khai trên diễn đàn. Chỉ bạn (tác giả) và Quản trị viên mới có thể xem được nội dung này cho đến khi được duyệt.</span>
+            </div>
+        </div>
+    <?php elseif ($currentPostStatus === 'rejected'): ?>
+        <div class="alert alert-danger d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-danger" role="alert">
+            <i class="bi bi-x-circle-fill fs-3 text-danger"></i>
+            <div>
+                <strong class="d-block mb-1">Bài viết bị từ chối (Rejected)</strong>
+                <span class="small text-muted">Bài viết này không được Quản trị viên duyệt và không xuất hiện trên diễn đàn.</span>
+            </div>
+        </div>
+    <?php elseif ($currentPostStatus === 'hidden'): ?>
+        <div class="alert alert-secondary d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-secondary" role="alert">
+            <i class="bi bi-eye-slash-fill fs-3 text-secondary"></i>
+            <div>
+                <strong class="d-block mb-1">Bài viết đã bị ẩn (Hidden)</strong>
+                <span class="small text-muted">Bài viết này đã được tạm ẩn khỏi diễn đàn công khai.</span>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- ══════════════════════════════════════════
          IMAGE CAROUSEL
     ══════════════════════════════════════════ -->
@@ -165,7 +193,97 @@ $galleryCount = count($galleryImages);
         <div class="post-body">
             <?= nl2br(htmlspecialchars($post['content'] ?? '', ENT_QUOTES, 'UTF-8')) ?>
         </div>
+
+        <!-- Dụng cụ & Trang thiết bị chuyến đi (Tools & Gear) -->
+        <?php if (!empty($tools)): ?>
+            <div class="post-tools-section mt-5 pt-4 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="nature-badge" style="background: rgba(155, 189, 85, 0.18); color: var(--color-ink); border-color: rgba(155, 189, 85, 0.4);">
+                            <i class="bi bi-tools me-1 text-success"></i>Dụng cụ chuyến đi
+                        </span>
+                        <h3 class="h5 fw-semibold mb-0" style="color: var(--color-ink);">Trang thiết bị đã sử dụng (Tools)</h3>
+                    </div>
+                    <span class="small text-muted">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i><?= count($tools) ?> dụng cụ được chia sẻ
+                    </span>
+                </div>
+
+                <div class="row row-cols-1 row-cols-sm-2 g-3">
+                    <?php foreach ($tools as $tool):
+                        $rawToolImg = trim((string)($tool['image_url'] ?? ''));
+                        if ($rawToolImg === '' || str_starts_with($rawToolImg, 'bi-')) {
+                            $toolImg = $baseUrl . '/assets/img/tent-forest.png';
+                        } elseif (str_starts_with($rawToolImg, 'http://') || str_starts_with($rawToolImg, 'https://')) {
+                            $toolImg = $rawToolImg;
+                        } else {
+                            $toolImg = $baseUrl . '/' . ltrim($rawToolImg, '/');
+                        }
+                        $toolLink = trim((string)($tool['link'] ?? ''));
+                    ?>
+                        <div class="col">
+                            <div class="p-3 rounded-4 border d-flex gap-3 align-items-center h-100" style="background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08) !important; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                                <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
+                                     alt="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>" 
+                                     class="rounded-3 object-fit-cover flex-shrink-0" 
+                                     style="width: 72px; height: 72px; border: 1px solid rgba(0,0,0,0.06);">
+                                
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <?php if (!empty($tool['category_name'])): ?>
+                                            <span class="badge rounded-pill bg-light text-dark border text-uppercase" style="font-size: 10px; letter-spacing: 0.4px;">
+                                                <?= htmlspecialchars($tool['category_name'], ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <span class="fw-bold small text-success">
+                                            <?= number_format((float)($tool['price'] ?? 0), 0, ',', '.') ?> đ
+                                        </span>
+                                    </div>
+
+                                    <h4 class="h6 fw-semibold text-truncate mb-1" style="color: var(--color-ink);" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>
+                                    </h4>
+
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <small class="text-muted text-truncate" style="font-size: 11.5px;">
+                                            <?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>
+                                        </small>
+                                        <?php if ($toolLink !== ''): ?>
+                                            <a href="<?= htmlspecialchars($toolLink, ENT_QUOTES, 'UTF-8') ?>" 
+                                               target="_blank" 
+                                               rel="noopener noreferrer" 
+                                               class="nature-btn-secondary px-2 py-1 text-dark border-dark-subtle flex-shrink-0"
+                                               style="font-size: 11px;"
+                                               title="Xem nơi mua hoặc thông số">
+                                                Nơi mua <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php elseif (!empty($canManage)): ?>
+            <div class="post-tools-section mt-5 pt-4 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-4" style="background: rgba(0,0,0,0.02); border: 1px dashed rgba(0,0,0,0.12);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-tools text-muted fs-4"></i>
+                        <div>
+                            <strong class="d-block text-dark small">Chưa đính kèm dụng cụ cho chuyến đi này</strong>
+                            <span class="text-muted" style="font-size: 12px;">Bạn có thể chỉnh sửa bài viết để chia sẻ những dụng cụ hoặc thiết bị bạn đã dùng.</span>
+                        </div>
+                    </div>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/edit" 
+                       class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle text-nowrap" style="font-size: 12px;">
+                        <i class="bi bi-plus-lg me-1"></i> Thêm dụng cụ
+                    </a>
+                </div>
+            </div>
+        <?php endif; ?>
     </article>
+
 
     <!-- Comments Section -->
     <section class="mt-5" aria-label="Bình luận">

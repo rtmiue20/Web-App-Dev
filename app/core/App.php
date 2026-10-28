@@ -60,6 +60,13 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
 
+        // 5b. Products / Tools (Public)
+        $products = new ProductController();
+        $router->get('/products', [$products, 'index']);
+        $router->get('/products/{id}', function ($id) use ($products) {
+            $products->show((int)$id);
+        });
+
         // 6. Admin Area (All protected by AdminMiddleware)
         $router->get('/admin', [$dashboard, 'index'], [AdminMiddleware::class]);
         
@@ -77,17 +84,12 @@ class App
             $categories->delete((int)$id);
         }, [AdminMiddleware::class]);
 
-        // FR13: Admin Post Management (Duyệt, Ẩn, Xóa bài)
+        // FR13: Admin Post Management (Duyệt, Ẩn, Xóa bài, Chuyển trạng thái)
         $router->get('/admin/posts', [$postAdmin, 'index'], [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/approve', function ($id) use ($postAdmin) {
-            $postAdmin->approve((int)$id);
-        }, [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/hide', function ($id) use ($postAdmin) {
-            $postAdmin->hide((int)$id);
-        }, [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/delete', function ($id) use ($postAdmin) {
-            $postAdmin->delete((int)$id);
-        }, [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/status', [$postAdmin, 'changeStatus'], [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/approve', [$postAdmin, 'approve'], [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/hide', [$postAdmin, 'hide'], [AdminMiddleware::class]);
+        $router->post('/admin/posts/{id}/delete', [$postAdmin, 'delete'], [AdminMiddleware::class]);
 
         // FR14: Admin User Management & Password Reset (Xem thông tin & Cấp lại mật khẩu)
         $router->get('/admin/users', [$userAdmin, 'index'], [AdminMiddleware::class]);
