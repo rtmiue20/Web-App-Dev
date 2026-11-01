@@ -118,10 +118,10 @@ Một thành viên làm máy host (chạy XAMPP chứa database), các bạn cò
 
 | STT | Họ tên | Vai trò | Phụ trách |
 |---|---|---|---|
-| 1 | _(điền)_ | Nhóm trưởng | _(điền)_ |
-| 2 | _(điền)_ | Thành viên | _(điền)_ |
-| 3 | _(điền)_ | Thành viên | _(điền)_ |
-| 4 | _(điền)_ | Thành viên | _(điền)_ |
+| 1 | Nguyễn Văn Minh Triều | Nhóm trưởng | _(điền)_ |
+| 2 | Ngô Trọng Phúc | Thành viên | _(điền)_ |
+| 3 | Nguyễn Phúc Vương | Thành viên | _(điền)_ |
+| 4 | Triệu Nguyễn Huỳnh Khang | Thành viên | _(điền)_ |
 
 Cơ sở dữ liệu được chia đều: mỗi thành viên thiết kế 2 bảng (tổng 8 bảng).
 
