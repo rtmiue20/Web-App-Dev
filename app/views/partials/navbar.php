@@ -56,10 +56,10 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
                 <span><?= htmlspecialchars($currentUser['username'] ?? 'Cá nhân', ENT_QUOTES, 'UTF-8') ?></span>
             </a>
 
-            <?php if (($currentUser['role_name'] ?? '') === 'admin' || (int)($currentUser['role_id'] ?? 0) === 2): ?>
+            <?php if (class_exists('Auth') && Auth::isModerator($currentUser)): ?>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
                    class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
-                    Quản trị
+                    <?= Auth::isAdmin($currentUser) ? 'Quản trị' : 'Kiểm duyệt' ?>
                 </a>
             <?php endif; ?>
 

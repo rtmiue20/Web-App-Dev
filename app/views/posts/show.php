@@ -292,7 +292,8 @@ $galleryCount = count($galleryImages);
         </h2>
 
         <!-- Comment input form -->
-        <?php if ($isLoggedIn): ?>
+        <?php $canComment = class_exists('Auth') ? Auth::isMember() : $isLoggedIn; ?>
+        <?php if ($canComment): ?>
             <div class="nature-card mb-4" style="border-radius: 28px; padding: 1.5rem;">
                 <form id="comment-form" onsubmit="event.preventDefault(); submitComment();">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
@@ -323,15 +324,29 @@ $galleryCount = count($galleryImages);
         <!-- List of Comments -->
         <div id="comments-list">
             <?php if (!empty($comments)): ?>
-                <?php foreach ($comments as $cm): ?>
-                    <div class="comment-card">
+                <?php foreach ($comments as $cm): 
+                    $cmId = (int)($cm['id'] ?? 0);
+                    $cmUserId = (int)($cm['user_id'] ?? 0);
+                    $canDeleteCm = class_exists('Auth') ? Auth::canDeleteComment($cmUserId) : false;
+                ?>
+                    <div class="comment-card" id="comment-item-<?= $cmId ?>">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="comment-author">
                                 <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cm['username'] ?? 'Người dùng', ENT_QUOTES, 'UTF-8') ?>
                             </span>
-                            <span class="comment-time">
-                                <?= !empty($cm['created_at']) ? date('d/m/Y H:i', strtotime($cm['created_at'])) : '' ?>
-                            </span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="comment-time">
+                                    <?= !empty($cm['created_at']) ? date('d/m/Y H:i', strtotime($cm['created_at'])) : '' ?>
+                                </span>
+                                <?php if ($canDeleteCm && $cmId > 0): ?>
+                                    <button type="button"
+                                            class="btn btn-sm text-danger p-0 border-0 bg-transparent"
+                                            title="Xóa bình luận"
+                                            onclick="if(window.ForumAjax) window.ForumAjax.deleteComment(<?= $cmId ?>, <?= (int)$post['id'] ?>, this)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         <div class="comment-text">
                             <?= nl2br(htmlspecialchars($cm['content'] ?? '', ENT_QUOTES, 'UTF-8')) ?>

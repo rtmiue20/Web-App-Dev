@@ -5,6 +5,7 @@ require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../services/WeatherService.php';
 require_once __DIR__ . '/../services/VietnamAddressService.php';
 require_once __DIR__ . '/../helpers/Session.php';
+require_once __DIR__ . '/../helpers/Auth.php';
 require_once __DIR__ . '/../helpers/Csrf.php';
 require_once __DIR__ . '/../helpers/Response.php';
 
@@ -86,7 +87,7 @@ class ApiController extends Controller
 
         $user = Session::get('user');
         $currentUserId = (int)($user['id'] ?? 0);
-        $isAdmin = (($user['role_name'] ?? '') === 'admin' || (int)($user['role_id'] ?? 0) === 2);
+        $canModerate = Auth::isModerator($user);
 
         $rows = $this->comments->getByPostId($postId);
         $formatted = [];
@@ -99,7 +100,7 @@ class ApiController extends Controller
                 'username'   => htmlspecialchars((string)($row['username'] ?? 'Thành viên'), ENT_QUOTES, 'UTF-8'),
                 'content'    => htmlspecialchars((string)($row['content'] ?? ''), ENT_QUOTES, 'UTF-8'),
                 'created_at' => !empty($row['created_at']) ? date('d/m/Y H:i', strtotime((string)$row['created_at'])) : date('d/m/Y H:i'),
-                'can_delete' => ($isAdmin || ($currentUserId > 0 && $currentUserId === $cmUserId))
+                'can_delete' => ($canModerate || ($currentUserId > 0 && $currentUserId === $cmUserId))
             ];
         }
 
@@ -118,8 +119,8 @@ class ApiController extends Controller
      */
     public function createComment(): void
     {
-        if (!Session::has('user')) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để gửi bình luận.'], 401);
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để gửi bình luận.'], 401);
             return;
         }
 
@@ -202,9 +203,9 @@ class ApiController extends Controller
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
-        $isAdmin = (($user['role_name'] ?? '') === 'admin' || (int)($user['role_id'] ?? 0) === 2);
+        $canModerate = Auth::isModerator($user);
 
-        $deleted = $this->comments->delete($commentId, $userId, $isAdmin);
+        $deleted = $this->comments->delete($commentId, $userId, $canModerate);
         if ($deleted) {
             $totalComments = $postId > 0 ? $this->comments->countByPost($postId) : 0;
             Response::json([

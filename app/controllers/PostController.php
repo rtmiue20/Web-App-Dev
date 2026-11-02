@@ -6,6 +6,7 @@ require_once __DIR__ . '/../models/Comment.php';
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../helpers/Auth.php';
 
 /**
  * Controller PostController - Quản lý chức năng bài viết (Tuần 2 & Tuần 3 - Phúc)
@@ -189,12 +190,11 @@ class PostController extends Controller {
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 1);
-        $roleName = $user['role_name'] ?? '';
-        $roleId = (int)($user['role_id'] ?? 0);
-        $isAdmin = ($roleName === 'admin' || $roleId === 2);
+        $canPublishDirectly = Auth::canPublishDirectly($user);
 
-        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt). Admin đăng thì được 'published' trực tiếp.
-        $status = $isAdmin ? 'published' : 'pending';
+        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt).
+        // Khi Moderator hoặc Admin đăng thì được 'published' trực tiếp.
+        $status = $canPublishDirectly ? 'published' : 'pending';
 
         $postId = $this->posts->create(
             $userId, 
@@ -523,18 +523,9 @@ class PostController extends Controller {
     }
 
     /**
-     * Kiểm tra quyền quản lý bài viết (Chỉ tác giả hoặc admin)
+     * Kiểm tra quyền quản lý bài viết (Tác giả bài viết, Moderator hoặc Admin)
      */
     private function canManagePost(array $post): bool {
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            return false;
-        }
-        $userId = (int)($user['id'] ?? 0);
-        $roleName = $user['role_name'] ?? '';
-        $roleId = (int)($user['role_id'] ?? 0);
-        $isAdmin = ($roleName === 'admin' || $roleId === 2);
-        $isAuthor = ($userId > 0 && $userId === (int)($post['user_id'] ?? 0));
-        return $isAdmin || $isAuthor;
+        return Auth::canManagePost($post);
     }
 }

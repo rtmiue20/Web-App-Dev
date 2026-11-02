@@ -82,10 +82,10 @@ class App
         $router->get('/api/posts', [$api, 'posts']);
         $router->get('/api/posts.php', [$api, 'posts']);
 
-        // 6. Admin Area (All protected by AdminMiddleware)
-        $router->get('/admin', [$dashboard, 'index'], [AdminMiddleware::class]);
+        // 6. Admin & Moderator Area (RBAC: moderator & admin)
+        $router->get('/admin', [$dashboard, 'index'], [ModeratorMiddleware::class]);
         
-        // FR11: Admin Category Management
+        // FR11: Admin Category Management (Chỉ Admin)
         $router->get('/admin/categories', [$categories, 'adminIndex'], [AdminMiddleware::class]);
         $router->get('/admin/categories/create', [$categories, 'create'], [AdminMiddleware::class]);
         $router->post('/admin/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
@@ -99,7 +99,7 @@ class App
             $categories->delete((int)$id);
         }, [AdminMiddleware::class]);
 
-        // FR12: Admin Product / Gear Management (Vương)
+        // FR12: Admin Product / Gear Management (Chỉ Admin)
         $router->get('/admin/products', [$productAdmin, 'index'], [AdminMiddleware::class]);
         $router->get('/admin/products/create', [$productAdmin, 'create'], [AdminMiddleware::class]);
         $router->post('/admin/products/store', [$productAdmin, 'store'], [AdminMiddleware::class]);
@@ -113,20 +113,23 @@ class App
             $productAdmin->delete((int)$id);
         }, [AdminMiddleware::class]);
 
-        // FR13: Admin Post Management (Duyệt, Ẩn, Xóa bài, Chuyển trạng thái)
-        $router->get('/admin/posts', [$postAdmin, 'index'], [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/status', [$postAdmin, 'changeStatus'], [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/approve', [$postAdmin, 'approve'], [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/hide', [$postAdmin, 'hide'], [AdminMiddleware::class]);
-        $router->post('/admin/posts/{id}/delete', [$postAdmin, 'delete'], [AdminMiddleware::class]);
+        // FR13: Post Moderation (Cho phép cả Moderator & Admin kiểm duyệt bài viết)
+        $router->get('/admin/posts', [$postAdmin, 'index'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/status', [$postAdmin, 'changeStatus'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/approve', [$postAdmin, 'approve'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/hide', [$postAdmin, 'hide'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/delete', [$postAdmin, 'delete'], [ModeratorMiddleware::class]);
 
-        // FR14: Admin User Management & Password Reset (Xem thông tin & Cấp lại mật khẩu)
+        // FR14: Admin User Management, Password Reset & RBAC Role Assignment (Chỉ Admin)
         $router->get('/admin/users', [$userAdmin, 'index'], [AdminMiddleware::class]);
         $router->get('/admin/users/{id}', function ($id) use ($userAdmin) {
             $userAdmin->show((int)$id);
         }, [AdminMiddleware::class]);
         $router->post('/admin/users/{id}/reset-password', function ($id) use ($userAdmin) {
             $userAdmin->resetPassword((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/users/{id}/role', function ($id) use ($userAdmin) {
+            $userAdmin->changeRole((int)$id);
         }, [AdminMiddleware::class]);
 
         // URL parsing

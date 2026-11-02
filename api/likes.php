@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../app/helpers/Session.php';
+require_once __DIR__ . '/../app/helpers/Auth.php';
 require_once __DIR__ . '/../app/helpers/Csrf.php';
 require_once __DIR__ . '/../app/helpers/Response.php';
 require_once __DIR__ . '/../app/core/Database.php';
@@ -8,8 +9,8 @@ require_once __DIR__ . '/../app/models/Post.php';
 
 Session::init();
 
-if (!Session::has('user')) {
-    Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bài viết.'], 401);
+if (!Auth::isMember()) {
+    Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để thích bài viết.'], 401);
 }
 
 $rawInput = file_get_contents('php://input');

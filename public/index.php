@@ -4,6 +4,7 @@ $baseUrl = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')),
 define('BASE_URL', $baseUrl === '.' ? '' : $baseUrl);
 
 require_once __DIR__ . '/../app/helpers/Session.php';
+require_once __DIR__ . '/../app/helpers/Auth.php';
 require_once __DIR__ . '/../app/helpers/Csrf.php';
 require_once __DIR__ . '/../app/helpers/Validator.php';
 require_once __DIR__ . '/../app/helpers/Response.php';
@@ -27,6 +28,7 @@ require_once __DIR__ . '/../app/services/WeatherService.php';
 require_once __DIR__ . '/../app/services/VietnamAddressService.php';
 
 require_once __DIR__ . '/../app/middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../app/middleware/ModeratorMiddleware.php';
 require_once __DIR__ . '/../app/middleware/AdminMiddleware.php';
 
 require_once __DIR__ . '/../app/controllers/HomeController.php';

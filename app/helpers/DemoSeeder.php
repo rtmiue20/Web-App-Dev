@@ -46,27 +46,40 @@ class DemoSeeder
                 ) ENGINE=InnoDB
             ");
 
-            // 2. Đảm bảo bảng roles và users có ít nhất 1 tài khoản hợp lệ
-            $roleRows = Database::query("SELECT COUNT(*) AS total FROM roles");
-            if ((int)($roleRows[0]['total'] ?? 0) === 0) {
-                Database::execute("INSERT IGNORE INTO roles (id, name) VALUES (1, 'member'), (2, 'admin')");
-            }
+            // 2. Đảm bảo bảng roles có đầy đủ 4 vai trò RBAC (member, admin, moderator, guest)
+            Database::execute("INSERT IGNORE INTO roles (id, name) VALUES (1, 'member'), (2, 'admin'), (3, 'moderator'), (4, 'guest')");
 
             $userRows = Database::query("SELECT id FROM users ORDER BY id ASC");
+            $defaultHash = password_hash('123456', PASSWORD_DEFAULT);
             if (empty($userRows)) {
-                $defaultHash = password_hash('123456', PASSWORD_DEFAULT);
                 Database::execute(
                     "INSERT IGNORE INTO users (id, username, email, password_hash, role_id) VALUES
                      (1, 'admin', 'admin@forum.local', :h1, 2),
                      (2, 'minh_trekking', 'minh@forum.local', :h2, 1),
-                     (3, 'lan_camping', 'lan@forum.local', :h3, 1)",
-                    ['h1' => $defaultHash, 'h2' => $defaultHash, 'h3' => $defaultHash]
+                     (3, 'lan_camping', 'lan@forum.local', :h3, 1),
+                     (4, 'mod_outdoor', 'mod@forum.local', :h4, 3)",
+                    ['h1' => $defaultHash, 'h2' => $defaultHash, 'h3' => $defaultHash, 'h4' => $defaultHash]
                 );
                 $authorId = 2;
                 $secondAuthorId = 3;
             } else {
                 $authorId = (int)$userRows[0]['id'];
                 $secondAuthorId = isset($userRows[1]['id']) ? (int)$userRows[1]['id'] : $authorId;
+
+                // Đảm bảo có tài khoản mẫu Điều hành viên (moderator) và Quản trị viên (admin) để test RBAC
+                $modCheck = Database::query("SELECT id FROM users WHERE role_id = 3 LIMIT 1");
+                if (empty($modCheck)) {
+                    Database::execute(
+                        "INSERT IGNORE INTO users (username, email, password_hash, role_id, bio)
+                         VALUES ('mod_outdoor', 'mod@forum.local', :hash, 3, 'Điều hành viên kiểm duyệt nội dung diễn đàn dã ngoại')",
+                        ['hash' => $defaultHash]
+                    );
+                }
+                // Cập nhật mật khẩu hợp lệ nếu tài khoản mẫu từ schema.sql đang lưu chuỗi 'hash_demo'
+                Database::execute(
+                    "UPDATE users SET password_hash = :hash WHERE password_hash = 'hash_demo'",
+                    ['hash' => $defaultHash]
+                );
             }
 
             // 3. Đảm bảo bảng categories có đủ 3 chuyên mục

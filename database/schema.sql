@@ -13,7 +13,7 @@ CREATE TABLE roles (
   name VARCHAR(30) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
-INSERT INTO roles (name) VALUES ('member'), ('admin');
+INSERT INTO roles (name) VALUES ('member'), ('admin'), ('moderator'), ('guest');
 
 CREATE TABLE users (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,          -- PK
@@ -276,6 +276,16 @@ CREATE PROCEDURE sp_user_change_password(
 )
 BEGIN
     UPDATE users SET password_hash = p_password_hash WHERE id = p_user_id;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_user_update_role$$
+CREATE PROCEDURE sp_user_update_role(
+    IN p_user_id INT,
+    IN p_role_id INT
+)
+BEGIN
+    UPDATE users SET role_id = p_role_id WHERE id = p_user_id;
+    SELECT ROW_COUNT() AS affected_rows;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_user_exists$$
