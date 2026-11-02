@@ -12,12 +12,20 @@ const ForumAjax = {
     return csrfInput ? csrfInput.value : '';
   },
 
+  getBaseUrl: function () {
+    const raw = String(window.BASE_URL || '').replace(/\/+$/, '');
+    if (raw === '/posts' || raw === '/admin' || raw === '/categories' || raw === '/products') {
+      return '';
+    }
+    return raw;
+  },
+
   // 1. FR08: Toggle like on a post via AJAX
   toggleLike: async function (postId, btnElement) {
     if (!postId || !btnElement) return;
 
     const csrfToken = this.getCsrfToken();
-    const baseUrl = window.BASE_URL || '';
+    const baseUrl = this.getBaseUrl();
 
     btnElement.disabled = true;
     try {
@@ -57,12 +65,12 @@ const ForumAjax = {
     }
   },
 
-  // 2. FR07: Submit new comment via AJAX
-  postComment: async function (postId, content, listContainer) {
+  // 2. FR07: Submit new comment or multi-level nested reply via AJAX
+  postComment: async function (postId, content, listContainer, parentId = null) {
     if (!postId || !content.trim()) return false;
 
     const csrfToken = this.getCsrfToken();
-    const baseUrl = window.BASE_URL || '';
+    const baseUrl = this.getBaseUrl();
 
     try {
       const response = await fetch(`${baseUrl}/api/comments.php`, {
@@ -73,6 +81,7 @@ const ForumAjax = {
         },
         body: JSON.stringify({
           post_id: postId,
+          parent_id: parentId,
           content: content.trim(),
           _csrf: csrfToken,
         }),
@@ -81,28 +90,26 @@ const ForumAjax = {
       const data = await response.json();
       if (data && data.success && data.data) {
         const cm = data.data;
-        if (listContainer) {
-          const item = document.createElement('div');
-          item.className = 'comment-card rise-in';
-          item.id = `comment-item-${cm.id}`;
-          item.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="comment-author">
-                <i class="bi bi-person-fill me-1"></i>${cm.username || 'Bạn'}
-              </span>
-              <div class="d-flex align-items-center gap-2">
-                <span class="comment-time">${cm.created_at || 'Vừa xong'}</span>
-                <button type="button"
-                        class="btn btn-sm btn-link text-danger p-0 text-decoration-none small"
-                        title="Xóa bình luận của bạn"
-                        onclick="ForumAjax.deleteComment(${cm.id}, ${postId}, this)">
-                  <i class="bi bi-trash3"></i> Xóa
-                </button>
-              </div>
-            </div>
-            <div class="comment-text">${cm.content.replace(/\n/g, '<br>')}</div>
-          `;
-          listContainer.prepend(item);
+        const threadEl = this.buildCommentThreadElement(cm, postId);
+
+        if (parentId && parentId > 0) {
+          let childrenContainer = document.getElementById(`comment-children-${parentId}`);
+          if (!childrenContainer) {
+            const parentThread = document.getElementById(`comment-thread-${parentId}`);
+            if (parentThread) {
+              childrenContainer = document.createElement('div');
+              childrenContainer.className = 'comment-children-list';
+              childrenContainer.id = `comment-children-${parentId}`;
+              parentThread.appendChild(childrenContainer);
+            }
+          }
+          if (childrenContainer) {
+            childrenContainer.appendChild(threadEl);
+          } else if (listContainer) {
+            listContainer.prepend(threadEl);
+          }
+        } else if (listContainer) {
+          listContainer.prepend(threadEl);
         }
 
         const countBadge = document.getElementById('comments-count-badge');
@@ -120,13 +127,163 @@ const ForumAjax = {
     }
   },
 
-  // 3. FR07: Delete own comment via AJAX
-  deleteComment: async function (commentId, postId, btnElement) {
-    if (!commentId) return;
-    if (!confirm('Bạn có chắc muốn xóa bình luận này không?')) return;
+  // Helper: Tạo phần tử DOM cho bình luận hoặc câu trả lời lồng nhau
+  buildCommentThreadElement: function (cm, postId) {
+    const isReply = Boolean(cm.parent_id && Number(cm.parent_id) > 0);
+    const threadWrap = document.createElement('div');
+    threadWrap.className = `comment-thread-node ${isReply ? 'comment-reply-node' : ''} rise-in`;
+    threadWrap.id = `comment-thread-${cm.id}`;
 
+    let roleBadgeHtml = '';
+    if (cm.role_name === 'admin') {
+      roleBadgeHtml = '<span class="badge rounded-pill text-bg-danger ms-1" style="font-size:10px;">ADMIN</span>';
+    } else if (cm.role_name === 'moderator') {
+      roleBadgeHtml = '<span class="badge rounded-pill text-bg-primary ms-1" style="font-size:10px;">MOD</span>';
+    }
+
+    const replyToHtml = cm.parent_username
+      ? `<span class="badge rounded-pill ms-2 fw-normal" style="background: rgba(155, 189, 85, 0.16); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.35); font-size: 11px;">
+           <i class="bi bi-reply-fill me-1"></i>@${cm.parent_username}
+         </span>`
+      : '';
+
+    const safeUsernameAttr = String(cm.username || 'Thành viên').replace(/'/g, "\\'");
+
+    threadWrap.innerHTML = `
+      <div class="comment-card" id="comment-item-${cm.id}">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+          <div class="d-flex align-items-center flex-wrap">
+            <span class="comment-author">
+              <i class="bi bi-person-fill me-1"></i>${cm.username || 'Bạn'}
+            </span>
+            ${roleBadgeHtml}
+            ${replyToHtml}
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <span class="comment-time" style="color: rgba(255, 255, 255, 0.55);">${cm.created_at || 'Vừa xong'}</span>
+            <button type="button"
+                    class="btn btn-sm btn-link p-0 text-decoration-none small fw-medium"
+                    style="color: #c4e482;"
+                    onclick="ForumAjax.toggleReplyBox(${cm.id}, ${postId}, '${safeUsernameAttr}')">
+              <i class="bi bi-reply-fill"></i> Trả lời
+            </button>
+            <button type="button"
+                    class="btn btn-sm btn-link text-danger p-0 text-decoration-none small"
+                    title="Xóa bình luận"
+                    onclick="ForumAjax.deleteComment(${cm.id}, ${postId}, this)">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+        </div>
+        <div class="comment-text">${String(cm.content || '').replace(/\n/g, '<br>')}</div>
+        <div id="reply-box-container-${cm.id}" class="mt-2" style="display: none;"></div>
+      </div>
+      <div class="comment-children-list" id="comment-children-${cm.id}"></div>
+    `;
+    return threadWrap;
+  },
+
+  // Bật / tắt khung nhập trả lời lồng nhau ngay dưới bình luận bất kỳ
+  toggleReplyBox: function (commentId, postId, targetUsername) {
+    const container = document.getElementById(`reply-box-container-${commentId}`);
+    if (!container) return;
+
+    if (container.style.display === 'block') {
+      container.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    // Đóng các ô reply đang mở khác cho gọn giao diện
+    document.querySelectorAll('[id^="reply-box-container-"]').forEach((el) => {
+      if (el.id !== `reply-box-container-${commentId}`) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+      }
+    });
+
+    container.style.display = 'block';
+    container.innerHTML = `
+      <form class="p-3 rounded-4 mt-3" style="background: var(--color-paper, #f2f3ef); color: var(--color-ink, #23261f); border: 1px solid rgba(155, 189, 85, 0.45); box-shadow: 0 10px 24px rgba(0,0,0,0.25);" onsubmit="event.preventDefault(); ForumAjax.submitReply(${postId}, ${commentId});">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-medium" style="color: #23261f;">
+            <i class="bi bi-corner-down-right text-success me-1"></i>Đang trả lời <strong class="text-success">@${targetUsername}</strong>
+          </span>
+          <button type="button" class="btn-close" style="font-size: 10px;" onclick="ForumAjax.toggleReplyBox(${commentId}, ${postId}, '')"></button>
+        </div>
+        <textarea id="reply-input-${commentId}" class="nature-textarea mb-2" rows="2" required placeholder="Nhập nội dung phản hồi @${targetUsername}..."></textarea>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="ForumAjax.toggleReplyBox(${commentId}, ${postId}, '')">Hủy</button>
+          <button type="submit" id="reply-submit-btn-${commentId}" class="nature-btn-primary px-3 py-1" style="width: auto; height: 34px; font-size: 12.5px;">
+            <i class="bi bi-send me-1"></i> Gửi trả lời
+          </button>
+        </div>
+      </form>
+    `;
+
+    const textarea = document.getElementById(`reply-input-${commentId}`);
+    if (textarea) textarea.focus();
+  },
+
+  // Gửi câu trả lời con (multi-level reply) qua AJAX
+  submitReply: async function (postId, parentId) {
+    const input = document.getElementById(`reply-input-${parentId}`);
+    const submitBtn = document.getElementById(`reply-submit-btn-${parentId}`);
+    if (!input || !input.value.trim()) return;
+
+    if (submitBtn) submitBtn.disabled = true;
+    const listContainer = document.getElementById('comments-list');
+    const ok = await this.postComment(postId, input.value, listContainer, parentId);
+    if (submitBtn) submitBtn.disabled = false;
+
+    if (ok) {
+      const container = document.getElementById(`reply-box-container-${parentId}`);
+      if (container) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+      }
+      const noMsg = document.getElementById('no-comments-msg');
+      if (noMsg) noMsg.remove();
+    }
+  },
+
+  // 3. FR07: Delete own comment (and its nested replies) via custom Modal + AJAX
+  _pendingDelete: null,
+
+  deleteComment: function (commentId, postId, btnElement) {
+    if (!commentId) return;
+
+    const modalEl = document.getElementById('deleteCommentModal');
+    const confirmBtn = document.getElementById('btnConfirmDeleteComment');
+
+    if (modalEl && confirmBtn && typeof bootstrap !== 'undefined') {
+      this._pendingDelete = { commentId, postId, btnElement };
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+      confirmBtn.onclick = async () => {
+        if (!this._pendingDelete) return;
+        const { commentId: cId, postId: pId, btnElement: btn } = this._pendingDelete;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xóa...';
+        await this.executeDeleteComment(cId, pId, btn);
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Xóa bình luận';
+        this._pendingDelete = null;
+        modalInstance.hide();
+      };
+
+      modalInstance.show();
+      return;
+    }
+
+    if (confirm('Bạn có chắc muốn xóa bình luận này (cùng các phản hồi bên dưới) không?')) {
+      this.executeDeleteComment(commentId, postId, btnElement);
+    }
+  },
+
+  executeDeleteComment: async function (commentId, postId, btnElement) {
     const csrfToken = this.getCsrfToken();
-    const baseUrl = window.BASE_URL || '';
+    const baseUrl = this.getBaseUrl();
 
     if (btnElement) btnElement.disabled = true;
     try {
@@ -145,14 +302,16 @@ const ForumAjax = {
 
       const data = await response.json();
       if (data && data.success) {
-        const card =
+        const targetNode =
+          document.getElementById(`comment-thread-${commentId}`) ||
           document.getElementById(`comment-item-${commentId}`) ||
+          (btnElement ? btnElement.closest('.comment-thread-node') : null) ||
           (btnElement ? btnElement.closest('.comment-card') : null);
-        if (card) {
-          card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-          card.style.opacity = '0';
-          card.style.transform = 'translateY(-6px)';
-          setTimeout(() => card.remove(), 250);
+        if (targetNode) {
+          targetNode.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+          targetNode.style.opacity = '0';
+          targetNode.style.transform = 'translateY(-6px)';
+          setTimeout(() => targetNode.remove(), 250);
         }
 
         const countBadge = document.getElementById('comments-count-badge');
@@ -172,7 +331,7 @@ const ForumAjax = {
   // 4. FR06: Fetch weather & 4-day forecast from Open-Meteo Web Service
   fetchWeather: async function (lat, lng, badgeElement, panelElement) {
     try {
-      const baseUrl = window.BASE_URL || '';
+      const baseUrl = this.getBaseUrl();
       const response = await fetch(
         `${baseUrl}/api/weather.php?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`
       );

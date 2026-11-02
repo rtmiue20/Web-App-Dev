@@ -61,10 +61,12 @@ CREATE TABLE comments (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,             -- PK
   post_id    INT UNSIGNED NOT NULL,                               -- FK -> posts
   user_id    INT UNSIGNED NOT NULL,                               -- FK -> users
+  parent_id  INT UNSIGNED NULL DEFAULT NULL,                      -- FK -> comments (Bình luận lồng nhau nhiều cấp)
   content    TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id)   REFERENCES posts(id)    ON DELETE CASCADE,
+  FOREIGN KEY (user_id)   REFERENCES users(id)    ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE post_likes (
@@ -442,18 +444,25 @@ END$$
 DROP PROCEDURE IF EXISTS sp_comment_list$$
 CREATE PROCEDURE sp_comment_list(IN p_post_id INT)
 BEGIN
-    SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+    SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
+           u.username, r.name AS role_name
     FROM comments c
     JOIN users u ON c.user_id = u.id
+    LEFT JOIN roles r ON r.id = u.role_id
     WHERE c.post_id = p_post_id
-    ORDER BY c.created_at DESC;
+    ORDER BY c.created_at ASC, c.id ASC;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_comment_create$$
-CREATE PROCEDURE sp_comment_create(IN p_post_id INT, IN p_user_id INT, IN p_content TEXT)
+CREATE PROCEDURE sp_comment_create(
+    IN p_post_id INT,
+    IN p_user_id INT,
+    IN p_content TEXT,
+    IN p_parent_id INT
+)
 BEGIN
-    INSERT INTO comments (post_id, user_id, content, created_at)
-    VALUES (p_post_id, p_user_id, p_content, NOW());
+    INSERT INTO comments (post_id, user_id, parent_id, content, created_at)
+    VALUES (p_post_id, p_user_id, p_parent_id, p_content, NOW());
     
     SELECT LAST_INSERT_ID() AS comment_id;
 END$$

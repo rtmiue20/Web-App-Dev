@@ -4,18 +4,42 @@ declare(strict_types=1);
 /** Uniform JSON envelope: {"success": bool, "data": mixed, "message": string}. */
 final class Response
 {
-    public static function json(bool $success, mixed $data = null, string $message = '', int $status = 200): void
+    public static function json(bool|array $success, mixed $data = null, string $message = '', int $status = 200): void
     {
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
+
+        if (is_array($success)) {
+            $payload = $success;
+            if (is_int($data) && $status === 200) {
+                $status = $data;
+            }
+            if (!array_key_exists('success', $payload)) {
+                $payload['success'] = ($status >= 200 && $status < 300);
+            }
+            if (!array_key_exists('data', $payload)) {
+                $payload['data'] = null;
+            }
+            if (!array_key_exists('message', $payload)) {
+                $payload['message'] = '';
+            }
+        } else {
+            $payload = [
+                'success' => $success,
+                'data'    => $data,
+                'message' => $message,
+            ];
+        }
+
         if (!headers_sent()) {
             http_response_code($status);
-            header('Content-Type: application/json; charset=utf-8');
+            header('Content-Type: application/json; charset=UTF-8');
             header('Cache-Control: no-store');
         }
+
         echo json_encode(
-            ['success' => $success, 'data' => $data, 'message' => $message],
+            $payload,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
         );
         exit;

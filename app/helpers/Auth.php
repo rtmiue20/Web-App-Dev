@@ -68,13 +68,29 @@ class Auth
         $roleName = strtolower(trim((string)($user['role_name'] ?? ($sessionUser['role_name'] ?? ''))));
         $roleId = (int)($user['role_id'] ?? ($sessionUser['role_id'] ?? 0));
 
-        if ($roleName === self::ROLE_ADMIN || $roleId === self::ROLE_ID_ADMIN) {
+        // Ưu tiên kiểm tra theo tên role (role_name) trước để tránh lệch ID tự tăng trong CSDL
+        if ($roleName !== '') {
+            if ($roleName === self::ROLE_ADMIN) {
+                return self::ROLE_ADMIN;
+            }
+            if ($roleName === self::ROLE_MODERATOR) {
+                return self::ROLE_MODERATOR;
+            }
+            if ($roleName === self::ROLE_MEMBER) {
+                return self::ROLE_MEMBER;
+            }
+            if ($roleName === self::ROLE_GUEST) {
+                return self::ROLE_GUEST;
+            }
+        }
+
+        if ($roleId === self::ROLE_ID_ADMIN) {
             return self::ROLE_ADMIN;
         }
-        if ($roleName === self::ROLE_MODERATOR || $roleId === self::ROLE_ID_MODERATOR) {
+        if ($roleId === self::ROLE_ID_MODERATOR) {
             return self::ROLE_MODERATOR;
         }
-        if ($roleName === self::ROLE_GUEST || $roleId === self::ROLE_ID_GUEST) {
+        if ($roleId === self::ROLE_ID_GUEST) {
             return self::ROLE_GUEST;
         }
 

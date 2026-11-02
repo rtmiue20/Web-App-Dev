@@ -46,6 +46,17 @@ class DemoSeeder
                 ) ENGINE=InnoDB
             ");
 
+            // 1b. Đảm bảo bảng comments có cột parent_id để hỗ trợ bình luận lồng nhau (reply nhiều cấp)
+            $parentCol = Database::query("SHOW COLUMNS FROM comments LIKE 'parent_id'");
+            if (empty($parentCol)) {
+                Database::execute("ALTER TABLE comments ADD COLUMN parent_id INT UNSIGNED NULL DEFAULT NULL AFTER user_id");
+                try {
+                    Database::execute("ALTER TABLE comments ADD CONSTRAINT fk_comments_parent FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE");
+                } catch (Throwable $fkEx) {
+                    // Bỏ qua nếu constraint đã tồn tại
+                }
+            }
+
             // 2. Đảm bảo bảng roles có đầy đủ 4 vai trò RBAC (member, admin, moderator, guest)
             Database::execute("INSERT IGNORE INTO roles (id, name) VALUES (1, 'member'), (2, 'admin'), (3, 'moderator'), (4, 'guest')");
 
@@ -212,6 +223,61 @@ class DemoSeeder
                         Database::execute("INSERT IGNORE INTO post_products (post_id, product_id) VALUES (:p, :pr)", ['p' => $p3, 'pr' => (int)$prodRows[5]['id']]);
                     }
                 }
+            }
+
+            // 7. Đảm bảo có bình luận lồng nhau (reply nhiều cấp) mẫu trên bài viết đầu tiên (chỉ tạo 1 lần đầu)
+            $seedLockFile = __DIR__ . '/../../storage/cache/nested_comments_seeded.lock';
+            $nestedCheck = Database::query("SELECT COUNT(*) AS total FROM comments WHERE parent_id IS NOT NULL");
+            if (!is_file($seedLockFile) && (int)($nestedCheck[0]['total'] ?? 0) === 0) {
+                $firstPost = Database::query("SELECT id FROM posts WHERE status = 'published' ORDER BY id ASC LIMIT 1");
+                if (!empty($firstPost)) {
+                    $firstPostId = (int)$firstPost[0]['id'];
+                    $rootComments = Database::query("SELECT id, user_id FROM comments WHERE post_id = :pid AND parent_id IS NULL ORDER BY id ASC LIMIT 1", ['pid' => $firstPostId]);
+                    if (empty($rootComments)) {
+                        Database::execute(
+                            "INSERT INTO comments (post_id, user_id, parent_id, content, created_at)
+                             VALUES (:pid, :uid, NULL, :cnt, NOW())",
+                            [
+                                'pid' => $firstPostId,
+                                'uid' => $secondAuthorId,
+                                'cnt' => 'Cảm ơn bài chia sẻ rất chi tiết! Cho mình hỏi đường lên Đồi Đa Phú ban đêm xe tay ga có dễ đi không bạn?'
+                            ]
+                        );
+                        $rootComments = Database::query("SELECT id, user_id FROM comments WHERE post_id = :pid AND parent_id IS NULL ORDER BY id ASC LIMIT 1", ['pid' => $firstPostId]);
+                    }
+                    if (!empty($rootComments)) {
+                        $rootId = (int)$rootComments[0]['id'];
+                        Database::execute(
+                            "INSERT INTO comments (post_id, user_id, parent_id, content, created_at)
+                             VALUES (:pid, :uid, :parent_id, :cnt, NOW())",
+                            [
+                                'pid'       => $firstPostId,
+                                'uid'       => $authorId,
+                                'parent_id' => $rootId,
+                                'cnt'       => 'Đường nhựa dễ đi khoảng 90%, chỉ có đoạn dốc đất cuối khoảng 300m hơi trơn nếu trời mưa nên bạn đi xe số hoặc đi trước 16h chiều là an toàn nhất nhé!'
+                            ]
+                        );
+                        $level1Rows = Database::query("SELECT id FROM comments WHERE parent_id = :pid ORDER BY id DESC LIMIT 1", ['pid' => $rootId]);
+                        if (!empty($level1Rows)) {
+                            $level1Id = (int)$level1Rows[0]['id'];
+                            Database::execute(
+                                "INSERT INTO comments (post_id, user_id, parent_id, content, created_at)
+                                 VALUES (:pid, :uid, :parent_id, :cnt, NOW())",
+                                [
+                                    'pid'       => $firstPostId,
+                                    'uid'       => $secondAuthorId,
+                                    'parent_id' => $level1Id,
+                                    'cnt'       => 'Tuyệt vời quá, cuối tuần này nhóm mình sẽ mang lều 2 lớp lên săn mây theo đúng lịch trình của bạn luôn!'
+                                ]
+                            );
+                        }
+                    }
+                }
+                $cacheDir = dirname($seedLockFile);
+                if (!is_dir($cacheDir)) {
+                    @mkdir($cacheDir, 0777, true);
+                }
+                @file_put_contents($seedLockFile, date('c'));
             }
         } catch (Throwable $e) {
             error_log('DemoSeeder error: ' . $e->getMessage());

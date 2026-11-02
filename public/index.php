@@ -1,7 +1,14 @@
 <?php
 
-$baseUrl = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-define('BASE_URL', $baseUrl === '.' ? '' : $baseUrl);
+if (PHP_SAPI === 'cli-server') {
+    define('BASE_URL', '');
+} else {
+    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+    $baseUrl = str_ends_with($scriptName, '/index.php')
+        ? rtrim( substr($scriptName, 0, -strlen('/index.php')), '/' )
+        : '';
+    define('BASE_URL', ($baseUrl === '.' || $baseUrl === '/') ? '' : $baseUrl);
+}
 
 require_once __DIR__ . '/../app/helpers/Session.php';
 require_once __DIR__ . '/../app/helpers/Auth.php';

@@ -76,8 +76,20 @@ class App
         $router->get('/api/provinces.php', [$api, 'provinces']);
         $router->get('/api/comments', [$api, 'listComments']);
         $router->get('/api/comments.php', [$api, 'listComments']);
-        $router->post('/api/comments', [$api, 'createComment']);
-        $router->post('/api/comments.php', [$api, 'createComment']);
+        $router->post('/api/comments', function () use ($api) {
+            if (($_GET['action'] ?? '') === 'delete') {
+                $api->deleteComment();
+            } else {
+                $api->createComment();
+            }
+        });
+        $router->post('/api/comments.php', function () use ($api) {
+            if (($_GET['action'] ?? '') === 'delete') {
+                $api->deleteComment();
+            } else {
+                $api->createComment();
+            }
+        });
         $router->post('/api/comments/delete', [$api, 'deleteComment']);
         $router->get('/api/posts', [$api, 'posts']);
         $router->get('/api/posts.php', [$api, 'posts']);

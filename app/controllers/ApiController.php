@@ -97,7 +97,9 @@ class ApiController extends Controller
                 'id'         => (int)($row['id'] ?? 0),
                 'post_id'    => (int)($row['post_id'] ?? $postId),
                 'user_id'    => $cmUserId,
+                'parent_id'  => !empty($row['parent_id']) ? (int)$row['parent_id'] : null,
                 'username'   => htmlspecialchars((string)($row['username'] ?? 'Thành viên'), ENT_QUOTES, 'UTF-8'),
+                'role_name'  => htmlspecialchars((string)($row['role_name'] ?? 'member'), ENT_QUOTES, 'UTF-8'),
                 'content'    => htmlspecialchars((string)($row['content'] ?? ''), ENT_QUOTES, 'UTF-8'),
                 'created_at' => !empty($row['created_at']) ? date('d/m/Y H:i', strtotime((string)$row['created_at'])) : date('d/m/Y H:i'),
                 'can_delete' => ($canModerate || ($currentUserId > 0 && $currentUserId === $cmUserId))
@@ -108,6 +110,7 @@ class ApiController extends Controller
             'success' => true,
             'data'    => [
                 'comments' => $formatted,
+                'tree'     => $this->comments->getTreeByPostId($postId),
                 'total'    => count($formatted)
             ]
         ]);
@@ -115,7 +118,7 @@ class ApiController extends Controller
 
     /**
      * POST /api/comments (hoặc /api/comments.php)
-     * Thêm bình luận mới bằng AJAX (FR07)
+     * Thêm bình luận mới hoặc trả lời bình luận lồng nhau nhiều cấp bằng AJAX (FR07)
      */
     public function createComment(): void
     {
@@ -131,6 +134,8 @@ class ApiController extends Controller
         }
 
         $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? 0);
+        $parentIdRaw = $json['parent_id'] ?? $_POST['parent_id'] ?? null;
+        $parentId = ($parentIdRaw !== null && $parentIdRaw !== '' && (int)$parentIdRaw > 0) ? (int)$parentIdRaw : null;
         $content = trim((string)($json['content'] ?? $_POST['content'] ?? ''));
         $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
 
@@ -146,22 +151,36 @@ class ApiController extends Controller
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
+        $roleName = Auth::role($user);
 
-        $commentId = $this->comments->create($postId, $userId, $content);
+        $parentUsername = null;
+        if ($parentId !== null && $parentId > 0) {
+            $parentRow = $this->comments->findById($parentId);
+            if ($parentRow && (int)($parentRow['post_id'] ?? 0) === $postId) {
+                $parentUsername = (string)($parentRow['username'] ?? '');
+            } else {
+                $parentId = null;
+            }
+        }
+
+        $commentId = $this->comments->create($postId, $userId, $content, $parentId);
         if ($commentId > 0) {
             $totalComments = $this->comments->countByPost($postId);
             Response::json([
                 'success' => true,
-                'message' => 'Đã gửi bình luận thành công!',
+                'message' => $parentId ? 'Đã gửi câu trả lời thành công!' : 'Đã gửi bình luận thành công!',
                 'data'    => [
-                    'id'             => $commentId,
-                    'post_id'        => $postId,
-                    'user_id'        => $userId,
-                    'content'        => htmlspecialchars($content, ENT_QUOTES, 'UTF-8'),
-                    'username'       => htmlspecialchars((string)($user['username'] ?? 'Bạn'), ENT_QUOTES, 'UTF-8'),
-                    'created_at'     => date('d/m/Y H:i'),
-                    'can_delete'     => true,
-                    'total_comments' => $totalComments
+                    'id'              => $commentId,
+                    'post_id'         => $postId,
+                    'user_id'         => $userId,
+                    'parent_id'       => $parentId,
+                    'parent_username' => $parentUsername !== null ? htmlspecialchars($parentUsername, ENT_QUOTES, 'UTF-8') : null,
+                    'content'         => htmlspecialchars($content, ENT_QUOTES, 'UTF-8'),
+                    'username'        => htmlspecialchars((string)($user['username'] ?? 'Bạn'), ENT_QUOTES, 'UTF-8'),
+                    'role_name'       => htmlspecialchars($roleName, ENT_QUOTES, 'UTF-8'),
+                    'created_at'      => date('d/m/Y H:i'),
+                    'can_delete'      => true,
+                    'total_comments'  => $totalComments
                 ]
             ]);
             return;

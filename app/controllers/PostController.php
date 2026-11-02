@@ -259,16 +259,18 @@ class PostController extends Controller {
             return;
         }
 
-        $commentsList = $this->comments->getByPostId($id);
+        $commentsTree = $this->comments->getTreeByPostId($id);
+        $totalComments = $this->comments->countByPost($id);
         $canManage = $this->canManagePost($post);
         $tools = $this->products->getByPostId($id);
 
         $this->render('posts/show', [
-            'title' => $post['title'],
-            'post' => $post,
-            'tools' => $tools,
-            'comments' => $commentsList,
-            'canManage' => $canManage
+            'title'         => $post['title'],
+            'post'          => $post,
+            'tools'         => $tools,
+            'comments'      => $commentsTree,
+            'totalComments' => $totalComments,
+            'canManage'     => $canManage
         ]);
     }
 
