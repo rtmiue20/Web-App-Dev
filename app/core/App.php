@@ -12,9 +12,11 @@ class App
         $posts = new PostController();
         $categories = new CategoryController();
         $users = new UserController();
+        $api = new ApiController();
         $dashboard = new DashboardController();
         $postAdmin = new PostAdminController();
         $userAdmin = new UserAdminController();
+        $productAdmin = new ProductAdminController();
 
         // 1. Home
         $router->get('/', [$home, 'index']);
@@ -60,12 +62,25 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
 
-        // 5b. Products / Tools (Public)
+        // 5b. Products / Tools (Public - FR09)
         $products = new ProductController();
         $router->get('/products', [$products, 'index']);
         $router->get('/products/{id}', function ($id) use ($products) {
             $products->show((int)$id);
         });
+
+        // 5c. AJAX & Web Service Endpoints (FR06, FR07, FR08 - JSON API)
+        $router->get('/api/weather', [$api, 'weather']);
+        $router->get('/api/weather.php', [$api, 'weather']);
+        $router->get('/api/provinces', [$api, 'provinces']);
+        $router->get('/api/provinces.php', [$api, 'provinces']);
+        $router->get('/api/comments', [$api, 'listComments']);
+        $router->get('/api/comments.php', [$api, 'listComments']);
+        $router->post('/api/comments', [$api, 'createComment']);
+        $router->post('/api/comments.php', [$api, 'createComment']);
+        $router->post('/api/comments/delete', [$api, 'deleteComment']);
+        $router->get('/api/posts', [$api, 'posts']);
+        $router->get('/api/posts.php', [$api, 'posts']);
 
         // 6. Admin Area (All protected by AdminMiddleware)
         $router->get('/admin', [$dashboard, 'index'], [AdminMiddleware::class]);
@@ -82,6 +97,20 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/admin/categories/delete/{id}', function ($id) use ($categories) {
             $categories->delete((int)$id);
+        }, [AdminMiddleware::class]);
+
+        // FR12: Admin Product / Gear Management (Vương)
+        $router->get('/admin/products', [$productAdmin, 'index'], [AdminMiddleware::class]);
+        $router->get('/admin/products/create', [$productAdmin, 'create'], [AdminMiddleware::class]);
+        $router->post('/admin/products/store', [$productAdmin, 'store'], [AdminMiddleware::class]);
+        $router->get('/admin/products/edit/{id}', function ($id) use ($productAdmin) {
+            $productAdmin->edit((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/products/update/{id}', function ($id) use ($productAdmin) {
+            $productAdmin->update((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/products/delete/{id}', function ($id) use ($productAdmin) {
+            $productAdmin->delete((int)$id);
         }, [AdminMiddleware::class]);
 
         // FR13: Admin Post Management (Duyệt, Ẩn, Xóa bài, Chuyển trạng thái)

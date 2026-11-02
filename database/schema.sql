@@ -2,6 +2,7 @@
 -- Quy trình: tạo DB -> tạo bảng -> thiết lập cột -> tạo quan hệ (PK/FK) -> routines
 -- Gồm 8 bảng nghiệp vụ và bảng roles dùng để phân quyền.
 
+DROP DATABASE IF EXISTS outdoor_forum;
 CREATE DATABASE IF NOT EXISTS outdoor_forum
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE outdoor_forum;
@@ -86,6 +87,8 @@ CREATE TABLE post_tags (
   PRIMARY KEY (post_id, tag_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (tag_id)  REFERENCES tags(id)  ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ===== Người 5: products, post_products (Dụng cụ & Dụng cụ chuyến đi) =====
 CREATE TABLE products (
   id          INT AUTO_INCREMENT PRIMARY KEY,                     -- PK

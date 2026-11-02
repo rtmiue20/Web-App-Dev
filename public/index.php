@@ -9,6 +9,7 @@ require_once __DIR__ . '/../app/helpers/Validator.php';
 require_once __DIR__ . '/../app/helpers/Response.php';
 require_once __DIR__ . '/../app/helpers/Upload.php';
 require_once __DIR__ . '/../app/helpers/functions.php';
+require_once __DIR__ . '/../app/helpers/DemoSeeder.php';
 
 require_once __DIR__ . '/../app/core/Database.php';
 require_once __DIR__ . '/../app/core/Model.php';
@@ -22,6 +23,9 @@ require_once __DIR__ . '/../app/models/Post.php';
 require_once __DIR__ . '/../app/models/Comment.php';
 require_once __DIR__ . '/../app/models/Product.php';
 
+require_once __DIR__ . '/../app/services/WeatherService.php';
+require_once __DIR__ . '/../app/services/VietnamAddressService.php';
+
 require_once __DIR__ . '/../app/middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../app/middleware/AdminMiddleware.php';
 
@@ -31,10 +35,13 @@ require_once __DIR__ . '/../app/controllers/PostController.php';
 require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/ProductController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
+require_once __DIR__ . '/../app/controllers/ApiController.php';
 require_once __DIR__ . '/../app/controllers/admin/DashboardController.php';
 require_once __DIR__ . '/../app/controllers/admin/PostAdminController.php';
 require_once __DIR__ . '/../app/controllers/admin/UserAdminController.php';
+require_once __DIR__ . '/../app/controllers/admin/ProductAdminController.php';
 
 require_once __DIR__ . '/../app/core/App.php';
 
+DemoSeeder::ensureSeeded();
 (new App())->run();
