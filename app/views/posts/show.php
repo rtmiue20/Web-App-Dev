@@ -161,7 +161,8 @@ $galleryCount = count($galleryImages);
                 <i class="bi bi-calendar-event me-1"></i>
                 <?= !empty($post['created_at']) ? date('d/m/Y H:i', strtotime($post['created_at'])) : '' ?>
             </span>
-            <span class="ms-auto d-flex align-items-center gap-2">
+            <span class="ms-auto d-flex align-items-center flex-wrap gap-2">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                 <?php if (!empty($canManage)): ?>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/edit" 
                        class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle"
@@ -180,13 +181,46 @@ $galleryCount = count($galleryImages);
                         </button>
                     </form>
                 <?php endif; ?>
-                <button type="button" 
-                        id="btn-like-post" 
-                        class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle"
-                        onclick="ForumAjax.toggleLike(<?= (int)$post['id'] ?>, this)">
-                    <i class="bi bi-heart-fill text-danger me-1"></i> 
-                    <span class="like-count"><?= (int)($post['likes'] ?? 0) ?></span> thích
-                </button>
+                <?php
+                    $currentVote = (int)($userVote ?? 0);
+                    $voteScore = (int)($post['vote_score'] ?? $post['likes'] ?? 0);
+                    $upvotesCount = (int)($post['upvotes'] ?? max(0, $voteScore));
+                    $downvotesCount = (int)($post['downvotes'] ?? 0);
+                ?>
+                <div class="d-inline-flex align-items-center rounded-pill border px-1 py-1"
+                     id="vote-widget-<?= (int)$post['id'] ?>"
+                     style="background: rgba(34, 40, 31, 0.06); border-color: rgba(34, 40, 31, 0.2) !important;">
+                    <button type="button"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-up-btn <?= $currentVote === 1 ? 'active' : '' ?>"
+                            data-post-id="<?= (int)$post['id'] ?>"
+                            onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, 1, this)"
+                            title="Upvote bài viết hữu ích (+1)"
+                            style="<?= $currentVote === 1 ? 'background: #2f5e2e; color: #fff; font-weight: 600;' : 'color: #2f5e2e; font-weight: 600;' ?>">
+                        <i class="bi bi-caret-up-fill"></i>
+                        <span class="d-none d-sm-inline small">Upvote</span>
+                    </button>
+
+                    <span class="fw-bold px-2 vote-score like-count"
+                          data-post-id="<?= (int)$post['id'] ?>"
+                          style="font-size: 0.95rem; color: #22281f; min-width: 30px; text-align: center;"
+                          title="Tổng điểm Vote (Upvotes - Downvotes)">
+                        <?= $voteScore ?>
+                    </span>
+
+                    <button type="button"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-down-btn <?= $currentVote === -1 ? 'active' : '' ?>"
+                            data-post-id="<?= (int)$post['id'] ?>"
+                            onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, -1, this)"
+                            title="Downvote bài viết (-1)"
+                            style="<?= $currentVote === -1 ? 'background: #b02a37; color: #fff; font-weight: 600;' : 'color: #8c3b2b; font-weight: 600;' ?>">
+                        <i class="bi bi-caret-down-fill"></i>
+                    </button>
+                </div>
+                <span class="small text-muted vote-breakdown"
+                      data-post-id="<?= (int)$post['id'] ?>"
+                      title="Chi tiết lượt Upvote / Downvote">
+                    (+<?= $upvotesCount ?> / -<?= $downvotesCount ?>)
+                </span>
             </span>
         </div>
 

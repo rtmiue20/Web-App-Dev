@@ -57,6 +57,12 @@ class DemoSeeder
                 }
             }
 
+            // 1c. Đảm bảo bảng post_likes có cột vote (1 = Upvote, -1 = Downvote) cho hệ thống Vote
+            $voteCol = Database::query("SHOW COLUMNS FROM post_likes LIKE 'vote'");
+            if (empty($voteCol)) {
+                Database::execute("ALTER TABLE post_likes ADD COLUMN vote TINYINT NOT NULL DEFAULT 1");
+            }
+
             // 2. Đảm bảo bảng roles có đầy đủ 4 vai trò RBAC (member, admin, moderator, guest)
             Database::execute("INSERT IGNORE INTO roles (id, name) VALUES (1, 'member'), (2, 'admin'), (3, 'moderator'), (4, 'guest')");
 
@@ -278,6 +284,36 @@ class DemoSeeder
                     @mkdir($cacheDir, 0777, true);
                 }
                 @file_put_contents($seedLockFile, date('c'));
+            }
+
+            // 8. Đảm bảo có dữ liệu vote mẫu để kiểm thử sắp xếp Hot / Mới / Top ngay lập tức (chỉ tạo 1 lần đầu)
+            $voteLockFile = __DIR__ . '/../../storage/cache/post_votes_seeded.lock';
+            $voteCountRows = Database::query("SELECT COUNT(*) AS total FROM post_likes");
+            if (!is_file($voteLockFile) && (int)($voteCountRows[0]['total'] ?? 0) === 0) {
+                $pubPostRows = Database::query("SELECT id FROM posts WHERE status = 'published' ORDER BY id ASC LIMIT 3");
+                $allUserRows = Database::query("SELECT id FROM users ORDER BY id ASC LIMIT 4");
+                if (count($pubPostRows) >= 2 && count($allUserRows) >= 2) {
+                    $p1 = (int)$pubPostRows[0]['id'];
+                    $p2 = (int)$pubPostRows[1]['id'];
+                    $p3 = isset($pubPostRows[2]['id']) ? (int)$pubPostRows[2]['id'] : 0;
+
+                    // Bài 2 có nhiều Upvote nhất (Top 1 về điểm vote), Bài 1 có nhiều bình luận + vote (Hot)
+                    foreach ($allUserRows as $idx => $uRow) {
+                        $uid = (int)$uRow['id'];
+                        Database::execute("INSERT IGNORE INTO post_likes (post_id, user_id, vote) VALUES (:p, :u, 1)", ['p' => $p2, 'u' => $uid]);
+                        if ($idx < 2) {
+                            Database::execute("INSERT IGNORE INTO post_likes (post_id, user_id, vote) VALUES (:p, :u, 1)", ['p' => $p1, 'u' => $uid]);
+                        }
+                        if ($p3 > 0 && $idx === 0) {
+                            Database::execute("INSERT IGNORE INTO post_likes (post_id, user_id, vote) VALUES (:p, :u, 1)", ['p' => $p3, 'u' => $uid]);
+                        }
+                    }
+                }
+                $cacheDir = dirname($voteLockFile);
+                if (!is_dir($cacheDir)) {
+                    @mkdir($cacheDir, 0777, true);
+                }
+                @file_put_contents($voteLockFile, date('c'));
             }
         } catch (Throwable $e) {
             error_log('DemoSeeder error: ' . $e->getMessage());

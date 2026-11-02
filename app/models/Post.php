@@ -3,9 +3,8 @@ require_once __DIR__ . '/../core/Model.php';
 require_once __DIR__ . '/../core/Database.php';
 
 /**
- * Model Post - Quản lý dữ liệu bài viết (Tuần 2 & Tuần 3 - Phúc)
+ * Model Post - Quản lý dữ liệu bài viết, Hệ thống Vote (Upvote/Downvote) & Sắp xếp (Hot/Mới/Top)
  * Kế thừa BaseModel / Model theo kiến trúc MVC & OOP
- * Gọi Stored Procedures (sp_post_list, sp_post_get, sp_post_create, sp_post_update, sp_post_delete)
  */
 class Post extends Model {
     private ?int $id = null;
@@ -58,96 +57,125 @@ class Post extends Model {
     public function setCategoryName(?string $categoryName): void { $this->categoryName = $categoryName; }
 
     /**
-     * Lấy danh sách bài viết (gọi routine sp_post_list)
+     * Chuẩn hóa tiêu chí sắp xếp bài viết ('hot', 'new', 'top')
+     */
+    public static function normalizeSort(?string $sort): string {
+        $clean = strtolower(trim((string)$sort));
+        if (in_array($clean, ['hot', 'new', 'top'], true)) {
+            return $clean;
+        }
+        return 'hot';
+    }
+
+    /**
+     * Sinh mệnh đề ORDER BY tương ứng với tiêu chí sắp xếp:
+     * - 'new' (Mới nhất): Sắp xếp theo thời gian đăng mới nhất
+     * - 'top' (Top Vote): Sắp xếp theo tổng điểm vote (Upvote - Downvote) cao nhất
+     * - 'hot' (Thịnh hành): Kết hợp điểm vote (x2) + số bình luận thảo luận (x3) và độ mới
+     */
+    private function buildOrderByClause(string $sort): string {
+        $sort = self::normalizeSort($sort);
+        return match ($sort) {
+            'top' => " ORDER BY vote_score DESC, upvotes DESC, comments_count DESC, p.created_at DESC, p.id DESC",
+            'new' => " ORDER BY p.created_at DESC, p.id DESC",
+            default => " ORDER BY (COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) * 2 + (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) * 3) DESC, p.created_at DESC, p.id DESC",
+        };
+    }
+
+    /**
+     * Lấy danh sách bài viết có hỗ trợ lọc chuyên mục và sắp xếp theo Hot / Mới / Top
      * @param int|null $categoryId Lọc theo chuyên mục hoặc null nếu lấy tất cả
+     * @param string $sort 'hot' | 'new' | 'top'
      * @return array Danh sách bài viết
      */
-    public function getAll(?int $categoryId = null): array {
+    public function getAll(?int $categoryId = null, string $sort = 'hot'): array {
+        $sql = "SELECT p.*, u.username, c.name AS category_name,
+                (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                FROM posts p 
+                JOIN users u ON p.user_id = u.id 
+                JOIN categories c ON p.category_id = c.id
+                WHERE p.status = 'published'";
+        $params = [];
+
+        if ($categoryId !== null) {
+            $sql .= " AND p.category_id = :category_id";
+            $params['category_id'] = $categoryId;
+        }
+
+        $sql .= $this->buildOrderByClause($sort);
+
         try {
-            return Database::call('sp_post_list', [$categoryId]);
-        } catch (PDOException $e) {
-            error_log('Notice: sp_post_list fallback query: ' . $e->getMessage());
-
-            $sql = "SELECT p.*, u.username, c.name AS category_name,
-                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
-                    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-                    FROM posts p 
-                    JOIN users u ON p.user_id = u.id 
-                    JOIN categories c ON p.category_id = c.id";
-            $params = [];
-
-            if ($categoryId !== null) {
-                $sql .= " WHERE p.category_id = :category_id";
-                $params['category_id'] = $categoryId;
-            }
-
-            $sql .= " ORDER BY p.created_at DESC";
-
-            try {
-                return Database::query($sql, $params);
-            } catch (PDOException $ex) {
-                error_log('Error getting posts: ' . $ex->getMessage());
-                return [];
-            }
+            return Database::query($sql, $params);
+        } catch (PDOException $ex) {
+            error_log('Error getting posts: ' . $ex->getMessage());
+            return [];
         }
     }
 
     /**
-     * Lấy danh sách bài viết theo chuyên mục và phân trang (Tuần 4 - FR03 - Phúc)
+     * Lấy danh sách bài viết theo chuyên mục, sắp xếp (hot/new/top) và phân trang
      * @param int|null $categoryId Lọc theo chuyên mục hoặc null nếu lấy tất cả
      * @param int $page Số trang hiện tại (bắt đầu từ 1)
      * @param int $limit Số lượng bài viết trên 1 trang
      * @param string|null $status Lọc trạng thái ('published', 'pending', 'hidden') hoặc null
+     * @param string $sort Tiêu chí sắp xếp ('hot', 'new', 'top')
      * @return array Danh sách bài viết
      */
-    public function getPaginated(?int $categoryId = null, int $page = 1, int $limit = 6, ?string $status = 'published'): array {
+    public function getPaginated(
+        ?int $categoryId = null,
+        int $page = 1,
+        int $limit = 6,
+        ?string $status = 'published',
+        string $sort = 'hot'
+    ): array {
         $offset = ($page - 1) * $limit;
         if ($offset < 0) {
             $offset = 0;
         }
 
+        $sql = "SELECT p.*, u.username, c.name AS category_name,
+                (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                FROM posts p 
+                JOIN users u ON p.user_id = u.id 
+                JOIN categories c ON p.category_id = c.id
+                WHERE 1=1";
+        
+        $params = [];
+
+        if ($categoryId !== null) {
+            $sql .= " AND p.category_id = :category_id";
+            $params['category_id'] = $categoryId;
+        }
+
+        if ($status !== null) {
+            $sql .= " AND p.status = :status";
+            $params['status'] = $status;
+        }
+
+        $sql .= $this->buildOrderByClause($sort) . " LIMIT :limit OFFSET :offset";
+
         try {
-            return Database::call('sp_post_list_paginated', [$categoryId, $status, $limit, $offset]);
-        } catch (PDOException $e) {
-            error_log('Notice: sp_post_list_paginated fallback query: ' . $e->getMessage());
-
-            $sql = "SELECT p.*, u.username, c.name AS category_name,
-                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
-                    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-                    FROM posts p 
-                    JOIN users u ON p.user_id = u.id 
-                    JOIN categories c ON p.category_id = c.id
-                    WHERE 1=1";
-            
-            $params = [];
-
-            if ($categoryId !== null) {
-                $sql .= " AND p.category_id = :category_id";
-                $params['category_id'] = $categoryId;
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $paramKey => $paramVal) {
+                $stmt->bindValue(':' . $paramKey, $paramVal);
             }
-
-            if ($status !== null) {
-                $sql .= " AND p.status = :status";
-                $params['status'] = $status;
-            }
-
-            $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
-
-            try {
-                $stmt = $this->db->prepare($sql);
-                foreach ($params as $paramKey => $paramVal) {
-                    $stmt->bindValue(':' . $paramKey, $paramVal);
-                }
-                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-                $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-                $stmt->execute();
-                return $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (PDOException $ex) {
-                error_log('Error getting paginated posts: ' . $ex->getMessage());
-                return [];
-            }
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $ex) {
+            error_log('Error getting paginated posts: ' . $ex->getMessage());
+            return [];
         }
     }
 
@@ -216,11 +244,6 @@ class Post extends Model {
     /**
      * Lấy danh sách bài viết phục vụ trang quản trị Admin (Tuần 4 - FR13 - Phúc)
      * Cho phép lọc theo trạng thái, chuyên mục và có phân trang
-     * @param string|null $status Trạng thái hoặc null/all nếu lấy tất cả
-     * @param int|null $categoryId ID chuyên mục hoặc null
-     * @param int $page Trang hiện tại
-     * @param int $limit Số dòng trên 1 trang
-     * @return array Danh sách bài viết
      */
     public function getAllForAdmin(?string $status = null, ?int $categoryId = null, int $page = 1, int $limit = 10): array {
         $offset = ($page - 1) * $limit;
@@ -230,7 +253,10 @@ class Post extends Model {
 
         $sql = "SELECT p.*, u.username, c.name AS category_name,
                 (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
                 (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
                 FROM posts p 
                 JOIN users u ON p.user_id = u.id 
@@ -268,9 +294,6 @@ class Post extends Model {
 
     /**
      * Đếm tổng số bài viết trong trang quản trị Admin theo bộ lọc (Tuần 4 - FR13 - Phúc)
-     * @param string|null $status Trạng thái hoặc null/all
-     * @param int|null $categoryId ID chuyên mục hoặc null
-     * @return int Tổng số bài viết
      */
     public function countForAdmin(?string $status = null, ?int $categoryId = null): int {
         $sql = "SELECT COUNT(*) AS total FROM posts WHERE 1=1";
@@ -296,7 +319,7 @@ class Post extends Model {
     }
 
     /**
-     * Lấy chi tiết bài viết theo ID (gọi routine sp_post_get)
+     * Lấy chi tiết bài viết theo ID kèm đầy đủ thông tin Vote (score, upvotes, downvotes)
      * @param int $id ID bài viết
      * @return array|false Mảng dữ liệu bài viết hoặc false nếu không tìm thấy
      */
@@ -309,8 +332,7 @@ class Post extends Model {
             error_log('Notice: sp_post_get fallback query: ' . $e->getMessage());
 
             $sql = "SELECT p.*, u.username, c.name AS category_name,
-                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes
+                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url
                     FROM posts p 
                     JOIN users u ON p.user_id = u.id 
                     JOIN categories c ON p.category_id = c.id 
@@ -325,6 +347,12 @@ class Post extends Model {
         }
 
         if ($post) {
+            $stats = $this->getVoteStats($id);
+            $post['vote_score'] = $stats['score'];
+            $post['upvotes']    = $stats['upvotes'];
+            $post['downvotes']  = $stats['downvotes'];
+            $post['likes']      = $stats['score'];
+
             $images = $this->getImages($id);
             if (empty($images) && !empty($post['image_url'])) {
                 $images = [['id' => 0, 'post_id' => $id, 'image_url' => $post['image_url']]];
@@ -337,16 +365,6 @@ class Post extends Model {
 
     /**
      * Tạo bài viết mới (gọi routine sp_post_create)
-     * @param int $userId ID tác giả
-     * @param int $categoryId ID chuyên mục
-     * @param string $title Tiêu đề
-     * @param string $content Nội dung
-     * @param string|null $location Địa điểm
-     * @param string|array|null $imageUrl Đường dẫn ảnh bìa (string hoặc mảng đường dẫn)
-     * @param float|null $lat Vĩ độ
-     * @param float|null $lng Kinh độ
-     * @param string $status Trạng thái bài viết ('published', 'pending', 'hidden')
-     * @return int ID bài viết vừa tạo (0 nếu thất bại)
      */
     public function create(
         int $userId, 
@@ -383,7 +401,6 @@ class Post extends Model {
                 ]);
                 $postId = (int)$this->db->lastInsertId();
             } catch (PDOException $ex) {
-                // Thử lại nếu DB chưa có cột lat/lng/status
                 try {
                     $sql2 = "INSERT INTO posts (user_id, category_id, title, content, location, created_at) 
                              VALUES (:user_id, :category_id, :title, :content, :location, NOW())";
@@ -403,7 +420,6 @@ class Post extends Model {
             }
         }
 
-        // Lưu ảnh vào bảng post_images nếu có (hỗ trợ 1 hoặc nhiều ảnh)
         if ($postId > 0 && !empty($imageUrl)) {
             if (is_array($imageUrl)) {
                 $this->addImages($postId, $imageUrl);
@@ -417,7 +433,6 @@ class Post extends Model {
 
     /**
      * Cập nhật bài viết (Tuần 3 - Phúc)
-     * Gọi stored procedure sp_post_update với fallback truy vấn trực tiếp
      */
     public function update(
         int $id,
@@ -460,7 +475,6 @@ class Post extends Model {
                     ':id' => $id
                 ]);
             } catch (PDOException $ex) {
-                // Thử lại nếu DB chưa có cột lat/lng/status
                 try {
                     $sql2 = "UPDATE posts 
                              SET category_id = :category_id,
@@ -483,7 +497,6 @@ class Post extends Model {
             }
         }
 
-        // Cập nhật ảnh mới nếu được tải lên (hỗ trợ 1 hoặc nhiều ảnh)
         if (!empty($imageUrl)) {
             $urls = is_array($imageUrl) ? $imageUrl : [$imageUrl];
             $this->addImages($id, $urls);
@@ -494,7 +507,6 @@ class Post extends Model {
 
     /**
      * Xóa bài viết theo ID (Tuần 3 - Phúc)
-     * Gọi stored procedure sp_post_delete với fallback
      */
     public function delete(int $id): bool {
         try {
@@ -532,29 +544,28 @@ class Post extends Model {
     }
 
     /**
-     * Tìm kiếm bài viết theo từ khóa và chuyên mục (gọi routine sp_post_search)
+     * Tìm kiếm bài viết theo từ khóa, chuyên mục và sắp xếp
      */
-    public function search(string $keyword, ?int $categoryId = null): array {
+    public function search(string $keyword, ?int $categoryId = null, string $sort = 'hot'): array {
         try {
-            return Database::call('sp_post_search', [$keyword, $categoryId]);
-        } catch (PDOException $e) {
-            error_log('Notice: sp_post_search fallback query: ' . $e->getMessage());
-            try {
-                $sql = "SELECT p.*, u.username, c.name AS category_name,
-                               (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                               (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
-                               (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-                        FROM posts p
-                        JOIN users u ON u.id = p.user_id
-                        JOIN categories c ON c.id = p.category_id
-                        WHERE (:cat IS NULL OR p.category_id = :cat)
-                          AND (p.title LIKE :kw OR p.content LIKE :kw OR p.location LIKE :kw)
-                        ORDER BY p.created_at DESC";
-                $pattern = '%' . trim($keyword) . '%';
-                return Database::query($sql, ['cat' => $categoryId, 'kw' => $pattern]);
-            } catch (PDOException $ex) {
-                return [];
-            }
+            $sql = "SELECT p.*, u.username, c.name AS category_name,
+                           (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                           COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                           (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                           (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                           COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                           (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                    FROM posts p
+                    JOIN users u ON u.id = p.user_id
+                    JOIN categories c ON c.id = p.category_id
+                    WHERE p.status = 'published'
+                      AND (:cat IS NULL OR p.category_id = :cat)
+                      AND (p.title LIKE :kw OR p.content LIKE :kw OR p.location LIKE :kw)"
+                    . $this->buildOrderByClause($sort);
+            $pattern = '%' . trim($keyword) . '%';
+            return Database::query($sql, ['cat' => $categoryId, 'kw' => $pattern]);
+        } catch (PDOException $ex) {
+            return [];
         }
     }
 
@@ -578,47 +589,117 @@ class Post extends Model {
     }
 
     /**
-     * Kiểm tra người dùng đã thích bài viết chưa (gọi routine sp_post_is_liked)
+     * Lấy thống kê điểm Vote (score, upvotes, downvotes) của 1 bài viết
+     */
+    public function getVoteStats(int $postId): array {
+        try {
+            $rows = Database::query(
+                "SELECT
+                    COALESCE(SUM(vote), 0) AS score,
+                    COUNT(CASE WHEN vote = 1 THEN 1 END) AS upvotes,
+                    COUNT(CASE WHEN vote = -1 THEN 1 END) AS downvotes
+                 FROM post_likes
+                 WHERE post_id = :p",
+                ['p' => $postId]
+            );
+            return [
+                'score'     => (int)($rows[0]['score'] ?? 0),
+                'upvotes'   => (int)($rows[0]['upvotes'] ?? 0),
+                'downvotes' => (int)($rows[0]['downvotes'] ?? 0),
+            ];
+        } catch (PDOException $e) {
+            return ['score' => 0, 'upvotes' => 0, 'downvotes' => 0];
+        }
+    }
+
+    /**
+     * Lấy trạng thái vote hiện tại của người dùng trên bài viết (1: Upvote, -1: Downvote, 0: Chưa vote)
+     */
+    public function getUserVote(int $postId, int $userId): int {
+        if ($postId <= 0 || $userId <= 0) {
+            return 0;
+        }
+        try {
+            $rows = Database::query(
+                "SELECT vote FROM post_likes WHERE post_id = :p AND user_id = :u LIMIT 1",
+                ['p' => $postId, 'u' => $userId]
+            );
+            return !empty($rows) ? (int)$rows[0]['vote'] : 0;
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Xử lý Upvote (+1) hoặc Downvote (-1) bài viết:
+     * - Nếu chưa vote -> thêm vote mới (+1 hoặc -1)
+     * - Nếu bấm lại đúng nút đã vote -> hủy vote (trở về 0)
+     * - Nếu đang Upvote mà bấm Downvote (hoặc ngược lại) -> đảo chiều vote
+     */
+    public function vote(int $postId, int $userId, int $voteType = 1): array {
+        $voteVal = ($voteType < 0) ? -1 : 1;
+        $userVote = 0;
+
+        try {
+            $existing = Database::query(
+                "SELECT vote FROM post_likes WHERE post_id = :p AND user_id = :u LIMIT 1",
+                ['p' => $postId, 'u' => $userId]
+            );
+
+            if (!empty($existing)) {
+                $currentVote = (int)$existing[0]['vote'];
+                if ($currentVote === $voteVal) {
+                    Database::execute(
+                        "DELETE FROM post_likes WHERE post_id = :p AND user_id = :u",
+                        ['p' => $postId, 'u' => $userId]
+                    );
+                    $userVote = 0;
+                } else {
+                    Database::execute(
+                        "UPDATE post_likes SET vote = :v WHERE post_id = :p AND user_id = :u",
+                        ['v' => $voteVal, 'p' => $postId, 'u' => $userId]
+                    );
+                    $userVote = $voteVal;
+                }
+            } else {
+                Database::execute(
+                    "INSERT INTO post_likes (post_id, user_id, vote) VALUES (:p, :u, :v)",
+                    ['p' => $postId, 'u' => $userId, 'v' => $voteVal]
+                );
+                $userVote = $voteVal;
+            }
+        } catch (PDOException $e) {
+            error_log('Error voting on post: ' . $e->getMessage());
+        }
+
+        $stats = $this->getVoteStats($postId);
+        return [
+            'score'     => $stats['score'],
+            'upvotes'   => $stats['upvotes'],
+            'downvotes' => $stats['downvotes'],
+            'user_vote' => $userVote,
+            'likes'     => $stats['score'],
+            'liked'     => ($userVote === 1),
+        ];
+    }
+
+    /**
+     * Kiểm tra người dùng đã Upvote bài viết chưa (tương thích ngược)
      */
     public function isLiked(int $postId, int $userId): bool {
-        try {
-            $rows = Database::call('sp_post_is_liked', [$postId, $userId]);
-            return !empty($rows) && (bool)($rows[0]['is_liked'] ?? false);
-        } catch (PDOException $e) {
-            $rows = Database::query("SELECT 1 FROM post_likes WHERE post_id = :p AND user_id = :u", ['p' => $postId, 'u' => $userId]);
-            return !empty($rows);
-        }
+        return $this->getUserVote($postId, $userId) === 1;
     }
 
     /**
-     * Thích hoặc bỏ thích bài viết (gọi routine sp_toggle_like hoặc sp_post_toggle_like)
+     * Thích hoặc bỏ thích bài viết (tương thích ngược với Upvote +1)
      */
     public function toggleLike(int $postId, int $userId): int {
-        try {
-            $results = Database::call('sp_toggle_like', [$postId, $userId]);
-            return (int) ($results[0]['likes'] ?? 0);
-        } catch (PDOException $e) {
-            $check = Database::query("SELECT 1 FROM post_likes WHERE post_id = :p AND user_id = :u", [
-                'p' => $postId, 'u' => $userId
-            ]);
-            if (!empty($check)) {
-                Database::execute("DELETE FROM post_likes WHERE post_id = :p AND user_id = :u", [
-                    'p' => $postId, 'u' => $userId
-                ]);
-            } else {
-                Database::execute("INSERT INTO post_likes (post_id, user_id) VALUES (:p, :u)", [
-                    'p' => $postId, 'u' => $userId
-                ]);
-            }
-            $countRes = Database::query("SELECT COUNT(*) as total FROM post_likes WHERE post_id = :p", ['p' => $postId]);
-            return (int)($countRes[0]['total'] ?? 0);
-        }
+        $result = $this->vote($postId, $userId, 1);
+        return (int)$result['score'];
     }
 
     /**
-     * Lay toan bo danh sach anh cua bai viet tu bang post_images
-     * @param int $postId
-     * @return array Danh sach anh
+     * Lấy toàn bộ danh sách ảnh của bài viết từ bảng post_images
      */
     public function getImages(int $postId): array {
         try {
@@ -631,10 +712,7 @@ class Post extends Model {
     }
 
     /**
-     * Them nhieu anh vao bang post_images cho bai viet
-     * @param int $postId
-     * @param array $imageUrls Mang duong dan anh
-     * @return bool
+     * Thêm nhiều ảnh vào bảng post_images cho bài viết
      */
     public function addImages(int $postId, array $imageUrls): bool {
         if (empty($imageUrls)) {

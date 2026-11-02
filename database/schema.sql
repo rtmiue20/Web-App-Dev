@@ -72,6 +72,7 @@ CREATE TABLE comments (
 CREATE TABLE post_likes (
   post_id INT UNSIGNED NOT NULL,                                  -- PK + FK -> posts
   user_id INT UNSIGNED NOT NULL,                                  -- PK + FK -> users
+  vote    TINYINT NOT NULL DEFAULT 1,                             -- 1: Upvote (+1), -1: Downvote (-1)
   PRIMARY KEY (post_id, user_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -484,8 +485,41 @@ END$$
 
 
 -- ==============================================================================
--- 5. LƯỢT THÍCH (POST LIKES)
+-- 5. LƯỢT THÍCH & VOTE (POST LIKES / UPVOTE / DOWNVOTE)
 -- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_post_vote$$
+CREATE PROCEDURE sp_post_vote(IN p_post_id INT, IN p_user_id INT, IN p_vote TINYINT)
+BEGIN
+    DECLARE v_existing TINYINT DEFAULT NULL;
+    DECLARE v_user_vote TINYINT DEFAULT 0;
+
+    SELECT vote INTO v_existing
+    FROM post_likes
+    WHERE post_id = p_post_id AND user_id = p_user_id
+    LIMIT 1;
+
+    IF v_existing IS NOT NULL THEN
+        IF v_existing = p_vote THEN
+            DELETE FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
+            SET v_user_vote = 0;
+        ELSE
+            UPDATE post_likes SET vote = p_vote WHERE post_id = p_post_id AND user_id = p_user_id;
+            SET v_user_vote = p_vote;
+        END IF;
+    ELSE
+        INSERT INTO post_likes (post_id, user_id, vote) VALUES (p_post_id, p_user_id, p_vote);
+        SET v_user_vote = p_vote;
+    END IF;
+
+    SELECT
+        COALESCE(SUM(vote), 0) AS score,
+        COUNT(CASE WHEN vote = 1 THEN 1 END) AS upvotes,
+        COUNT(CASE WHEN vote = -1 THEN 1 END) AS downvotes,
+        v_user_vote AS user_vote
+    FROM post_likes
+    WHERE post_id = p_post_id;
+END$$
 
 DROP PROCEDURE IF EXISTS sp_toggle_like$$
 DROP PROCEDURE IF EXISTS sp_post_toggle_like$$
@@ -493,15 +527,16 @@ CREATE PROCEDURE sp_post_toggle_like(IN p_post_id INT, IN p_user_id INT)
 BEGIN
     DECLARE v_liked INT DEFAULT 0;
     
-    IF EXISTS (SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id) THEN
+    IF EXISTS (SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id AND vote = 1) THEN
         DELETE FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
         SET v_liked = 0;
     ELSE
-        INSERT INTO post_likes (post_id, user_id) VALUES (p_post_id, p_user_id);
+        INSERT INTO post_likes (post_id, user_id, vote) VALUES (p_post_id, p_user_id, 1)
+        ON DUPLICATE KEY UPDATE vote = 1;
         SET v_liked = 1;
     END IF;
     
-    SELECT COUNT(*) AS likes, v_liked AS is_liked 
+    SELECT COALESCE(SUM(vote), 0) AS likes, v_liked AS is_liked 
     FROM post_likes 
     WHERE post_id = p_post_id;
 END$$
@@ -516,7 +551,7 @@ DROP PROCEDURE IF EXISTS sp_post_is_liked$$
 CREATE PROCEDURE sp_post_is_liked(IN p_post_id INT, IN p_user_id INT)
 BEGIN
     SELECT EXISTS (
-        SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id
+        SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id AND vote = 1
     ) AS is_liked;
 END$$
 

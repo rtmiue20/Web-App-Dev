@@ -249,6 +249,7 @@ class ApiController extends Controller
     {
         $keyword = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
         $categoryId = isset($_GET['category']) && $_GET['category'] !== '' ? (int)$_GET['category'] : null;
+        $sort = Post::normalizeSort($_GET['sort'] ?? 'hot');
 
         if ($keyword !== '' && isset($_GET['suggest'])) {
             $suggestions = $this->posts->suggest($keyword);
@@ -260,14 +261,50 @@ class ApiController extends Controller
         }
 
         if ($keyword !== '') {
-            $posts = $this->posts->search($keyword, $categoryId);
+            $posts = $this->posts->search($keyword, $categoryId, $sort);
         } else {
-            $posts = $this->posts->getAll($categoryId);
+            $posts = $this->posts->getAll($categoryId, $sort);
         }
 
         Response::json([
             'success' => true,
             'data'    => $posts
+        ]);
+    }
+
+    /**
+     * POST /api/likes.php hoặc /api/votes
+     * Xử lý Upvote (+1) / Downvote (-1) bài viết qua AJAX
+     */
+    public function votePost(): void
+    {
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
+        if ($postId <= 0) {
+            Response::json(['success' => false, 'message' => 'Bài viết không hợp lệ.'], 400);
+            return;
+        }
+
+        $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;
+        $voteType = ((int)$voteRaw < 0) ? -1 : 1;
+
+        $user = Session::get('user');
+        $userId = (int)($user['id'] ?? 0);
+        $voteData = $this->posts->vote($postId, $userId, $voteType);
+
+        Response::json([
+            'success' => true,
+            'data'    => $voteData
         ]);
     }
 }

@@ -58,7 +58,9 @@ class PostController extends Controller {
             $page = $totalPages;
         }
 
-        $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published');
+        $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
+
+        $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
         $categoriesList = $this->categories->getAll();
 
         $this->render('posts/index', [
@@ -66,6 +68,7 @@ class PostController extends Controller {
             'posts' => $postsList,
             'categories' => $categoriesList,
             'selectedCategoryId' => $categoryId,
+            'selectedSort' => $selectedSort,
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'totalPosts' => $totalPosts,
@@ -263,6 +266,7 @@ class PostController extends Controller {
         $totalComments = $this->comments->countByPost($id);
         $canManage = $this->canManagePost($post);
         $tools = $this->products->getByPostId($id);
+        $userVote = Auth::check() ? $this->posts->getUserVote($id, Auth::id()) : 0;
 
         $this->render('posts/show', [
             'title'         => $post['title'],
@@ -270,7 +274,8 @@ class PostController extends Controller {
             'tools'         => $tools,
             'comments'      => $commentsTree,
             'totalComments' => $totalComments,
-            'canManage'     => $canManage
+            'canManage'     => $canManage,
+            'userVote'      => $userVote
         ]);
     }
 
@@ -500,28 +505,31 @@ class PostController extends Controller {
     }
 
     /**
-     * Thích bài viết qua AJAX
+     * Upvote (+1) / Downvote (-1) bài viết qua AJAX
      */
     public function like(int $id): void {
-        header('Content-Type: application/json; charset=utf-8');
-
-        if (!Session::has('user')) {
-            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bài viết.']);
-            exit;
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            return;
         }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;
+        $voteType = ((int)$voteRaw < 0) ? -1 : 1;
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
-        $newLikes = $this->posts->toggleLike($id, $userId);
+        $voteData = $this->posts->vote($id, $userId, $voteType);
 
-        echo json_encode([
+        Response::json([
             'success' => true,
-            'data' => [
-                'likes' => $newLikes,
-                'liked' => true
-            ]
+            'data'    => $voteData
         ]);
-        exit;
     }
 
     /**

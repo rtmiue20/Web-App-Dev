@@ -52,6 +52,9 @@ class App
         $router->post('/posts/{id}/like', function ($id) use ($posts) {
             $posts->like((int)$id);
         });
+        $router->post('/posts/{id}/vote', function ($id) use ($posts) {
+            $posts->like((int)$id);
+        });
 
         // 5. Categories (Public)
         $router->get('/categories', [$categories, 'index']);
@@ -91,6 +94,9 @@ class App
             }
         });
         $router->post('/api/comments/delete', [$api, 'deleteComment']);
+        $router->post('/api/likes', [$api, 'votePost']);
+        $router->post('/api/likes.php', [$api, 'votePost']);
+        $router->post('/api/votes', [$api, 'votePost']);
         $router->get('/api/posts', [$api, 'posts']);
         $router->get('/api/posts.php', [$api, 'posts']);
 

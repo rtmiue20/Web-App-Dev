@@ -20,49 +20,79 @@ const ForumAjax = {
     return raw;
   },
 
-  // 1. FR08: Toggle like on a post via AJAX
-  toggleLike: async function (postId, btnElement) {
-    if (!postId || !btnElement) return;
+  // 1. FR08: Hệ thống Vote (Upvote +1 / Downvote -1) bài viết qua AJAX
+  votePost: async function (postId, voteType, btnElement) {
+    if (!postId) return;
 
     const csrfToken = this.getCsrfToken();
     const baseUrl = this.getBaseUrl();
+    const cleanVote = Number(voteType) < 0 ? -1 : 1;
 
-    btnElement.disabled = true;
+    if (btnElement) {
+      btnElement.disabled = true;
+    }
+
     try {
-      const response = await fetch(`${baseUrl}/posts/${postId}/like`, {
+      const response = await fetch(`${baseUrl}/api/likes.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
-        body: JSON.stringify({ _csrf: csrfToken }),
+        body: JSON.stringify({
+          post_id: postId,
+          vote: cleanVote,
+          _csrf: csrfToken,
+        }),
       });
 
       const data = await response.json();
-      if (data && data.success) {
-        const countSpan = btnElement.querySelector('.like-count');
-        if (countSpan) {
-          countSpan.textContent = data.data.likes;
-        }
-        const isLiked = Boolean(data.data.liked);
-        btnElement.classList.toggle('liked', isLiked);
-        btnElement.style.background = isLiked ? 'rgba(220, 53, 69, 0.12)' : '';
-        btnElement.style.borderColor = isLiked ? 'rgba(220, 53, 69, 0.45)' : '';
+      if (data && data.success && data.data) {
+        const score = Number(data.data.score ?? data.data.likes ?? 0);
+        const upvotes = Number(data.data.upvotes ?? Math.max(0, score));
+        const downvotes = Number(data.data.downvotes ?? 0);
+        const userVote = Number(data.data.user_vote ?? 0);
 
-        const icon = btnElement.querySelector('i');
-        if (icon) {
-          icon.className = isLiked
-            ? 'bi bi-heart-fill text-danger me-1'
-            : 'bi bi-heart text-danger me-1';
-        }
+        // Cập nhật tất cả bộ đếm điểm vote của bài viết trên trang
+        document.querySelectorAll(`.vote-score[data-post-id="${postId}"], .like-count[data-post-id="${postId}"]`).forEach(function (el) {
+          el.textContent = score;
+        });
+
+        // Cập nhật chi tiết (+up / -down) nếu có
+        document.querySelectorAll(`.vote-breakdown[data-post-id="${postId}"]`).forEach(function (el) {
+          el.textContent = `(+${upvotes} / -${downvotes})`;
+        });
+
+        // Cập nhật trạng thái nút Upvote (+1)
+        document.querySelectorAll(`.vote-up-btn[data-post-id="${postId}"]`).forEach(function (upBtn) {
+          const isUp = userVote === 1;
+          upBtn.classList.toggle('active', isUp);
+          upBtn.style.background = isUp ? '#2f5e2e' : '';
+          upBtn.style.color = isUp ? '#ffffff' : '#2f5e2e';
+        });
+
+        // Cập nhật trạng thái nút Downvote (-1)
+        document.querySelectorAll(`.vote-down-btn[data-post-id="${postId}"]`).forEach(function (downBtn) {
+          const isDown = userVote === -1;
+          downBtn.classList.toggle('active', isDown);
+          downBtn.style.background = isDown ? '#b02a37' : '';
+          downBtn.style.color = isDown ? '#ffffff' : '#8c3b2b';
+        });
       } else {
-        alert(data.message || 'Vui lòng đăng nhập để thích bài viết.');
+        alert((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.');
       }
     } catch (err) {
-      console.error('Lỗi khi gửi like:', err);
+      console.error('Lỗi khi gửi vote:', err);
     } finally {
-      btnElement.disabled = false;
+      if (btnElement) {
+        btnElement.disabled = false;
+      }
     }
+  },
+
+  // Tương thích ngược với các nút gọi toggleLike cũ
+  toggleLike: async function (postId, btnElement) {
+    return this.votePost(postId, 1, btnElement);
   },
 
   // 2. FR07: Submit new comment or multi-level nested reply via AJAX
