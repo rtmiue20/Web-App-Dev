@@ -225,7 +225,7 @@ const ForumAjax = {
     }
 
     // Đóng các ô reply đang mở khác cho gọn giao diện
-    document.querySelectorAll('[id^="reply-box-container-"]').forEach((el) => {
+    document.querySelectorAll('[id^="reply-box-container-"]').forEach(function(el) {
       if (el.id !== `reply-box-container-${commentId}`) {
         el.style.display = 'none';
         el.innerHTML = '';
@@ -289,16 +289,19 @@ const ForumAjax = {
     if (modalEl && confirmBtn && typeof bootstrap !== 'undefined') {
       this._pendingDelete = { commentId, postId, btnElement };
       const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+      const self = this;
 
-      confirmBtn.onclick = async () => {
-        if (!this._pendingDelete) return;
-        const { commentId: cId, postId: pId, btnElement: btn } = this._pendingDelete;
+      confirmBtn.onclick = async function() {
+        if (!self._pendingDelete) return;
+        const cId = self._pendingDelete.commentId;
+        const pId = self._pendingDelete.postId;
+        const btn = self._pendingDelete.btnElement;
         confirmBtn.disabled = true;
         confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xóa...';
-        await this.executeDeleteComment(cId, pId, btn);
+        await self.executeDeleteComment(cId, pId, btn);
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Xóa bình luận';
-        this._pendingDelete = null;
+        self._pendingDelete = null;
         modalInstance.hide();
       };
 
@@ -341,7 +344,9 @@ const ForumAjax = {
           targetNode.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
           targetNode.style.opacity = '0';
           targetNode.style.transform = 'translateY(-6px)';
-          setTimeout(() => targetNode.remove(), 250);
+          setTimeout(function() {
+            targetNode.remove();
+          }, 250);
         }
 
         const countBadge = document.getElementById('comments-count-badge');
@@ -385,7 +390,8 @@ const ForumAjax = {
               <div class="row row-cols-2 row-cols-sm-4 g-2 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
                 ${w.daily
                   .map(
-                    (d) => `
+                    function(d) {
+                      return `
                   <div class="col">
                     <div class="p-2 rounded-3 text-center h-100" style="background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.06);">
                       <div class="fw-semibold text-dark" style="font-size: 12px;">${d.day_label}</div>
@@ -399,7 +405,8 @@ const ForumAjax = {
                       </div>
                     </div>
                   </div>
-                `
+                `;
+                    }
                   )
                   .join('')}
               </div>
@@ -466,7 +473,7 @@ const ForumAjax = {
     }
 
     provSelect.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>';
-    provincesData.forEach((p) => {
+    provincesData.forEach(function(p) {
       const opt = document.createElement('option');
       opt.value = p.code;
       opt.textContent = p.name;
@@ -482,12 +489,12 @@ const ForumAjax = {
         return;
       }
 
-      const prov = provincesData.find((p) => String(p.code) === String(code));
+      const prov = provincesData.find(function(p) { return String(p.code) === String(code); });
       if (!prov) return;
 
       distSelect.disabled = false;
       if (Array.isArray(prov.districts)) {
-        prov.districts.forEach((d, idx) => {
+        prov.districts.forEach(function(d, idx) {
           const opt = document.createElement('option');
           opt.value = String(idx);
           opt.textContent = d.name;
@@ -509,7 +516,7 @@ const ForumAjax = {
     distSelect.addEventListener('change', function () {
       const code = provSelect.value;
       const distIdx = this.value;
-      const prov = provincesData.find((p) => String(p.code) === String(code));
+      const prov = provincesData.find(function(p) { return String(p.code) === String(code); });
       if (!prov) return;
 
       if (distIdx === '' || !prov.districts || !prov.districts[distIdx]) {

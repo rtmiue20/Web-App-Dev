@@ -871,15 +871,17 @@ body {
 }
 
 .nature-alert-success {
-  background: rgba(155, 189, 85, 0.18);
-  border: 1px solid rgba(155, 189, 85, 0.4);
-  color: #d8e8b0;
+  background: #f1f8eb;
+  border: 1px solid #c2e2a8;
+  color: #1e4619;
+  font-weight: 500;
 }
 
 .nature-alert-error {
-  background: rgba(220, 53, 69, 0.18);
-  border: 1px solid rgba(220, 53, 69, 0.4);
-  color: #f8b4b9;
+  background: #fdf2f2;
+  border: 1px solid #f5c2c7;
+  color: #842029;
+  font-weight: 500;
 }
 
 .nature-badge {
@@ -1148,8 +1150,108 @@ body {
 }
 
 /* ==========================================================================
-   Tool Item Marquee (Chạy chữ tự động cho dụng cụ có tên dài khi đăng bài)
+   App Toast Notification (Liquid Glass đậm, nhỏ gọn ở góc phải)
    ========================================================================== */
+#flash-toast-container {
+  position: fixed !important;
+  top: 1.25rem !important;
+  right: 1.5rem !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 99999 !important;
+  width: min(88vw, 320px) !important;
+  max-width: 320px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  pointer-events: none !important;
+}
+
+.app-toast {
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 16px !important;
+  padding: 0.7rem 0.85rem 0.75rem 0.85rem !important;
+  overflow: hidden !important;
+  animation: toastSlideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  transition: opacity 0.3s ease, transform 0.3s ease !important;
+  pointer-events: auto !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+.app-toast-success {
+  background: linear-gradient(135deg, rgba(32, 48, 25, 0.94) 0%, rgba(18, 28, 15, 0.97) 100%) !important;
+  border: 1px solid rgba(165, 215, 95, 0.38) !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  color: #f2f6ee !important;
+}
+
+.app-toast-error {
+  background: linear-gradient(135deg, rgba(58, 20, 24, 0.94) 0%, rgba(32, 12, 14, 0.97) 100%) !important;
+  border: 1px solid rgba(255, 115, 125, 0.38) !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  color: #fff0f2 !important;
+}
+
+.toast-glass-close {
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  cursor: pointer !important;
+  padding: 1px 4px !important;
+  line-height: 1 !important;
+  font-size: 0.75rem !important;
+  transition: color 0.15s ease, transform 0.15s ease !important;
+}
+
+.toast-glass-close:hover {
+  color: #ffffff !important;
+  transform: scale(1.15) !important;
+}
+
+.app-toast.toast-hiding {
+  opacity: 0 !important;
+  transform: translateX(110%) !important;
+}
+
+.toast-progress-bar {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  height: 2.5px !important;
+  width: 100% !important;
+  animation: toastProgress 6s linear forwards !important;
+}
+
+.toast-progress-success {
+  background: linear-gradient(to right, #9bbd55, #cbe68e);
+}
+
+.toast-progress-error {
+  background: linear-gradient(to right, #ff4d60, #ffa3ad);
+}
+
+@keyframes toastSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
 .tool-card-label {
   overflow: hidden;
   max-width: 100%;
@@ -1181,7 +1283,9 @@ body {
 
 /* Tạm dừng chạy chữ khi rê chuột hoặc focus để đọc hoặc click dễ dàng */
 .tool-item label:hover .tool-title-inner,
-.tool-item label:focus-within .tool-title-inner {
+.tool-item label:focus-within .tool-title-inner,
+.tool-post-card:hover .tool-title-inner,
+.tool-post-card:focus-within .tool-title-inner {
   animation-play-state: paused;
 }
 

@@ -191,13 +191,12 @@ $galleryCount = count($galleryImages);
                      id="vote-widget-<?= (int)$post['id'] ?>"
                      style="background: rgba(34, 40, 31, 0.06); border-color: rgba(34, 40, 31, 0.2) !important;">
                     <button type="button"
-                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-up-btn <?= $currentVote === 1 ? 'active' : '' ?>"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center justify-content-center vote-up-btn <?= $currentVote === 1 ? 'active' : '' ?>"
                             data-post-id="<?= (int)$post['id'] ?>"
                             onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, 1, this)"
                             title="Upvote bài viết hữu ích (+1)"
                             style="<?= $currentVote === 1 ? 'background: #2f5e2e; color: #fff; font-weight: 600;' : 'color: #2f5e2e; font-weight: 600;' ?>">
                         <i class="bi bi-caret-up-fill"></i>
-                        <span class="d-none d-sm-inline small">Upvote</span>
                     </button>
 
                     <span class="fw-bold px-2 vote-score like-count"
@@ -208,7 +207,7 @@ $galleryCount = count($galleryImages);
                     </span>
 
                     <button type="button"
-                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-down-btn <?= $currentVote === -1 ? 'active' : '' ?>"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center justify-content-center vote-down-btn <?= $currentVote === -1 ? 'active' : '' ?>"
                             data-post-id="<?= (int)$post['id'] ?>"
                             onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, -1, this)"
                             title="Downvote bài viết (-1)"
@@ -230,6 +229,28 @@ $galleryCount = count($galleryImages);
 
         <!-- Dụng cụ & Trang thiết bị chuyến đi (Tools & Gear) -->
         <?php if (!empty($tools)): ?>
+            <style>
+                .tool-post-card { overflow: hidden; max-width: 100%; box-sizing: border-box; }
+                .tool-title-marquee { position: relative; width: 100%; max-width: 100%; overflow: hidden; white-space: nowrap; line-height: 1.35; }
+                .tool-title-marquee.has-overflow {
+                    mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                    -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                }
+                .tool-title-inner { display: inline-block; white-space: nowrap; }
+                .tool-title-marquee.has-overflow .tool-title-inner {
+                    will-change: transform;
+                    animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+                }
+                .tool-post-card:hover .tool-title-inner,
+                .tool-post-card:focus-within .tool-title-inner {
+                    animation-play-state: paused;
+                }
+                @keyframes toolTextMarquee {
+                    0%, 20% { transform: translateX(0); }
+                    68%, 82% { transform: translateX(var(--marquee-distance, -80px)); }
+                    94%, 100% { transform: translateX(0); }
+                }
+            </style>
             <div class="post-tools-section mt-5 pt-4 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
@@ -256,13 +277,14 @@ $galleryCount = count($galleryImages);
                         $toolLink = trim((string)($tool['link'] ?? ''));
                     ?>
                         <div class="col">
-                            <div class="p-3 rounded-4 border d-flex gap-3 align-items-center h-100" style="background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08) !important; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                            <div class="tool-post-card p-3 rounded-4 border d-flex gap-3 align-items-center h-100 position-relative overflow-hidden" 
+                                 style="background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.08) !important; transition: transform 0.2s ease, box-shadow 0.2s ease; max-width: 100%;">
                                 <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
                                      alt="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>" 
                                      class="rounded-3 object-fit-cover flex-shrink-0" 
                                      style="width: 72px; height: 72px; border: 1px solid rgba(0,0,0,0.06);">
                                 
-                                <div class="flex-grow-1 min-w-0">
+                                <div class="flex-grow-1 min-w-0 overflow-hidden">
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <?php if (!empty($tool['category_name'])): ?>
                                             <span class="badge rounded-pill bg-light text-dark border text-uppercase" style="font-size: 10px; letter-spacing: 0.4px;">
@@ -274,12 +296,12 @@ $galleryCount = count($galleryImages);
                                         </span>
                                     </div>
 
-                                    <h4 class="h6 fw-semibold text-truncate mb-1" style="color: var(--color-ink);" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>
-                                    </h4>
+                                    <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <span class="tool-title-inner"><?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
 
                                     <div class="d-flex align-items-center justify-content-between gap-2">
-                                        <small class="text-muted text-truncate" style="font-size: 11.5px;">
+                                        <small class="text-muted text-truncate flex-grow-1 min-w-0" style="font-size: 11.5px;" title="<?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>">
                                             <?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>
                                         </small>
                                         <?php if ($toolLink !== ''): ?>
@@ -287,7 +309,7 @@ $galleryCount = count($galleryImages);
                                                target="_blank" 
                                                rel="noopener noreferrer" 
                                                class="nature-btn-secondary px-2 py-1 text-dark border-dark-subtle flex-shrink-0"
-                                               style="font-size: 11px;"
+                                               style="font-size: 11px; white-space: nowrap;"
                                                title="Xem nơi mua hoặc thông số">
                                                 Nơi mua <i class="bi bi-box-arrow-up-right ms-1"></i>
                                             </a>
@@ -746,7 +768,11 @@ $galleryCount = count($galleryImages);
         // Animate out current
         slides[current].classList.remove('active');
         slides[current].classList.add(outClass);
-        setTimeout(() => slides[current]?.classList.remove(outClass), 450);
+        setTimeout(function() {
+            if (slides[current]) {
+                slides[current].classList.remove(outClass);
+            }
+        }, 450);
 
         current = (next + TOTAL) % TOTAL;
 
@@ -754,7 +780,9 @@ $galleryCount = count($galleryImages);
         slides[current].classList.add('active');
 
         // Update dots + counter
-        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        dots.forEach(function(d, i) {
+            d.classList.toggle('active', i === current);
+        });
         if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
     }
 
@@ -809,7 +837,9 @@ $galleryCount = count($galleryImages);
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
             // Sync carousel
-            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            dots.forEach(function(d, i) {
+                d.classList.toggle('active', i === current);
+            });
             if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
         },
 
@@ -817,7 +847,9 @@ $galleryCount = count($galleryImages);
             current = (current + 1) % TOTAL;
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
-            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            dots.forEach(function(d, i) {
+                d.classList.toggle('active', i === current);
+            });
             if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
         },
 
@@ -844,7 +876,7 @@ $galleryCount = count($galleryImages);
     function startTimer() {
         stopTimer();
         if (TOTAL <= 1) return;
-        timer = setInterval(() => {
+        timer = setInterval(function() {
             goToSlide(current + 1, 'left');
         }, AUTO_MS);
     }
@@ -856,7 +888,9 @@ $galleryCount = count($galleryImages);
     // ── Pause on hover ────────────────────────────────────────────
     if (viewport) {
         viewport.addEventListener('mouseenter', stopTimer);
-        viewport.addEventListener('mouseleave', () => { if (playing) startTimer(); });
+        viewport.addEventListener('mouseleave', function() {
+            if (playing) startTimer();
+        });
     }
 
     // ── Keyboard navigation ───────────────────────────────────────
@@ -881,7 +915,7 @@ function submitComment() {
     if (!input || !input.value.trim()) return;
 
     const list = document.getElementById('comments-list');
-    ForumAjax.postComment(<?= (int)$post['id'] ?>, input.value, list).then(success => {
+    ForumAjax.postComment(<?= (int)$post['id'] ?>, input.value, list).then(function(success) {
         if (success) {
             input.value = '';
             const noMsg = document.getElementById('no-comments-msg');
@@ -890,8 +924,11 @@ function submitComment() {
     });
 }
 
-// ── Weather ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── Weather & Tool Marquee ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.initToolMarquees) {
+        window.initToolMarquees();
+    }
     const weatherElem = document.getElementById('weather-info');
     if (weatherElem) {
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>

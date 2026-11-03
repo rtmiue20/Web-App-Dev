@@ -300,7 +300,7 @@ function previewEditImages(files) {
     const grid = document.getElementById('editPreviewGrid');
     grid.innerHTML = '';
     if (!files || files.length === 0) return;
-    Array.from(files).forEach((file, i) => {
+    Array.from(files).forEach(function(file, i) {
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -337,7 +337,9 @@ function handleEditDrop(e) {
 
     // Assign dropped files to input
     const dt = new DataTransfer();
-    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    Array.from(e.dataTransfer.files).forEach(function(f) {
+        dt.items.add(f);
+    });
     input.files = dt.files;
     previewEditImages(input.files);
 }
@@ -439,14 +441,14 @@ function handleEditDrop(e) {
 </style>
 
 <script>
-const MapPicker = (() => {
+const MapPicker = (function() {
     let selected = null;
-    const modal        = () => document.getElementById('mapPickerModal');
-    const searchInput  = () => document.getElementById('mapSearchInput');
-    const resultsBox   = () => document.getElementById('mapSearchResults');
-    const selectedInfo = () => document.getElementById('mapSelectedInfo');
-    const selectedText = () => document.getElementById('mapSelectedText');
-    const confirmBtn   = () => document.getElementById('mapConfirmBtn');
+    function modal() { return document.getElementById('mapPickerModal'); }
+    function searchInput() { return document.getElementById('mapSearchInput'); }
+    function resultsBox() { return document.getElementById('mapSearchResults'); }
+    function selectedInfo() { return document.getElementById('mapSelectedInfo'); }
+    function selectedText() { return document.getElementById('mapSelectedText'); }
+    function confirmBtn() { return document.getElementById('mapConfirmBtn'); }
 
     function open() {
         selected = null;
@@ -455,7 +457,9 @@ const MapPicker = (() => {
         if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
         if (searchInput()) searchInput().value = document.getElementById('location')?.value || '';
         modal().style.display = 'flex';
-        setTimeout(() => searchInput()?.focus(), 80);
+        setTimeout(function() {
+            if (searchInput()) searchInput().focus();
+        }, 80);
     }
 
     function close() { modal().style.display = 'none'; }
@@ -487,12 +491,14 @@ const MapPicker = (() => {
                 return;
             }
             resultsBox().innerHTML = '';
-            data.forEach(item => {
+            data.forEach(function(item) {
                 const div = document.createElement('div');
                 div.className = 'map-result-item';
                 const shortName = item.display_name.split(',')[0].trim();
                 div.innerHTML = `<i class="bi bi-geo-alt-fill"></i><div><strong>${shortName}</strong><span>${item.display_name}</span></div>`;
-                div.addEventListener('click', () => selectResult(item, div));
+                div.addEventListener('click', function() {
+                    selectResult(item, div);
+                });
                 resultsBox().appendChild(div);
             });
         } catch (err) {
@@ -514,7 +520,9 @@ const MapPicker = (() => {
             lng: parseFloat(item.lon),
             short_name: item.display_name.split(',').slice(0, 2).join(',').trim()
         };
-        document.querySelectorAll('.map-result-item').forEach(e => e.classList.remove('selected'));
+        document.querySelectorAll('.map-result-item').forEach(function(e) {
+            e.classList.remove('selected');
+        });
         if (el) el.classList.add('selected');
         if (selectedInfo()) selectedInfo().style.display = 'flex';
         if (selectedText()) selectedText().textContent = `${selected.short_name}  ·  ${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`;

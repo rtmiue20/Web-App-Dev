@@ -184,15 +184,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
             }
-        }).then(async res => {
-            const data = await res.json().catch(() => null);
+        }).then(async function(res) {
+            const data = await res.json().catch(function() { return null; });
             return { ok: res.ok, status: res.status, data: data };
-        }).catch(err => {
+        }).catch(function(err) {
             return { ok: false, error: err };
         });
 
         // 3. Đợi 200ms cho card fade out rồi kích hoạt intro reveal
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(function(r) { setTimeout(r, 200); });
 
         intro.style.setProperty('--d', totalMs + 'ms');
         intro.classList.remove('play');
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 4. Chờ animation hoàn thiện và nhận kết quả API song song
         const [result] = await Promise.all([
             apiPromise,
-            new Promise(r => setTimeout(r, totalMs + HOLD_MS))
+            new Promise(function(r) { setTimeout(r, totalMs + HOLD_MS); })
         ]);
 
         if (result && result.ok && result.data && result.data.success) {
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Thất bại: đóng intro, khôi phục form và hiển thị thông báo lỗi
             intro.classList.remove('show');
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(function(r) { setTimeout(r, 250); });
             intro.classList.remove('play');
 
             loginCard.classList.remove('out');

@@ -379,30 +379,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const countText = document.getElementById('imagePreviewCount');
 
     if (dropzone && input) {
-        dropzone.addEventListener('click', () => input.click());
+        dropzone.addEventListener('click', function() {
+            input.click();
+        });
 
-        ['dragenter', 'dragover'].forEach(ev => {
-            dropzone.addEventListener(ev, (e) => {
+        ['dragenter', 'dragover'].forEach(function(ev) {
+            dropzone.addEventListener(ev, function(e) {
                 e.preventDefault(); e.stopPropagation();
                 dropzone.style.background   = 'rgba(155, 189, 85, 0.15)';
                 dropzone.style.borderColor  = 'var(--color-moss, #9bbd55)';
             });
         });
-        ['dragleave', 'drop'].forEach(ev => {
-            dropzone.addEventListener(ev, (e) => {
+        ['dragleave', 'drop'].forEach(function(ev) {
+            dropzone.addEventListener(ev, function(e) {
                 e.preventDefault(); e.stopPropagation();
                 dropzone.style.background  = 'rgba(0,0,0,0.02)';
                 dropzone.style.borderColor = 'rgba(0,0,0,0.15)';
             });
         });
-        dropzone.addEventListener('drop', (e) => {
+        dropzone.addEventListener('drop', function(e) {
             const dt = e.dataTransfer;
             if (dt && dt.files && dt.files.length > 0) {
                 input.files = dt.files;
                 renderPreviews(dt.files);
             }
         });
-        input.addEventListener('change', () => renderPreviews(input.files));
+        input.addEventListener('change', function() {
+            renderPreviews(input.files);
+        });
 
         function renderPreviews(files) {
             if (!files || files.length === 0) {
@@ -415,10 +419,10 @@ document.addEventListener('DOMContentLoaded', function() {
             previewContainer.classList.remove('d-none');
             countText.classList.remove('d-none');
             countText.innerHTML = `<i class="bi bi-check-circle-fill text-success me-1"></i>Đã chọn <strong>${files.length}</strong> hình ảnh cho bài viết này.`;
-            Array.from(files).forEach((file, index) => {
+            Array.from(files).forEach(function(file, index) {
                 if (!file.type.startsWith('image/')) return;
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = function(e) {
                     const col = document.createElement('div');
                     col.className = 'col-4 col-sm-3 col-md-2';
                     col.innerHTML = `
@@ -437,15 +441,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // ══════════════════════════════════════════════════════════════
 // MAP PICKER — OpenStreetMap Nominatim (no API key needed)
 // ══════════════════════════════════════════════════════════════
-const MapPicker = (() => {
+const MapPicker = (function() {
     let selected = null;
 
-    const modal        = () => document.getElementById('mapPickerModal');
-    const searchInput  = () => document.getElementById('mapSearchInput');
-    const resultsBox   = () => document.getElementById('mapSearchResults');
-    const selectedInfo = () => document.getElementById('mapSelectedInfo');
-    const selectedText = () => document.getElementById('mapSelectedText');
-    const confirmBtn   = () => document.getElementById('mapConfirmBtn');
+    function modal() { return document.getElementById('mapPickerModal'); }
+    function searchInput() { return document.getElementById('mapSearchInput'); }
+    function resultsBox() { return document.getElementById('mapSearchResults'); }
+    function selectedInfo() { return document.getElementById('mapSelectedInfo'); }
+    function selectedText() { return document.getElementById('mapSelectedText'); }
+    function confirmBtn() { return document.getElementById('mapConfirmBtn'); }
 
     function open() {
         selected = null;
@@ -456,7 +460,9 @@ const MapPicker = (() => {
             searchInput().value = document.getElementById('location')?.value || '';
         }
         modal().style.display = 'flex';
-        setTimeout(() => searchInput()?.focus(), 80);
+        setTimeout(function() {
+            if (searchInput()) searchInput().focus();
+        }, 80);
     }
 
     function close() {
@@ -496,13 +502,15 @@ const MapPicker = (() => {
             }
 
             resultsBox().innerHTML = '';
-            data.forEach(item => {
+            data.forEach(function(item) {
                 const div = document.createElement('div');
                 div.className = 'map-result-item';
                 const shortName = item.display_name.split(',')[0].trim();
                 const address   = item.display_name;
                 div.innerHTML = `<i class="bi bi-geo-alt-fill"></i><div><strong>${shortName}</strong><span>${address}</span></div>`;
-                div.addEventListener('click', () => selectResult(item, div));
+                div.addEventListener('click', function() {
+                    selectResult(item, div);
+                });
                 resultsBox().appendChild(div);
             });
         } catch (err) {
@@ -526,7 +534,9 @@ const MapPicker = (() => {
         };
 
         // Highlight selected row
-        document.querySelectorAll('.map-result-item').forEach(e => e.classList.remove('selected'));
+        document.querySelectorAll('.map-result-item').forEach(function(e) {
+            e.classList.remove('selected');
+        });
         if (el) el.classList.add('selected');
 
         if (selectedInfo()) selectedInfo().style.display = 'flex';
