@@ -332,6 +332,33 @@ $galleryCount = count($galleryImages);
         <?php endif; ?>
 
         <!-- ══════════════════════════════════════════════════════════
+             DỰ BÁO THỜI TIẾT DÃ NGOẠI & 4 NGÀY TỚI (Web Service FR06)
+        ══════════════════════════════════════════════════════════ -->
+        <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border" style="background: rgba(255, 255, 255, 0.035); border-color: rgba(255, 255, 255, 0.1) !important;">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: rgba(155, 189, 85, 0.2); color: #c4e482;">
+                        <i class="bi bi-cloud-sun-fill fs-5"></i>
+                    </span>
+                    <div>
+                        <h3 class="h6 mb-0 text-white fw-semibold">Dự báo thời tiết & Khuyến nghị chuyến đi</h3>
+                        <span class="text-white-50" style="font-size: 11.5px;">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
+                    </div>
+                </div>
+                <?php if (!empty($post['location'])): ?>
+                    <span class="badge rounded-pill text-bg-light border text-secondary px-3 py-1.5" style="font-size: 11px;">
+                        <i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <div id="weather-forecast-panel" class="p-3 rounded-3" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08);">
+                <div class="text-center py-3 text-white-50 small">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>Đang tải dữ liệu khí tượng và dự báo 4 ngày tới...
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════
              AUTHOR BIO & GAMIFICATION WIDGET
         ══════════════════════════════════════════════════════════ -->
         <?php 
@@ -1161,12 +1188,13 @@ document.addEventListener('DOMContentLoaded', function() {
         window.ForumAjax.startCommentPolling(<?= (int)$post['id'] ?>);
     }
     const weatherElem = document.getElementById('weather-info');
-    if (weatherElem) {
+    const weatherPanel = document.getElementById('weather-forecast-panel');
+    if (weatherElem || weatherPanel) {
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
-            ForumAjax.fetchWeather('<?= htmlspecialchars((string)$post['lat'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars((string)$post['lng'], ENT_QUOTES, 'UTF-8') ?>', weatherElem);
+            ForumAjax.fetchWeather('<?= htmlspecialchars((string)$post['lat'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars((string)$post['lng'], ENT_QUOTES, 'UTF-8') ?>', weatherElem, weatherPanel);
         <?php else: ?>
             // Default: Northern Vietnam mountains (Ta Xua)
-            ForumAjax.fetchWeather('21.28', '104.31', weatherElem);
+            ForumAjax.fetchWeather('21.28', '104.31', weatherElem, weatherPanel);
         <?php endif; ?>
     }
 });

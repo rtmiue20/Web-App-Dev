@@ -11,6 +11,7 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     <title><?= htmlspecialchars($title ?? 'Diễn đàn dã ngoại', ENT_QUOTES, 'UTF-8') ?> — Bước ra thiên nhiên</title>
     <link rel="icon" type="image/svg+xml" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon-dark-32x32.png">
+    <link rel="shortcut icon" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/favicon.ico">
     <link rel="apple-touch-icon" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon-dark-32x32.png">
     
     <!-- Bootstrap 5.3 & Bootstrap Icons -->
@@ -28,40 +29,43 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     <!-- Floating Dock Navbar -->
     <?php require __DIR__ . '/../partials/navbar.php'; ?>
 
-    <!-- Flash Toast Messages Container (Góc phải màn hình, liquid glass đậm dễ đọc & tự đóng) -->
+    <!-- Flash Toast Messages Container (Apple Liquid Glass ở góc phải) -->
     <?php if ($successMessage || $errorMessage): ?>
-        <div id="flash-toast-container" 
-             style="position: fixed !important; top: 1.25rem !important; right: 1.5rem !important; left: auto !important; bottom: auto !important; z-index: 99999 !important; width: min(88vw, 320px) !important; max-width: 320px !important; display: flex !important; flex-direction: column !important; gap: 0.5rem !important; pointer-events: none !important;">
+        <div id="flash-toast-container">
             <?php if ($successMessage): ?>
                 <div class="app-toast app-toast-success shadow-lg" role="alert" id="toast-success">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="bi bi-check-circle-fill flex-shrink-0" style="color: #a8e063; font-size: 1.15rem; line-height: 1.2; margin-top: 1px;"></i>
-                        <div class="flex-grow-1 min-w-0" style="font-size: 12.5px; line-height: 1.4; color: #f2f6ee;">
-                            <div class="fw-bold mb-1" style="font-size: 13.5px; color: #a8e063;">Thành công!</div>
-                            <div><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="toast-body-row d-flex align-items-center gap-2">
+                        <div class="toast-icon-badge toast-icon-success flex-shrink-0">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="toast-title">Thành công!</div>
+                            <div class="toast-desc"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
                         </div>
                         <button type="button" 
                                 class="toast-glass-close flex-shrink-0" 
                                 onclick="window.dismissToast(this.closest('.app-toast'))" 
                                 aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
                     </div>
-                    <div class="toast-progress-bar toast-progress-success"></div>
+                    <div class="toast-progress-track"><div class="toast-progress-fill toast-progress-success"></div></div>
                 </div>
             <?php endif; ?>
             <?php if ($errorMessage): ?>
                 <div class="app-toast app-toast-error shadow-lg" role="alert" id="toast-error">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="color: #ff808b; font-size: 1.15rem; line-height: 1.2; margin-top: 1px;"></i>
-                        <div class="flex-grow-1 min-w-0" style="font-size: 12.5px; line-height: 1.4; color: #fff0f2;">
-                            <div class="fw-bold mb-1" style="font-size: 13.5px; color: #ff808b;">Thông báo lỗi</div>
-                            <div><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="toast-body-row d-flex align-items-center gap-2">
+                        <div class="toast-icon-badge toast-icon-error flex-shrink-0">
+                            <i class="bi bi-exclamation-lg"></i>
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="toast-title">Thông báo</div>
+                            <div class="toast-desc"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
                         </div>
                         <button type="button" 
                                 class="toast-glass-close flex-shrink-0" 
                                 onclick="window.dismissToast(this.closest('.app-toast'))" 
                                 aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
                     </div>
-                    <div class="toast-progress-bar toast-progress-error"></div>
+                    <div class="toast-progress-track"><div class="toast-progress-fill toast-progress-error"></div></div>
                 </div>
             <?php endif; ?>
         </div>
