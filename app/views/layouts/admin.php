@@ -108,36 +108,47 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <!-- Admin Navigation Dock -->
     <header class="admin-nav-bar d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" class="dock-logo d-flex align-items-center gap-2 text-decoration-none" title="Trang quản trị">
+            <?php $isFullAdmin = class_exists('Auth') ? Auth::isAdmin($currentUser) : (($currentUser['role_name'] ?? '') === 'admin'); ?>
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" class="dock-logo d-flex align-items-center gap-2 text-decoration-none" title="Trang quản trị / kiểm duyệt">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m8 19 4-4 4 4"/>
                     <path d="M12 19V9"/>
                     <path d="M12 9 8 5l4-4 4 4-4 4Z"/>
                     <path d="m18 14 3 3-5 5H8l-5-5 3-3"/>
                 </svg>
-                <span class="badge" style="background: var(--color-moss, #9bbd55); color: #22281f; font-weight: 600; font-size: 11px; letter-spacing: 0.05em;">ADMIN</span>
+                <span class="badge" style="background: var(--color-moss, #9bbd55); color: #22281f; font-weight: 600; font-size: 11px; letter-spacing: 0.05em;">
+                    <?= $isFullAdmin ? 'ADMIN' : 'MOD' ?>
+                </span>
             </a>
 
             <div class="vr mx-2 bg-secondary opacity-25 d-none d-md-block" style="height: 24px;"></div>
 
-            <!-- Admin Menus -->
+            <!-- Admin / Moderator Menus -->
             <nav class="d-flex align-items-center gap-1">
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
                    class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
                     <i class="bi bi-speedometer2 me-1"></i> Dashboard
                 </a>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" 
-                   class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
-                    <i class="bi bi-tags me-1"></i> Chuyên mục
-                </a>
+                <?php if ($isFullAdmin): ?>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" 
+                       class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
+                        <i class="bi bi-tags me-1"></i> Chuyên mục
+                    </a>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products" 
+                       class="dock-pill <?= $isActive('/admin/products') ? 'active' : '' ?>" title="Quản lý dụng cụ & thiết bị">
+                        <i class="bi bi-tools me-1"></i> Dụng cụ
+                    </a>
+                <?php endif; ?>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" 
-                   class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Quản lý bài viết">
+                   class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Kiểm duyệt & Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
                 </a>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" 
-                   class="dock-pill <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên & Cấp lại mật khẩu">
-                    <i class="bi bi-people me-1"></i> Thành viên
-                </a>
+                <?php if ($isFullAdmin): ?>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" 
+                       class="dock-pill <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên, Phân quyền RBAC & Cấp lại mật khẩu">
+                        <i class="bi bi-people me-1"></i> Thành viên
+                    </a>
+                <?php endif; ?>
             </nav>
         </div>
 

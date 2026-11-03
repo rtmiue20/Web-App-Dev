@@ -2,6 +2,7 @@
 -- Quy trình: tạo DB -> tạo bảng -> thiết lập cột -> tạo quan hệ (PK/FK) -> routines
 -- Gồm 8 bảng nghiệp vụ và bảng roles dùng để phân quyền.
 
+DROP DATABASE IF EXISTS outdoor_forum;
 CREATE DATABASE IF NOT EXISTS outdoor_forum
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE outdoor_forum;
@@ -12,7 +13,7 @@ CREATE TABLE roles (
   name VARCHAR(30) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
-INSERT INTO roles (name) VALUES ('member'), ('admin');
+INSERT INTO roles (name) VALUES ('member'), ('admin'), ('moderator'), ('guest');
 
 CREATE TABLE users (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,          -- PK
@@ -60,15 +61,18 @@ CREATE TABLE comments (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,             -- PK
   post_id    INT UNSIGNED NOT NULL,                               -- FK -> posts
   user_id    INT UNSIGNED NOT NULL,                               -- FK -> users
+  parent_id  INT UNSIGNED NULL DEFAULT NULL,                      -- FK -> comments (Bình luận lồng nhau nhiều cấp)
   content    TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id)   REFERENCES posts(id)    ON DELETE CASCADE,
+  FOREIGN KEY (user_id)   REFERENCES users(id)    ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE post_likes (
   post_id INT UNSIGNED NOT NULL,                                  -- PK + FK -> posts
   user_id INT UNSIGNED NOT NULL,                                  -- PK + FK -> users
+  vote    TINYINT NOT NULL DEFAULT 1,                             -- 1: Upvote (+1), -1: Downvote (-1)
   PRIMARY KEY (post_id, user_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -86,6 +90,8 @@ CREATE TABLE post_tags (
   PRIMARY KEY (post_id, tag_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (tag_id)  REFERENCES tags(id)  ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ===== Người 5: products, post_products (Dụng cụ & Dụng cụ chuyến đi) =====
 CREATE TABLE products (
   id          INT AUTO_INCREMENT PRIMARY KEY,                     -- PK
@@ -275,6 +281,16 @@ BEGIN
     UPDATE users SET password_hash = p_password_hash WHERE id = p_user_id;
 END$$
 
+DROP PROCEDURE IF EXISTS sp_user_update_role$$
+CREATE PROCEDURE sp_user_update_role(
+    IN p_user_id INT,
+    IN p_role_id INT
+)
+BEGIN
+    UPDATE users SET role_id = p_role_id WHERE id = p_user_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
 DROP PROCEDURE IF EXISTS sp_user_exists$$
 CREATE PROCEDURE sp_user_exists(IN p_email VARCHAR(120), IN p_username VARCHAR(50))
 BEGIN
@@ -429,18 +445,25 @@ END$$
 DROP PROCEDURE IF EXISTS sp_comment_list$$
 CREATE PROCEDURE sp_comment_list(IN p_post_id INT)
 BEGIN
-    SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+    SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
+           u.username, r.name AS role_name
     FROM comments c
     JOIN users u ON c.user_id = u.id
+    LEFT JOIN roles r ON r.id = u.role_id
     WHERE c.post_id = p_post_id
-    ORDER BY c.created_at DESC;
+    ORDER BY c.created_at ASC, c.id ASC;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_comment_create$$
-CREATE PROCEDURE sp_comment_create(IN p_post_id INT, IN p_user_id INT, IN p_content TEXT)
+CREATE PROCEDURE sp_comment_create(
+    IN p_post_id INT,
+    IN p_user_id INT,
+    IN p_content TEXT,
+    IN p_parent_id INT
+)
 BEGIN
-    INSERT INTO comments (post_id, user_id, content, created_at)
-    VALUES (p_post_id, p_user_id, p_content, NOW());
+    INSERT INTO comments (post_id, user_id, parent_id, content, created_at)
+    VALUES (p_post_id, p_user_id, p_parent_id, p_content, NOW());
     
     SELECT LAST_INSERT_ID() AS comment_id;
 END$$
@@ -462,8 +485,41 @@ END$$
 
 
 -- ==============================================================================
--- 5. LƯỢT THÍCH (POST LIKES)
+-- 5. LƯỢT THÍCH & VOTE (POST LIKES / UPVOTE / DOWNVOTE)
 -- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_post_vote$$
+CREATE PROCEDURE sp_post_vote(IN p_post_id INT, IN p_user_id INT, IN p_vote TINYINT)
+BEGIN
+    DECLARE v_existing TINYINT DEFAULT NULL;
+    DECLARE v_user_vote TINYINT DEFAULT 0;
+
+    SELECT vote INTO v_existing
+    FROM post_likes
+    WHERE post_id = p_post_id AND user_id = p_user_id
+    LIMIT 1;
+
+    IF v_existing IS NOT NULL THEN
+        IF v_existing = p_vote THEN
+            DELETE FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
+            SET v_user_vote = 0;
+        ELSE
+            UPDATE post_likes SET vote = p_vote WHERE post_id = p_post_id AND user_id = p_user_id;
+            SET v_user_vote = p_vote;
+        END IF;
+    ELSE
+        INSERT INTO post_likes (post_id, user_id, vote) VALUES (p_post_id, p_user_id, p_vote);
+        SET v_user_vote = p_vote;
+    END IF;
+
+    SELECT
+        COALESCE(SUM(vote), 0) AS score,
+        COUNT(CASE WHEN vote = 1 THEN 1 END) AS upvotes,
+        COUNT(CASE WHEN vote = -1 THEN 1 END) AS downvotes,
+        v_user_vote AS user_vote
+    FROM post_likes
+    WHERE post_id = p_post_id;
+END$$
 
 DROP PROCEDURE IF EXISTS sp_toggle_like$$
 DROP PROCEDURE IF EXISTS sp_post_toggle_like$$
@@ -471,15 +527,16 @@ CREATE PROCEDURE sp_post_toggle_like(IN p_post_id INT, IN p_user_id INT)
 BEGIN
     DECLARE v_liked INT DEFAULT 0;
     
-    IF EXISTS (SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id) THEN
+    IF EXISTS (SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id AND vote = 1) THEN
         DELETE FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
         SET v_liked = 0;
     ELSE
-        INSERT INTO post_likes (post_id, user_id) VALUES (p_post_id, p_user_id);
+        INSERT INTO post_likes (post_id, user_id, vote) VALUES (p_post_id, p_user_id, 1)
+        ON DUPLICATE KEY UPDATE vote = 1;
         SET v_liked = 1;
     END IF;
     
-    SELECT COUNT(*) AS likes, v_liked AS is_liked 
+    SELECT COALESCE(SUM(vote), 0) AS likes, v_liked AS is_liked 
     FROM post_likes 
     WHERE post_id = p_post_id;
 END$$
@@ -494,7 +551,7 @@ DROP PROCEDURE IF EXISTS sp_post_is_liked$$
 CREATE PROCEDURE sp_post_is_liked(IN p_post_id INT, IN p_user_id INT)
 BEGIN
     SELECT EXISTS (
-        SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id
+        SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id AND vote = 1
     ) AS is_liked;
 END$$
 

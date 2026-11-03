@@ -127,7 +127,19 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
                 <!-- Preview container -->
                 <div class="row g-2 mt-2 d-none" id="imagePreviewContainer"></div>
-                <div class="small text-muted mt-1 d-none" id="imagePreviewCount"></div>
+                                <div class="small text-muted mt-1 d-none" id="imagePreviewCount"></div>
+                <div class="mt-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white text-muted rounded-start-pill ps-3">
+                            <i class="bi bi-cloud-check-fill text-primary me-1"></i>Link ảnh Cloud (ImgBB / Cloudinary)
+                        </span>
+                        <input type="text"
+                               name="cloud_image_url"
+                               id="cloud_image_url"
+                               class="form-control rounded-end-pill"
+                               placeholder="Dán link ảnh từ ImgBB / Cloudinary (hoặc bấm tải ảnh ở khung trên để tự động upload)...">
+                    </div>
+                </div>
 
                 <?php if (!empty($errors['image']) || !empty($errors['images'])): ?>
                     <div class="text-danger small mt-1"><?= htmlspecialchars($errors['image'] ?? $errors['images'], ENT_QUOTES, 'UTF-8') ?></div>

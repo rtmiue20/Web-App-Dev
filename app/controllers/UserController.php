@@ -117,6 +117,14 @@ class UserController extends Controller
             return null;
         }
 
+        // Đồng bộ role_id và role_name mới nhất từ CSDL vào Session
+        if (is_array($sessionUser)) {
+            $sessionUser['id'] = $user->getId();
+            $sessionUser['role_id'] = $user->getRoleId();
+            $sessionUser['role_name'] = $user->getRoleName();
+            Session::set('user', $sessionUser);
+        }
+
         return $user;
     }
 
@@ -124,8 +132,10 @@ class UserController extends Controller
     {
         $this->render('users/profile', [
             'user' => [
+                'id' => $user->getId(),
                 'username' => $user->getUsername(),
                 'email' => $user->getEmail(),
+                'role_id' => $user->getRoleId(),
                 'role_name' => $user->getRoleName(),
                 'created_at' => $user->getCreatedAt(),
                 'bio' => $user->getBio(),

@@ -30,9 +30,14 @@ $username = (string) ($user['username'] ?? '');
         <div class="row g-3 mb-4">
             <div class="col-sm-4"><span class="nature-label">Địa chỉ email</span></div>
             <div class="col-sm-8 text-dark"><?= e($user['email'] ?? '') ?></div>
-            <div class="col-sm-4"><span class="nature-label">Vai trò</span></div>
+            <div class="col-sm-4"><span class="nature-label">Vai trò (RBAC)</span></div>
             <div class="col-sm-8">
-                <span class="badge text-bg-success px-3 py-1 rounded-pill"><?= e($user['role_name'] ?? 'Thành viên') ?></span>
+                <?php
+                $currentRole = class_exists('Auth') ? Auth::role($user) : ($user['role_name'] ?? 'member');
+                $roleLabel = class_exists('Auth') ? Auth::roleLabel($currentRole) : $currentRole;
+                $roleBadge = class_exists('Auth') ? Auth::roleBadgeClass($currentRole) : 'text-bg-success';
+                ?>
+                <span class="badge <?= e($roleBadge) ?> px-3 py-1 rounded-pill"><?= e($roleLabel) ?></span>
             </div>
             <div class="col-sm-4"><span class="nature-label">Ngày tham gia</span></div>
             <div class="col-sm-8 text-dark">

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../models/Comment.php';
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../helpers/Auth.php';
 
 /**
  * Controller PostController - Quản lý chức năng bài viết (Tuần 2 & Tuần 3 - Phúc)
@@ -57,7 +58,9 @@ class PostController extends Controller {
             $page = $totalPages;
         }
 
-        $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published');
+        $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
+
+        $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
         $categoriesList = $this->categories->getAll();
 
         $this->render('posts/index', [
@@ -65,6 +68,7 @@ class PostController extends Controller {
             'posts' => $postsList,
             'categories' => $categoriesList,
             'selectedCategoryId' => $categoryId,
+            'selectedSort' => $selectedSort,
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'totalPosts' => $totalPosts,
@@ -189,12 +193,11 @@ class PostController extends Controller {
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 1);
-        $roleName = $user['role_name'] ?? '';
-        $roleId = (int)($user['role_id'] ?? 0);
-        $isAdmin = ($roleName === 'admin' || $roleId === 2);
+        $canPublishDirectly = Auth::canPublishDirectly($user);
 
-        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt). Admin đăng thì được 'published' trực tiếp.
-        $status = $isAdmin ? 'published' : 'pending';
+        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt).
+        // Khi Moderator hoặc Admin đăng thì được 'published' trực tiếp.
+        $status = $canPublishDirectly ? 'published' : 'pending';
 
         $postId = $this->posts->create(
             $userId, 
@@ -259,16 +262,20 @@ class PostController extends Controller {
             return;
         }
 
-        $commentsList = $this->comments->getByPostId($id);
+        $commentsTree = $this->comments->getTreeByPostId($id);
+        $totalComments = $this->comments->countByPost($id);
         $canManage = $this->canManagePost($post);
         $tools = $this->products->getByPostId($id);
+        $userVote = Auth::check() ? $this->posts->getUserVote($id, Auth::id()) : 0;
 
         $this->render('posts/show', [
-            'title' => $post['title'],
-            'post' => $post,
-            'tools' => $tools,
-            'comments' => $commentsList,
-            'canManage' => $canManage
+            'title'         => $post['title'],
+            'post'          => $post,
+            'tools'         => $tools,
+            'comments'      => $commentsTree,
+            'totalComments' => $totalComments,
+            'canManage'     => $canManage,
+            'userVote'      => $userVote
         ]);
     }
 
@@ -498,43 +505,37 @@ class PostController extends Controller {
     }
 
     /**
-     * Thích bài viết qua AJAX
+     * Upvote (+1) / Downvote (-1) bài viết qua AJAX
      */
     public function like(int $id): void {
-        header('Content-Type: application/json; charset=utf-8');
-
-        if (!Session::has('user')) {
-            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bài viết.']);
-            exit;
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            return;
         }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;
+        $voteType = ((int)$voteRaw < 0) ? -1 : 1;
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
-        $newLikes = $this->posts->toggleLike($id, $userId);
+        $voteData = $this->posts->vote($id, $userId, $voteType);
 
-        echo json_encode([
+        Response::json([
             'success' => true,
-            'data' => [
-                'likes' => $newLikes,
-                'liked' => true
-            ]
+            'data'    => $voteData
         ]);
-        exit;
     }
 
     /**
-     * Kiểm tra quyền quản lý bài viết (Chỉ tác giả hoặc admin)
+     * Kiểm tra quyền quản lý bài viết (Tác giả bài viết, Moderator hoặc Admin)
      */
     private function canManagePost(array $post): bool {
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            return false;
-        }
-        $userId = (int)($user['id'] ?? 0);
-        $roleName = $user['role_name'] ?? '';
-        $roleId = (int)($user['role_id'] ?? 0);
-        $isAdmin = ($roleName === 'admin' || $roleId === 2);
-        $isAuthor = ($userId > 0 && $userId === (int)($post['user_id'] ?? 0));
-        return $isAdmin || $isAuthor;
+        return Auth::canManagePost($post);
     }
 }

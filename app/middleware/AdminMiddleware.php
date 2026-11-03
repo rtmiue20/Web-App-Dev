@@ -1,20 +1,20 @@
 <?php
+require_once __DIR__ . '/../helpers/Auth.php';
 
+/**
+ * Middleware AdminMiddleware - Bảo vệ các chức năng Quản trị hệ thống cao nhất (RBAC: chỉ admin)
+ */
 class AdminMiddleware
 {
     public static function handle(): bool
     {
-        $user = Session::get('user');
-        if (!is_array($user)) {
+        if (!Auth::check()) {
             Session::flash('error', 'Vui lòng đăng nhập bằng tài khoản Quản trị viên để tiếp tục.');
             header('Location: ' . BASE_URL . '/login', true, 303);
             return false;
         }
 
-        $roleName = $user['role_name'] ?? null;
-        $roleId = (int)($user['role_id'] ?? 0);
-
-        if ($roleName === 'admin' || $roleId === 2) {
+        if (Auth::isAdmin()) {
             return true;
         }
 
@@ -23,7 +23,7 @@ class AdminMiddleware
         if (file_exists($errorFile)) {
             require $errorFile;
         } else {
-            echo '403 Forbidden - Bạn không có quyền quản trị viên để truy cập chức năng này.';
+            echo '403 Forbidden - Bạn không có quyền Quản trị viên (Admin) để truy cập chức năng này.';
         }
         return false;
     }

@@ -4,7 +4,10 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 $currentPage = isset($currentPage) ? (int)$currentPage : 1;
 $totalPages = isset($totalPages) ? (int)$totalPages : 1;
 $totalPosts = isset($totalPosts) ? (int)$totalPosts : count($posts ?? []);
+$selectedSort = isset($selectedSort) && in_array($selectedSort, ['hot', 'new', 'top'], true) ? $selectedSort : 'hot';
 $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId . '&' : '';
+$sortQuery = 'sort=' . urlencode($selectedSort) . '&';
+$filterQuery = $catQuery . $sortQuery;
 ?>
 <div class="app-container">
     <div class="d-flex flex-wrap justify-content-between align-items-center page-header gap-3">
@@ -40,12 +43,12 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
                             
                             <!-- Track trượt ngang chứa các danh mục -->
                             <div class="category-slidebar-track d-flex align-items-center gap-2" id="catSlideTrack">
-                                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
+                                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?sort=<?= urlencode($selectedSort) ?>" 
                                    class="dock-pill <?= empty($selectedCategoryId) ? 'active' : '' ?>">
                                     Tất cả
                                 </a>
                                 <?php foreach ($categories as $cat): ?>
-                                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?category=<?= (int)$cat['id'] ?>" 
+                                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?category=<?= (int)$cat['id'] ?>&sort=<?= urlencode($selectedSort) ?>" 
                                        class="dock-pill <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
                                         <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
                                     </a>
@@ -66,11 +69,55 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
                     </div>
                 </div>
 
-                <div class="col-12 col-lg-auto text-lg-end text-white-50 small text-nowrap">
-                    <i class="bi bi-collection me-1"></i> Tổng cộng: <strong><?= $totalPosts ?></strong> bài viết
+                <!-- Bộ lọc sắp xếp: Hot / Mới / Top Vote -->
+                <div class="col-12 col-lg-auto d-flex flex-wrap align-items-center justify-content-between justify-content-lg-end gap-3">
+                    <div class="sort-filter-group d-inline-flex align-items-center p-1 rounded-pill"
+                         style="background: rgba(20, 25, 18, 0.65); border: 1px solid rgba(255, 255, 255, 0.14);">
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $catQuery ?>sort=hot"
+                           class="sort-pill <?= $selectedSort === 'hot' ? 'active' : '' ?>"
+                           title="Sắp xếp theo độ sôi nổi (Điểm Vote + Bình luận)">
+                            <i class="bi bi-fire me-1"></i>Hot
+                        </a>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $catQuery ?>sort=new"
+                           class="sort-pill <?= $selectedSort === 'new' ? 'active' : '' ?>"
+                           title="Sắp xếp theo bài viết mới đăng nhất">
+                            <i class="bi bi-stars me-1"></i>Mới
+                        </a>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $catQuery ?>sort=top"
+                           class="sort-pill <?= $selectedSort === 'top' ? 'active' : '' ?>"
+                           title="Sắp xếp theo điểm Vote cao nhất">
+                            <i class="bi bi-trophy-fill me-1"></i>Top
+                        </a>
+                    </div>
+
+                    <div class="text-white-50 small text-nowrap">
+                        <i class="bi bi-collection me-1"></i> Tổng cộng: <strong><?= $totalPosts ?></strong> bài viết
+                    </div>
                 </div>
             </div>
         </div>
+        <style>
+            .sort-pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 5px 14px;
+                border-radius: 999px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: rgba(241, 241, 236, 0.72);
+                text-decoration: none;
+                transition: all 0.18s ease;
+            }
+            .sort-pill:hover {
+                color: #f1f1ec;
+                background: rgba(255, 255, 255, 0.08);
+            }
+            .sort-pill.active {
+                background: #9bbd55;
+                color: #1c2219;
+                box-shadow: 0 2px 8px rgba(155, 189, 85, 0.35);
+            }
+        </style>
     <?php endif; ?>
 
     <!-- Post list grid -->
@@ -83,7 +130,7 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
                 <!-- Nút trang trước -->
                 <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
                     <a class="page-link rounded-pill" 
-                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $catQuery ?>page=<?= max(1, $currentPage - 1) ?>" 
+                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $filterQuery ?>page=<?= max(1, $currentPage - 1) ?>" 
                        tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
                        aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
                         <i class="bi bi-chevron-left me-1"></i> Trước
@@ -94,7 +141,7 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
                         <a class="page-link rounded-pill" 
-                           href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $catQuery ?>page=<?= $i ?>">
+                           href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $filterQuery ?>page=<?= $i ?>">
                             <?= $i ?>
                         </a>
                     </li>
@@ -103,7 +150,7 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
                 <!-- Nút trang sau -->
                 <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
                     <a class="page-link rounded-pill" 
-                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $catQuery ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
+                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?<?= $filterQuery ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
                        tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
                        aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
                         Sau <i class="bi bi-chevron-right ms-1"></i>
