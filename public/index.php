@@ -11,37 +11,10 @@ if (PHP_SAPI === 'cli-server') {
     $baseUrl = str_ends_with($scriptName, '/index.php')
         ? rtrim( substr($scriptName, 0, -strlen('/index.php')), '/' )
         : '';
-    define('BASE_URL', ($baseUrl === '.' || $baseUrl === '/') ? '' : $baseUrl);
+    define('BASE_URL', ($baseUrl === '.' || $baseUrl === '') ? '' : $baseUrl);
 }
 
-require_once __DIR__ . '/../app/helpers/Session.php';
-require_once __DIR__ . '/../app/helpers/Auth.php';
-require_once __DIR__ . '/../app/helpers/Csrf.php';
-require_once __DIR__ . '/../app/helpers/Validator.php';
-require_once __DIR__ . '/../app/helpers/Response.php';
-require_once __DIR__ . '/../app/helpers/Upload.php';
-require_once __DIR__ . '/../app/helpers/functions.php';
-require_once __DIR__ . '/../app/helpers/DemoSeeder.php';
-require_once __DIR__ . '/../app/helpers/Gamification.php';
-
-require_once __DIR__ . '/../app/core/Database.php';
-require_once __DIR__ . '/../app/core/Model.php';
-require_once __DIR__ . '/../app/core/Controller.php';
-require_once __DIR__ . '/../app/core/Router.php';
-
-require_once __DIR__ . '/../app/models/Role.php';
-require_once __DIR__ . '/../app/models/User.php';
-require_once __DIR__ . '/../app/models/Category.php';
-require_once __DIR__ . '/../app/models/Post.php';
-require_once __DIR__ . '/../app/models/Comment.php';
-require_once __DIR__ . '/../app/models/Product.php';
-require_once __DIR__ . '/../app/models/Bookmark.php';
-require_once __DIR__ . '/../app/models/Follow.php';
-require_once __DIR__ . '/../app/models/Notification.php';
-require_once __DIR__ . '/../app/models/Report.php';
-
-require_once __DIR__ . '/../app/services/WeatherService.php';
-require_once __DIR__ . '/../app/services/VietnamAddressService.php';
+require_once __DIR__ . '/../app/bootstrap.php';
 
 require_once __DIR__ . '/../app/middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../app/middleware/ModeratorMiddleware.php';

@@ -103,7 +103,7 @@ const ForumAjax = {
     if (btnElement) btnElement.disabled = true;
 
     try {
-      const response = await fetch(`${baseUrl}/api/comments/like`, {
+      const response = await fetch(`${baseUrl}/api/comments.php?action=like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -452,21 +452,23 @@ const ForumAjax = {
           let dailyHtml = '';
           if (Array.isArray(w.daily) && w.daily.length > 0) {
             dailyHtml = `
-              <div class="row row-cols-2 row-cols-sm-4 g-2 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
+              <div class="row row-cols-2 row-cols-sm-4 g-2 mt-2 pt-2 border-top border-white border-opacity-10">
                 ${w.daily
                   .map(
                     function(d) {
                       return `
                   <div class="col">
-                    <div class="p-2 rounded-3 text-center h-100" style="background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.06);">
-                      <div class="fw-semibold text-dark" style="font-size: 12px;">${d.day_label}</div>
-                      <div class="text-muted" style="font-size: 10.5px;">${d.date}</div>
-                      <div class="my-1 fs-5"><i class="bi ${d.icon || 'bi-cloud-sun'}"></i></div>
-                      <div class="fw-bold text-dark" style="font-size: 12.5px;">
-                        ${d.temp_max}° <span class="text-muted fw-normal">/ ${d.temp_min}°C</span>
+                    <div class="p-2.5 rounded-3 text-center h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">
+                      <div>
+                        <div class="fw-semibold text-white" style="font-size: 12px;">${d.day_label}</div>
+                        <div class="text-white-50" style="font-size: 10.5px;">${d.date}</div>
+                        <div class="my-1 fs-5"><i class="bi ${d.icon || 'bi-cloud-sun'}"></i></div>
+                        <div class="fw-bold text-white" style="font-size: 12.5px;">
+                          ${d.temp_max}° <span class="text-white-50 fw-normal" style="font-size: 11px;">/ ${d.temp_min}°C</span>
+                        </div>
                       </div>
-                      <div class="text-primary" style="font-size: 10.5px;" title="Xác suất mưa">
-                        <i class="bi bi-droplet-half"></i> Mưa ${d.rain_prob}%
+                      <div class="mt-1" style="font-size: 10.5px; color: #70d6ff;" title="Xác suất mưa">
+                        <i class="bi bi-droplet-fill me-1"></i>Mưa ${d.rain_prob}%
                       </div>
                     </div>
                   </div>
@@ -481,29 +483,30 @@ const ForumAjax = {
           targetPanel.innerHTML = `
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
               <div class="d-flex align-items-center gap-3">
-                <div class="display-6 fw-bold mb-0 d-flex align-items-center gap-2" style="color: var(--color-ink);">
+                <div class="display-6 fw-bold mb-0 d-flex align-items-center gap-2 text-white">
                   <i class="bi ${w.icon || 'bi-cloud-sun-fill text-warning'}"></i>
                   <span>${w.temp}°C</span>
                 </div>
                 <div>
-                  <div class="fw-semibold text-dark">${w.condition}</div>
-                  <div class="text-muted" style="font-size: 12px;">
-                    Cảm giác như <strong>${w.feels_like ?? w.temp}°C</strong> · Độ ẩm <strong>${w.humidity ?? 75}%</strong> · Gió <strong>${w.windspeed} km/h</strong>
+                  <div class="fw-semibold text-white fs-6">${w.condition}</div>
+                  <div class="text-white-50" style="font-size: 12px;">
+                    Cảm giác như <strong class="text-white">${w.feels_like ?? w.temp}°C</strong> · Độ ẩm <strong class="text-white">${w.humidity ?? 75}%</strong> · Gió <strong class="text-white">${w.windspeed} km/h</strong>
                   </div>
                 </div>
               </div>
-              <span class="badge rounded-pill text-bg-light border text-secondary" style="font-size: 11px;">
+              <span class="badge rounded-pill bg-white bg-opacity-10 border border-white border-opacity-15 text-white-50 px-3 py-1.5" style="font-size: 11px;">
                 <i class="bi bi-cloud-check me-1 text-success"></i>${w.source || 'Open-Meteo API'}
               </span>
             </div>
             ${
               w.advice
-                ? `<div class="p-2 px-3 rounded-3 small mb-1 d-flex align-items-center gap-2" style="background: rgba(155, 189, 85, 0.14); color: #2b3a1a;">
-                     <i class="bi bi-compass-fill text-success"></i>
+                ? `<div class="p-2.5 px-3 rounded-3 small mb-2 d-flex align-items-center gap-2" style="background: rgba(155, 189, 85, 0.16); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.3);">
+                     <i class="bi bi-compass-fill fs-6 text-success flex-shrink-0"></i>
                      <span><strong>Gợi ý dã ngoại:</strong> ${w.advice}</span>
                    </div>`
                 : ''
             }
+            <div class="small fw-semibold text-white-50 mt-2 mb-1" style="font-size: 11.5px;"><i class="bi bi-calendar3 me-1"></i>Dự báo chi tiết 4 ngày tới:</div>
             ${dailyHtml}
           `;
         }
@@ -629,7 +632,7 @@ const ForumAjax = {
   fetchCommentsRealtime: async function (postId) {
     const baseUrl = this.getBaseUrl();
     try {
-      const response = await fetch(`${baseUrl}/api/comments?post_id=${postId}`);
+      const response = await fetch(`${baseUrl}/api/comments.php?post_id=${postId}`);
       const json = await response.json();
       if (!json || !json.success || !json.data || !Array.isArray(json.data.comments)) {
         return;
@@ -716,7 +719,7 @@ const ForumAjax = {
 
       debounceTimer = setTimeout(async function () {
         try {
-          const res = await fetch(`${baseUrl}/api/posts?q=${encodeURIComponent(q)}&suggest=1`);
+          const res = await fetch(`${baseUrl}/api/posts.php?q=${encodeURIComponent(q)}&suggest=1`);
           const json = await res.json();
           if (spinner) spinner.style.display = 'none';
 
@@ -996,7 +999,7 @@ const ForumAjax = {
 
         usernameTimer = setTimeout(async function () {
           try {
-            const res = await fetch(`${baseUrl}/api/check-user?username=${encodeURIComponent(val)}`);
+            const res = await fetch(`${baseUrl}/api/check-user.php?username=${encodeURIComponent(val)}`);
             const json = await res.json();
             if (json && json.success) {
               if (json.available) {
@@ -1045,7 +1048,7 @@ const ForumAjax = {
 
         emailTimer = setTimeout(async function () {
           try {
-            const res = await fetch(`${baseUrl}/api/check-user?email=${encodeURIComponent(val)}`);
+            const res = await fetch(`${baseUrl}/api/check-user.php?email=${encodeURIComponent(val)}`);
             const json = await res.json();
             if (json && json.success) {
               if (json.available) {
@@ -1082,7 +1085,7 @@ const ForumAjax = {
     const self = this;
 
     try {
-      const res = await fetch(`${baseUrl}/api/posts/${postId}/bookmark`, {
+      const res = await fetch(`${baseUrl}/api/bookmarks.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1116,6 +1119,9 @@ const ForumAjax = {
         }
         btn.title = bookmarked ? 'Bỏ lưu bài viết' : 'Lưu bài viết vào bộ sưu tập';
       }
+      if (typeof window.showToast === 'function') {
+        window.showToast(json.message || (json.data && json.data.bookmarked ? 'Đã lưu bài viết vào bộ sưu tập.' : 'Đã bỏ lưu bài viết.'), 'success');
+      }
       return true;
     } catch (err) {
       console.error('Lỗi lưu bài viết:', err);
@@ -1131,7 +1137,7 @@ const ForumAjax = {
     const csrfToken = this.getCsrfToken();
 
     try {
-      const res = await fetch(`${baseUrl}/api/users/${userId}/follow`, {
+      const res = await fetch(`${baseUrl}/api/follows.php?type=user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1160,11 +1166,15 @@ const ForumAjax = {
         }
         const text = btn.querySelector('.follow-btn-text');
         if (text) {
-          text.textContent = isFollowing ? 'Đang theo dõi' : 'Theo dõi';
+          text.textContent = isFollowing ? 'Đang theo dõi' : 'Theo dõi tác giả';
         }
         if (btn.id === 'btnFollowUser') {
           btn.style.background = isFollowing ? '#6c757d' : 'var(--color-moss, #9bbd55)';
         }
+      }
+
+      if (typeof window.showToast === 'function') {
+        window.showToast(json.message || (isFollowing ? 'Đã theo dõi tác giả.' : 'Đã hủy theo dõi tác giả.'), 'success');
       }
 
       // Cập nhật số lượng người theo dõi nếu có counter trên trang
@@ -1192,7 +1202,7 @@ const ForumAjax = {
     const csrfToken = this.getCsrfToken();
 
     try {
-      const res = await fetch(`${baseUrl}/api/categories/${categoryId}/follow`, {
+      const res = await fetch(`${baseUrl}/api/follows.php?type=category`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1240,7 +1250,7 @@ const ForumAjax = {
     }
 
     try {
-      const res = await fetch(`${baseUrl}/api/reports`, {
+      const res = await fetch(`${baseUrl}/api/reports.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1281,11 +1291,15 @@ const ForumAjax = {
   // =========================================================================
   // 14. Tính năng nâng cao: Thông báo thời gian thực (Notifications)
   // =========================================================================
-  toggleNotificationsDropdown: function () {
+  toggleNotificationsDropdown: function (e) {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
     const menu = document.getElementById('notificationsDropdownMenu');
     if (!menu) return;
 
-    if (menu.style.display === 'block') {
+    const isVisible = (menu.style.display === 'block' || window.getComputedStyle(menu).display === 'block');
+    if (isVisible) {
       menu.style.display = 'none';
     } else {
       menu.style.display = 'block';
@@ -1300,7 +1314,7 @@ const ForumAjax = {
     const self = this;
 
     try {
-      const res = await fetch(`${baseUrl}/api/notifications`);
+      const res = await fetch(`${baseUrl}/api/notifications.php`);
       const json = await res.json();
 
       if (!json || !json.success || !json.data) return;
@@ -1369,7 +1383,7 @@ const ForumAjax = {
     const badge = document.getElementById('navUnreadBadge');
 
     try {
-      await fetch(`${baseUrl}/api/notifications/read`, {
+      await fetch(`${baseUrl}/api/notifications.php?action=read`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
