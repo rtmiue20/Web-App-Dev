@@ -46,6 +46,38 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         </a>
 
         <?php if (is_array($currentUser)): ?>
+            <!-- Notification Bell Icon (Tính năng thông báo thời gian thực) -->
+            <div class="position-relative d-inline-block">
+                <button type="button" 
+                        class="dock-pill position-relative d-inline-flex align-items-center justify-content-center p-0" 
+                        id="btnNotificationToggle" 
+                        onclick="ForumAjax.toggleNotificationsDropdown()"
+                        aria-label="Thông báo" 
+                        style="width: 38px; height: 38px; border-radius: 50%; cursor: pointer;">
+                    <i class="bi bi-bell-fill fs-6" style="color: rgba(241, 241, 236, 0.85);"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                          id="navUnreadBadge" 
+                          style="display: none; font-size: 9px; padding: 2px 5px;">
+                        0
+                    </span>
+                </button>
+
+                <!-- Notifications Dropdown Popup -->
+                <div id="notificationsDropdownMenu" class="notifications-dropdown-menu shadow-lg" style="display: none;">
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom border-secondary border-opacity-25">
+                        <span class="fw-bold small text-white"><i class="bi bi-bell me-1 text-success"></i>Thông báo của bạn</span>
+                        <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 small" style="color: #9bbd55; font-size: 11.5px;" onclick="ForumAjax.markAllNotificationsRead()">
+                            Đã đọc tất cả
+                        </button>
+                    </div>
+                    <div id="notificationsListContainer" class="notifications-list-scroll" style="max-height: 320px; overflow-y: auto;">
+                        <div class="text-center py-4 text-white-50 small">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang tải thông báo...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- User Profile Link -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
                class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">

@@ -1,0 +1,34 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+
+# Local config & credentials
+config.local.php
+.env
+
+# Uploads (giữ cấu trúc thư mục & ảnh mẫu seed ban đầu, bỏ qua ảnh người dùng đăng bài khi test)
+public/uploads/posts/*
+!public/uploads/posts/.gitkeep
+!public/uploads/posts/1121ddee7bf6fd0f2cce7d6f4d96d49d.jpg
+!public/uploads/posts/1792544054_6716c5f3d63f.jpg
+!public/uploads/posts/338c3415e2eb26f4650ecb888117196e.jpg
+!public/uploads/posts/55ecd30a577add2295879b31f092b3fb.jpg
+!public/uploads/posts/6891cab3c28b89d713d592adb1dee24d.jpg
+!public/uploads/posts/729197006baecca7a06257f4f9179eb4.jpg
+!public/uploads/posts/a3b2899e41fbdd8960b2549ddaa6a14a.jpg
+!public/uploads/posts/b4b8706b7ea4d38ea0a399677d436cc6.jpg
+!public/uploads/posts/cc50a0f0d97226d6aeac280a2338a371.jpg
+!public/uploads/posts/d6836428ccffe08a05c012b7b823d6b7.jpg
+!public/uploads/posts/f4bd5ba478164663f5039e68f394cf4b.jpg
+
+# Cache, locks & temporary files
+storage/cache/*
+!storage/cache/.gitkeep
+*.lock
+*.log
+temp_fix_test.txt
+

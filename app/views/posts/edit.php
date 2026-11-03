@@ -119,6 +119,99 @@ if (empty($editImages) && !empty($post['image_url'])) {
                 </div>
             </div>
 
+            <!-- Bài viết dạng "Chuyến đi" (Trip Info: Cung đường, thời gian, chi phí, độ khó, vùng miền, đồ cần mang) -->
+            <div class="card border-0 rounded-4 mb-4" style="background: rgba(155, 189, 85, 0.08); border: 1px solid rgba(155, 189, 85, 0.3) !important;">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px; background: var(--color-moss, #9bbd55); color: #1c2219;">
+                            <i class="bi bi-signpost-2-fill"></i>
+                        </span>
+                        <div>
+                            <h3 class="h6 fw-bold mb-0 text-dark">Thông tin hành trình "Chuyến đi" (Trip Details)</h3>
+                            <span class="text-muted small" style="font-size: 11.5px;">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc và chuẩn bị chuyến đi</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Loại hình -->
+                        <div class="col-12 col-md-4">
+                            <label for="activity_type" class="nature-label">Loại hình dã ngoại</label>
+                            <?php $currAct = $old['activity_type'] ?? $post['activity_type'] ?? ''; ?>
+                            <select class="nature-input" id="activity_type" name="activity_type">
+                                <option value="">-- Chọn loại hình --</option>
+                                <option value="camping" <?= ($currAct === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
+                                <option value="trekking" <?= ($currAct === 'trekking') ? 'selected' : '' ?>>🥾 Đi bộ đường dài (Trekking)</option>
+                                <option value="leo_nui" <?= ($currAct === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking / Mountain)</option>
+                                <option value="phuot" <?= ($currAct === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
+                                <option value="da_ngoai" <?= ($currAct === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại ngoài trời</option>
+                            </select>
+                        </div>
+
+                        <!-- Mức độ khó -->
+                        <div class="col-12 col-md-4">
+                            <label for="difficulty" class="nature-label">Mức độ khó</label>
+                            <?php $currDiff = $old['difficulty'] ?? $post['difficulty'] ?? 'medium'; ?>
+                            <select class="nature-input" id="difficulty" name="difficulty">
+                                <option value="easy" <?= ($currDiff === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới, gia đình)</option>
+                                <option value="medium" <?= ($currDiff === 'medium') ? 'selected' : '' ?>>🟡 Trung bình (Cần thể lực cơ bản)</option>
+                                <option value="hard" <?= ($currDiff === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc, dài ngày)</option>
+                                <option value="extreme" <?= ($currDiff === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao (Chuyên nghiệp)</option>
+                            </select>
+                        </div>
+
+                        <!-- Vùng miền -->
+                        <div class="col-12 col-md-4">
+                            <label for="region" class="nature-label">Vùng miền</label>
+                            <?php $currReg = $old['region'] ?? $post['region'] ?? ''; ?>
+                            <select class="nature-input" id="region" name="region">
+                                <option value="">-- Chọn vùng miền --</option>
+                                <option value="Tây Bắc" <?= ($currReg === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                                <option value="Đông Bắc" <?= ($currReg === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                                <option value="Bắc Bộ" <?= ($currReg === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                                <option value="Bắc Trung Bộ" <?= ($currReg === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                                <option value="Nam Trung Bộ" <?= ($currReg === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                                <option value="Tây Nguyên" <?= ($currReg === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                                <option value="Đông Nam Bộ" <?= ($currReg === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                                <option value="Tây Nam Bộ" <?= ($currReg === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Cung đường -->
+                        <div class="col-12 col-md-5">
+                            <label for="route" class="nature-label">Cung đường di chuyển</label>
+                            <input type="text" class="nature-input" id="route" name="route" 
+                                   placeholder="Ví dụ: Hà Nội - Đèo Đá Trắng - Tà Xùa (220km)" 
+                                   value="<?= htmlspecialchars((string)($old['route'] ?? $post['route'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <!-- Thời gian -->
+                        <div class="col-12 col-md-3">
+                            <label for="trip_duration" class="nature-label">Thời gian</label>
+                            <input type="text" class="nature-input" id="trip_duration" name="trip_duration" 
+                                   placeholder="Ví dụ: 2 ngày 1 đêm" 
+                                   value="<?= htmlspecialchars((string)($old['trip_duration'] ?? $post['trip_duration'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <!-- Chi phí dự tính -->
+                        <div class="col-12 col-md-4">
+                            <label for="estimated_cost" class="nature-label">Chi phí dự tính</label>
+                            <input type="text" class="nature-input" id="estimated_cost" name="estimated_cost" 
+                                   placeholder="Ví dụ: 1.200.000 đ/người" 
+                                   value="<?= htmlspecialchars((string)($old['estimated_cost'] ?? $post['estimated_cost'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                    </div>
+
+                    <!-- Đồ cần mang -->
+                    <div>
+                        <label for="gear_needed" class="nature-label">Đồ cần mang (Checklist trang bị mang theo)</label>
+                        <textarea class="nature-textarea" id="gear_needed" name="gear_needed" rows="2" 
+                                  placeholder="Ví dụ: Lều 2 lớp chống mưa, túi ngủ nhiệt, giày trekking bám tốt, áo gió, đèn pin đội đầu, bình nước 2L, bộ sơ cứu y tế..."><?= htmlspecialchars((string)($old['gear_needed'] ?? $post['gear_needed'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── Images Section ──────────────────────────────────────── -->
             <div class="mb-4">
                 <label class="nature-label">Ảnh bài viết</label>
@@ -201,6 +294,28 @@ if (empty($editImages) && !empty($post['image_url'])) {
                 </div>
 
                 <?php if (!empty($products)): ?>
+                    <style>
+                        .tool-card-label { overflow: hidden; max-width: 100%; }
+                        .tool-title-marquee { position: relative; width: 100%; max-width: 100%; overflow: hidden; white-space: nowrap; line-height: 1.35; }
+                        .tool-title-marquee.has-overflow {
+                            mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                            -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                        }
+                        .tool-title-inner { display: inline-block; white-space: nowrap; }
+                        .tool-title-marquee.has-overflow .tool-title-inner {
+                            will-change: transform;
+                            animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+                        }
+                        .tool-item label:hover .tool-title-inner,
+                        .tool-item label:focus-within .tool-title-inner {
+                            animation-play-state: paused;
+                        }
+                        @keyframes toolTextMarquee {
+                            0%, 20% { transform: translateX(0); }
+                            68%, 82% { transform: translateX(var(--marquee-distance, -80px)); }
+                            94%, 100% { transform: translateX(0); }
+                        }
+                    </style>
                     <div class="rounded-4 p-3 border" style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12) !important;">
                         <!-- Filter search box -->
                         <div class="mb-3">
@@ -229,8 +344,8 @@ if (empty($editImages) && !empty($post['image_url'])) {
                                 }
                             ?>
                                 <div class="col tool-item" data-name="<?= htmlspecialchars(mb_strtolower($prod['name']), ENT_QUOTES, 'UTF-8') ?>">
-                                    <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative" 
-                                           style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important;">
+                                    <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative tool-card-label" 
+                                           style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important; overflow: hidden;">
                                         <input type="checkbox" 
                                                name="product_ids[]" 
                                                value="<?= $pId ?>" 
@@ -242,9 +357,9 @@ if (empty($editImages) && !empty($post['image_url'])) {
                                              alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>" 
                                              class="rounded-2 object-fit-cover flex-shrink-0" 
                                              style="width: 44px; height: 44px; border: 1px solid rgba(0,0,0,0.06);">
-                                        <div class="min-w-0 flex-grow-1" style="font-size: 13px;">
-                                            <div class="fw-semibold text-truncate text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                                <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>
+                                        <div class="min-w-0 flex-grow-1 overflow-hidden" style="font-size: 13px;">
+                                            <div class="tool-title-marquee fw-semibold text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <span class="tool-title-inner"><?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?></span>
                                             </div>
                                             <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 11px;">
                                                 <span><?= htmlspecialchars($prod['category_name'] ?? 'Dụng cụ', ENT_QUOTES, 'UTF-8') ?></span>
@@ -278,7 +393,7 @@ function previewEditImages(files) {
     const grid = document.getElementById('editPreviewGrid');
     grid.innerHTML = '';
     if (!files || files.length === 0) return;
-    Array.from(files).forEach((file, i) => {
+    Array.from(files).forEach(function(file, i) {
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -315,7 +430,9 @@ function handleEditDrop(e) {
 
     // Assign dropped files to input
     const dt = new DataTransfer();
-    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    Array.from(e.dataTransfer.files).forEach(function(f) {
+        dt.items.add(f);
+    });
     input.files = dt.files;
     previewEditImages(input.files);
 }
@@ -417,14 +534,14 @@ function handleEditDrop(e) {
 </style>
 
 <script>
-const MapPicker = (() => {
+const MapPicker = (function() {
     let selected = null;
-    const modal        = () => document.getElementById('mapPickerModal');
-    const searchInput  = () => document.getElementById('mapSearchInput');
-    const resultsBox   = () => document.getElementById('mapSearchResults');
-    const selectedInfo = () => document.getElementById('mapSelectedInfo');
-    const selectedText = () => document.getElementById('mapSelectedText');
-    const confirmBtn   = () => document.getElementById('mapConfirmBtn');
+    function modal() { return document.getElementById('mapPickerModal'); }
+    function searchInput() { return document.getElementById('mapSearchInput'); }
+    function resultsBox() { return document.getElementById('mapSearchResults'); }
+    function selectedInfo() { return document.getElementById('mapSelectedInfo'); }
+    function selectedText() { return document.getElementById('mapSelectedText'); }
+    function confirmBtn() { return document.getElementById('mapConfirmBtn'); }
 
     function open() {
         selected = null;
@@ -433,7 +550,9 @@ const MapPicker = (() => {
         if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
         if (searchInput()) searchInput().value = document.getElementById('location')?.value || '';
         modal().style.display = 'flex';
-        setTimeout(() => searchInput()?.focus(), 80);
+        setTimeout(function() {
+            if (searchInput()) searchInput().focus();
+        }, 80);
     }
 
     function close() { modal().style.display = 'none'; }
@@ -465,12 +584,14 @@ const MapPicker = (() => {
                 return;
             }
             resultsBox().innerHTML = '';
-            data.forEach(item => {
+            data.forEach(function(item) {
                 const div = document.createElement('div');
                 div.className = 'map-result-item';
                 const shortName = item.display_name.split(',')[0].trim();
                 div.innerHTML = `<i class="bi bi-geo-alt-fill"></i><div><strong>${shortName}</strong><span>${item.display_name}</span></div>`;
-                div.addEventListener('click', () => selectResult(item, div));
+                div.addEventListener('click', function() {
+                    selectResult(item, div);
+                });
                 resultsBox().appendChild(div);
             });
         } catch (err) {
@@ -492,7 +613,9 @@ const MapPicker = (() => {
             lng: parseFloat(item.lon),
             short_name: item.display_name.split(',').slice(0, 2).join(',').trim()
         };
-        document.querySelectorAll('.map-result-item').forEach(e => e.classList.remove('selected'));
+        document.querySelectorAll('.map-result-item').forEach(function(e) {
+            e.classList.remove('selected');
+        });
         if (el) el.classList.add('selected');
         if (selectedInfo()) selectedInfo().style.display = 'flex';
         if (selectedText()) selectedText().textContent = `${selected.short_name}  ·  ${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`;
@@ -520,13 +643,37 @@ const MapPicker = (() => {
     return { open, close, search, confirm };
 })();
 
-// Xử lý bộ chọn Dụng cụ (Tools Selection)
+// Xử lý bộ chọn Dụng cụ (Tools Selection) & Chạy chữ Marquee
 function updateSelectedToolsCounter() {
     var checkedBoxes = document.querySelectorAll('.tool-checkbox:checked');
     var badge = document.getElementById('selectedToolsCount');
     if (badge) {
         badge.textContent = checkedBoxes.length;
     }
+}
+
+function initToolMarquees() {
+    var marquees = document.querySelectorAll('.tool-title-marquee');
+    if (!marquees.length) return;
+
+    marquees.forEach(function(marquee) {
+        var inner = marquee.querySelector('.tool-title-inner');
+        if (!inner) return;
+
+        marquee.classList.remove('has-overflow');
+        var overflow = inner.scrollWidth - marquee.clientWidth;
+        if (overflow > 2) {
+            marquee.classList.add('has-overflow');
+            var distance = overflow + 10;
+            var duration = Math.min(14, Math.max(6, Math.round(distance / 22) + 3));
+            inner.style.setProperty('--marquee-distance', '-' + distance + 'px');
+            inner.style.setProperty('--marquee-duration', duration + 's');
+        } else {
+            marquee.classList.remove('has-overflow');
+            inner.style.removeProperty('--marquee-distance');
+            inner.style.removeProperty('--marquee-duration');
+        }
+    });
 }
 
 function filterToolsList(keyword) {
@@ -540,10 +687,21 @@ function filterToolsList(keyword) {
             item.style.display = 'none';
         }
     });
+    setTimeout(initToolMarquees, 50);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedToolsCounter();
+    initToolMarquees();
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(initToolMarquees);
+    }
+});
+
+window.addEventListener('load', initToolMarquees);
+window.addEventListener('resize', function() {
+    clearTimeout(window._marqueeResizeTimer);
+    window._marqueeResizeTimer = setTimeout(initToolMarquees, 150);
 });
 </script>
 

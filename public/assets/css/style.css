@@ -871,15 +871,17 @@ body {
 }
 
 .nature-alert-success {
-  background: rgba(155, 189, 85, 0.18);
-  border: 1px solid rgba(155, 189, 85, 0.4);
-  color: #d8e8b0;
+  background: #f1f8eb;
+  border: 1px solid #c2e2a8;
+  color: #1e4619;
+  font-weight: 500;
 }
 
 .nature-alert-error {
-  background: rgba(220, 53, 69, 0.18);
-  border: 1px solid rgba(220, 53, 69, 0.4);
-  color: #f8b4b9;
+  background: #fdf2f2;
+  border: 1px solid #f5c2c7;
+  color: #842029;
+  font-weight: 500;
 }
 
 .nature-badge {
@@ -1146,3 +1148,407 @@ body {
   opacity: 0.65;
   font-weight: 300;
 }
+
+/* ==========================================================================
+   App Toast Notification (Liquid Glass đậm, nhỏ gọn ở góc phải)
+   ========================================================================== */
+#flash-toast-container {
+  position: fixed !important;
+  top: 1.25rem !important;
+  right: 1.5rem !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 99999 !important;
+  width: min(88vw, 320px) !important;
+  max-width: 320px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  pointer-events: none !important;
+}
+
+.app-toast {
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 16px !important;
+  padding: 0.7rem 0.85rem 0.75rem 0.85rem !important;
+  overflow: hidden !important;
+  animation: toastSlideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  transition: opacity 0.3s ease, transform 0.3s ease !important;
+  pointer-events: auto !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+.app-toast-success {
+  background: linear-gradient(135deg, rgba(32, 48, 25, 0.94) 0%, rgba(18, 28, 15, 0.97) 100%) !important;
+  border: 1px solid rgba(165, 215, 95, 0.38) !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  color: #f2f6ee !important;
+}
+
+.app-toast-error {
+  background: linear-gradient(135deg, rgba(58, 20, 24, 0.94) 0%, rgba(32, 12, 14, 0.97) 100%) !important;
+  border: 1px solid rgba(255, 115, 125, 0.38) !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  color: #fff0f2 !important;
+}
+
+.toast-glass-close {
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  cursor: pointer !important;
+  padding: 1px 4px !important;
+  line-height: 1 !important;
+  font-size: 0.75rem !important;
+  transition: color 0.15s ease, transform 0.15s ease !important;
+}
+
+.toast-glass-close:hover {
+  color: #ffffff !important;
+  transform: scale(1.15) !important;
+}
+
+.app-toast.toast-hiding {
+  opacity: 0 !important;
+  transform: translateX(110%) !important;
+}
+
+.toast-progress-bar {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  height: 2.5px !important;
+  width: 100% !important;
+  animation: toastProgress 6s linear forwards !important;
+}
+
+.toast-progress-success {
+  background: linear-gradient(to right, #9bbd55, #cbe68e);
+}
+
+.toast-progress-error {
+  background: linear-gradient(to right, #ff4d60, #ffa3ad);
+}
+
+@keyframes toastSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+.tool-card-label {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.tool-title-marquee {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+.tool-title-marquee.has-overflow {
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+}
+
+.tool-title-inner {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.tool-title-marquee.has-overflow .tool-title-inner {
+  will-change: transform;
+  animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+}
+
+/* Tạm dừng chạy chữ khi rê chuột hoặc focus để đọc hoặc click dễ dàng */
+.tool-item label:hover .tool-title-inner,
+.tool-item label:focus-within .tool-title-inner,
+.tool-post-card:hover .tool-title-inner,
+.tool-post-card:focus-within .tool-title-inner {
+  animation-play-state: paused;
+}
+
+@keyframes toolTextMarquee {
+  0%, 20% {
+    transform: translateX(0);
+  }
+  68%, 82% {
+    transform: translateX(var(--marquee-distance, -80px));
+  }
+  94%, 100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-title-marquee.has-overflow .tool-title-inner {
+    animation: none;
+  }
+  .tool-title-marquee.has-overflow {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
+/* ==========================================================================
+   AJAX Feature 1: Comment Likes & Realtime Comments Status
+   ========================================================================== */
+.comment-like-btn {
+  transition: transform 0.15s ease, color 0.15s ease;
+  line-height: 1;
+}
+.comment-like-btn:hover {
+  transform: scale(1.12);
+}
+.comment-like-btn.liked {
+  color: #ff6b81 !important;
+}
+
+#realtime-comment-status {
+  animation: fadeIn 0.4s ease;
+  backdrop-filter: blur(8px);
+}
+
+/* ==========================================================================
+   AJAX Feature 3: Search Autocomplete Dropdown
+   ========================================================================== */
+.search-autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-input-group {
+  background: rgba(26, 32, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input-group:focus-within {
+  border-color: var(--color-moss, #9bbd55);
+  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.25);
+}
+
+.nature-search-input {
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.5rem;
+  box-shadow: none !important;
+}
+
+.nature-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.search-autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: rgba(26, 34, 23, 0.95);
+  border: 1px solid rgba(165, 215, 95, 0.35);
+  border-radius: 18px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 0.4rem;
+}
+
+.search-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  color: #f1f3ee;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.search-suggest-item:hover,
+.search-suggest-item.active {
+  background: rgba(155, 189, 85, 0.22);
+  color: #ffffff;
+}
+
+.search-suggest-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(155, 189, 85, 0.18);
+  color: var(--color-moss, #9bbd55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.search-suggest-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #f5f8f0;
+}
+
+.search-suggest-location {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ==========================================================================
+   AJAX Feature 4: Infinite Scroll & Load More
+   ========================================================================== */
+#btnLoadMorePosts {
+  border-radius: 999px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+#btnLoadMorePosts:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+#btnLoadMorePosts:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+/* ==========================================================================
+   AJAX Feature 5: Register Live Validation Feedback
+   ========================================================================== */
+.ajax-validation-feedback {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.nature-input.is-valid-ajax {
+  border-color: #2fb344 !important;
+  box-shadow: 0 0 0 2px rgba(47, 179, 68, 0.2) !important;
+}
+
+.nature-input.is-invalid-ajax {
+  border-color: #d63939 !important;
+  box-shadow: 0 0 0 2px rgba(214, 57, 57, 0.2) !important;
+}
+
+/* ==========================================================================
+   Advanced Feature 3 & 4: Notifications Dropdown
+   ========================================================================== */
+.notifications-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 340px;
+  max-width: 90vw;
+  background: rgba(30, 36, 28, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  z-index: 1050;
+  overflow: hidden;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.18s ease;
+}
+
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.notification-item.unread {
+  background: rgba(155, 189, 85, 0.1);
+  border-left: 3px solid #9bbd55;
+}
+
+.notification-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(155, 189, 85, 0.2);
+  color: #9bbd55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.notification-content {
+  flex-grow: 1;
+  min-width: 0;
+  font-size: 0.83rem;
+  line-height: 1.35;
+  color: #e5e9de;
+}
+
+.notification-time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 3px;
+}
+
+/* ==========================================================================
+   Advanced Feature: Bookmark & Follow Buttons
+   ========================================================================== */
+.bookmark-btn {
+  transition: all 0.2s ease;
+}
+
+.bookmark-btn:hover {
+  transform: scale(1.05);
+}
+
+.bookmark-btn.bookmarked {
+  background: rgba(231, 76, 60, 0.12) !important;
+  color: #e74c3c !important;
+  border-color: rgba(231, 76, 60, 0.35) !important;
+}
+
+.follow-user-btn {
+  transition: all 0.2s ease;
+}
+
+.follow-user-btn.following {
+  background: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+

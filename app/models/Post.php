@@ -375,7 +375,8 @@ class Post extends Model {
         string|array|null $imageUrl = null,
         ?float $lat = null,
         ?float $lng = null,
-        string $status = 'pending'
+        string $status = 'pending',
+        array $tripData = []
     ): int {
         $postId = 0;
 
@@ -428,6 +429,10 @@ class Post extends Model {
             }
         }
 
+        if ($postId > 0 && !empty($tripData)) {
+            $this->updateTripData($postId, $tripData);
+        }
+
         return $postId;
     }
 
@@ -443,7 +448,8 @@ class Post extends Model {
         string|array|null $imageUrl = null,
         ?float $lat = null,
         ?float $lng = null,
-        ?string $status = null
+        ?string $status = null,
+        array $tripData = []
     ): bool {
         $updated = false;
 
@@ -502,7 +508,38 @@ class Post extends Model {
             $this->addImages($id, $urls);
         }
 
+        if (!empty($tripData)) {
+            $this->updateTripData($id, $tripData);
+        }
+
         return $updated;
+    }
+
+    /**
+     * Cập nhật thông tin bài viết dạng "Chuyến đi" (Trip details)
+     */
+    public function updateTripData(int $postId, array $data): bool {
+        $allowed = ['route', 'trip_duration', 'estimated_cost', 'gear_needed', 'difficulty', 'region', 'activity_type'];
+        $fields = [];
+        $params = ['id' => $postId];
+        foreach ($allowed as $f) {
+            if (array_key_exists($f, $data)) {
+                $fields[] = "$f = :$f";
+                $val = $data[$f];
+                $params[$f] = ($val !== null && $val !== '') ? trim((string)$val) : null;
+            }
+        }
+        if (empty($fields)) {
+            return false;
+        }
+        try {
+            $sql = "UPDATE posts SET " . implode(', ', $fields) . " WHERE id = :id";
+            Database::query($sql, $params);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Error updating trip data: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -548,6 +585,20 @@ class Post extends Model {
      */
     public function search(string $keyword, ?int $categoryId = null, string $sort = 'hot'): array {
         try {
+            $params = [];
+            $where = ["p.status = 'published'"];
+
+            if ($categoryId !== null) {
+                $where[] = "p.category_id = :cat";
+                $params['cat'] = $categoryId;
+            }
+
+            $pattern = '%' . trim($keyword) . '%';
+            $where[] = "(p.title LIKE :kw1 OR p.content LIKE :kw2 OR p.location LIKE :kw3)";
+            $params['kw1'] = $pattern;
+            $params['kw2'] = $pattern;
+            $params['kw3'] = $pattern;
+
             $sql = "SELECT p.*, u.username, c.name AS category_name,
                            (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
                            COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
@@ -558,14 +609,163 @@ class Post extends Model {
                     FROM posts p
                     JOIN users u ON u.id = p.user_id
                     JOIN categories c ON c.id = p.category_id
-                    WHERE p.status = 'published'
-                      AND (:cat IS NULL OR p.category_id = :cat)
-                      AND (p.title LIKE :kw OR p.content LIKE :kw OR p.location LIKE :kw)"
+                    WHERE " . implode(' AND ', $where)
                     . $this->buildOrderByClause($sort);
-            $pattern = '%' . trim($keyword) . '%';
-            return Database::query($sql, ['cat' => $categoryId, 'kw' => $pattern]);
+            return Database::query($sql, $params);
         } catch (PDOException $ex) {
             return [];
+        }
+    }
+
+    /**
+     * Tìm kiếm nâng cao: MariaDB FULLTEXT kết hợp bộ lọc đa tiêu chí (độ khó, vùng miền, loại hình, tag)
+     */
+    public function advancedSearch(array $filters = [], int $page = 1, int $limit = 6): array {
+        $offset = ($page - 1) * $limit;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $params = [];
+        $where = ["p.status = 'published'"];
+
+        $keyword = trim((string)($filters['keyword'] ?? ''));
+        if ($keyword !== '') {
+            $words = preg_split('/\s+/', $keyword);
+            $booleanTokens = [];
+            foreach ($words as $w) {
+                $w = trim($w);
+                if ($w !== '') {
+                    $booleanTokens[] = '+' . $w . '*';
+                }
+            }
+            $booleanQuery = implode(' ', $booleanTokens);
+
+            $where[] = "(MATCH(p.title, p.content, p.location) AGAINST(:kw_boolean IN BOOLEAN MODE) OR p.title LIKE :kw_like1 OR p.location LIKE :kw_like2 OR p.content LIKE :kw_like3)";
+            $params['kw_boolean'] = $booleanQuery;
+            $params['kw_like1'] = '%' . $keyword . '%';
+            $params['kw_like2'] = '%' . $keyword . '%';
+            $params['kw_like3'] = '%' . $keyword . '%';
+        }
+
+        if (!empty($filters['category_id'])) {
+            $where[] = "p.category_id = :cat_id";
+            $params['cat_id'] = (int)$filters['category_id'];
+        }
+
+        if (!empty($filters['activity_type'])) {
+            $where[] = "p.activity_type = :act_type";
+            $params['act_type'] = $filters['activity_type'];
+        }
+
+        if (!empty($filters['difficulty'])) {
+            $where[] = "p.difficulty = :difficulty";
+            $params['difficulty'] = $filters['difficulty'];
+        }
+
+        if (!empty($filters['region'])) {
+            $where[] = "p.region = :region";
+            $params['region'] = $filters['region'];
+        }
+
+        if (!empty($filters['tag_id'])) {
+            $where[] = "EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag_id = :tag_id)";
+            $params['tag_id'] = (int)$filters['tag_id'];
+        } elseif (!empty($filters['tag_name'])) {
+            $where[] = "EXISTS (SELECT 1 FROM post_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.post_id = p.id AND t.name = :tag_name)";
+            $params['tag_name'] = $filters['tag_name'];
+        }
+
+        $sort = self::normalizeSort($filters['sort'] ?? 'hot');
+
+        $sql = "SELECT p.*, u.username, c.name AS category_name,
+                       (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                       COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                       (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                       (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                       COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                       (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                FROM posts p
+                JOIN users u ON u.id = p.user_id
+                JOIN categories c ON c.id = p.category_id
+                WHERE " . implode(' AND ', $where) . " " . $this->buildOrderByClause($sort) . " LIMIT :limit OFFSET :offset";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue(':' . $k, $v);
+            }
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Error in advancedSearch: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Đếm tổng số kết quả tìm kiếm nâng cao phục vụ phân trang
+     */
+    public function countAdvancedSearch(array $filters = []): int {
+        $params = [];
+        $where = ["p.status = 'published'"];
+
+        $keyword = trim((string)($filters['keyword'] ?? ''));
+        if ($keyword !== '') {
+            $words = preg_split('/\s+/', $keyword);
+            $booleanTokens = [];
+            foreach ($words as $w) {
+                $w = trim($w);
+                if ($w !== '') {
+                    $booleanTokens[] = '+' . $w . '*';
+                }
+            }
+            $booleanQuery = implode(' ', $booleanTokens);
+            $where[] = "(MATCH(p.title, p.content, p.location) AGAINST(:kw_boolean IN BOOLEAN MODE) OR p.title LIKE :kw_like1 OR p.location LIKE :kw_like2 OR p.content LIKE :kw_like3)";
+            $params['kw_boolean'] = $booleanQuery;
+            $params['kw_like1'] = '%' . $keyword . '%';
+            $params['kw_like2'] = '%' . $keyword . '%';
+            $params['kw_like3'] = '%' . $keyword . '%';
+        }
+
+        if (!empty($filters['category_id'])) {
+            $where[] = "p.category_id = :cat_id";
+            $params['cat_id'] = (int)$filters['category_id'];
+        }
+
+        if (!empty($filters['activity_type'])) {
+            $where[] = "p.activity_type = :act_type";
+            $params['act_type'] = $filters['activity_type'];
+        }
+
+        if (!empty($filters['difficulty'])) {
+            $where[] = "p.difficulty = :difficulty";
+            $params['difficulty'] = $filters['difficulty'];
+        }
+
+        if (!empty($filters['region'])) {
+            $where[] = "p.region = :region";
+            $params['region'] = $filters['region'];
+        }
+
+        if (!empty($filters['tag_id'])) {
+            $where[] = "EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag_id = :tag_id)";
+            $params['tag_id'] = (int)$filters['tag_id'];
+        } elseif (!empty($filters['tag_name'])) {
+            $where[] = "EXISTS (SELECT 1 FROM post_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.post_id = p.id AND t.name = :tag_name)";
+            $params['tag_name'] = $filters['tag_name'];
+        }
+
+        $sql = "SELECT COUNT(*) AS total FROM posts p WHERE " . implode(' AND ', $where);
+
+        try {
+            $res = Database::query($sql, $params);
+            return (int)($res[0]['total'] ?? 0);
+        } catch (PDOException $e) {
+            error_log('Error counting advancedSearch: ' . $e->getMessage());
+            return 0;
         }
     }
 

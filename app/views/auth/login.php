@@ -65,8 +65,9 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                                 id="btn-toggle-pw"
                                 class="btn-toggle-password" 
                                 data-target="password"
+                                onclick="togglePasswordVisibility('password', this)"
                                 aria-label="Hiện hoặc ẩn mật khẩu"
-                                style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                                style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
                             <!-- Eye Open -->
                             <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
@@ -135,21 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const alertBox = document.getElementById('login-alert-box');
     const alertText = document.getElementById('login-alert-text');
 
-    // Password Show/Hide Toggle
-    const toggleBtn = document.getElementById('btn-toggle-pw');
-    if (toggleBtn && passwordInput) {
-        toggleBtn.addEventListener('click', function() {
-            const isPw = passwordInput.type === 'password';
-            passwordInput.type = isPw ? 'text' : 'password';
-            const iconOpen = toggleBtn.querySelector('.icon-eye-open');
-            const iconClosed = toggleBtn.querySelector('.icon-eye-closed');
-            if (iconOpen && iconClosed) {
-                iconOpen.style.display = isPw ? 'none' : 'block';
-                iconClosed.style.display = isPw ? 'block' : 'none';
-            }
-        });
-    }
-
     if (!loginForm) return;
 
     let busy = false;
@@ -198,15 +184,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
             }
-        }).then(async res => {
-            const data = await res.json().catch(() => null);
+        }).then(async function(res) {
+            const data = await res.json().catch(function() { return null; });
             return { ok: res.ok, status: res.status, data: data };
-        }).catch(err => {
+        }).catch(function(err) {
             return { ok: false, error: err };
         });
 
         // 3. Đợi 200ms cho card fade out rồi kích hoạt intro reveal
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(function(r) { setTimeout(r, 200); });
 
         intro.style.setProperty('--d', totalMs + 'ms');
         intro.classList.remove('play');
@@ -216,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 4. Chờ animation hoàn thiện và nhận kết quả API song song
         const [result] = await Promise.all([
             apiPromise,
-            new Promise(r => setTimeout(r, totalMs + HOLD_MS))
+            new Promise(function(r) { setTimeout(r, totalMs + HOLD_MS); })
         ]);
 
         if (result && result.ok && result.data && result.data.success) {
@@ -228,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Thất bại: đóng intro, khôi phục form và hiển thị thông báo lỗi
             intro.classList.remove('show');
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(function(r) { setTimeout(r, 250); });
             intro.classList.remove('play');
 
             loginCard.classList.remove('out');

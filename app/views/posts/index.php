@@ -22,6 +22,28 @@ $filterQuery = $catQuery . $sortQuery;
         </div>
     </div>
 
+    <!-- Thanh Tìm kiếm Gợi ý Autocomplete bằng AJAX (FR04 - Phúc) -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-12 col-md-8 col-lg-7">
+            <div class="search-autocomplete-wrapper position-relative">
+                <div class="input-group search-input-group shadow-sm">
+                    <span class="input-group-text bg-transparent border-end-0 ps-3" style="color: var(--color-moss, #9bbd55);">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           id="forumSearchInput" 
+                           class="form-control border-start-0 border-end-0 nature-search-input" 
+                           placeholder="Tìm nhanh bài viết, địa điểm (ví dụ: Tà Xùa, Đà Lạt, lều cắm trại...)" 
+                           autocomplete="off">
+                    <span class="input-group-text bg-transparent border-start-0 pe-3" id="searchSpinner" style="display: none;">
+                        <span class="spinner-border spinner-border-sm text-success" role="status"></span>
+                    </span>
+                </div>
+                <div id="searchSuggestionsDropdown" class="search-autocomplete-dropdown shadow-lg" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Category Slidebar (FR03 - Tuần 4 - Phúc) -->
     <?php if (!empty($categories)): ?>
         <div class="category-slidebar-container mb-4 pb-2" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
@@ -96,6 +118,100 @@ $filterQuery = $catQuery . $sortQuery;
                 </div>
             </div>
         </div>
+
+        <!-- Thanh nút mở rộng Bộ lọc nâng cao (Loại hình, Độ khó, Vùng miền, Tag) -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-light rounded-pill px-3 d-inline-flex align-items-center gap-1" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#advancedFilterCollapse" 
+                    aria-expanded="<?= (!empty($filters['difficulty']) || !empty($filters['region']) || !empty($filters['activity_type']) || !empty($filters['tag_name'])) ? 'true' : 'false' ?>">
+                <i class="bi bi-sliders2 text-success"></i>
+                <span>Bộ lọc nâng cao (Độ khó, Vùng miền, Loại hình)</span>
+                <?php if (!empty($filters['difficulty']) || !empty($filters['region']) || !empty($filters['activity_type']) || !empty($filters['tag_name'])): ?>
+                    <span class="badge rounded-pill text-bg-success ms-1">Đang lọc</span>
+                <?php endif; ?>
+            </button>
+
+            <?php if (!empty($popularTags)): ?>
+                <div class="d-inline-flex align-items-center gap-1 flex-wrap">
+                    <span class="small text-white-50 me-1"><i class="bi bi-tags me-1"></i>Tag:</span>
+                    <?php foreach ($popularTags as $t): 
+                        $isTagActive = ($filters['tag_name'] ?? '') === $t['name'];
+                    ?>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?tag=<?= urlencode($t['name']) ?>&sort=<?= urlencode($selectedSort) ?>" 
+                           class="badge rounded-pill text-decoration-none <?= $isTagActive ? 'text-bg-success' : 'text-bg-dark border border-secondary border-opacity-50' ?>" 
+                           style="font-size: 11px;">
+                            #<?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Khung bộ lọc nâng cao (Collapsible) -->
+        <div class="collapse <?= (!empty($filters['difficulty']) || !empty($filters['region']) || !empty($filters['activity_type']) || !empty($filters['tag_name'])) ? 'show' : '' ?> mb-4" id="advancedFilterCollapse">
+            <div class="card border-0 rounded-4 p-3 p-md-4 shadow-sm" style="background: rgba(34, 40, 31, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.12) !important;">
+                <form method="get" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" class="row g-3 align-items-end">
+                    <?php if (!empty($selectedCategoryId)): ?>
+                        <input type="hidden" name="category" value="<?= (int)$selectedCategoryId ?>">
+                    <?php endif; ?>
+                    <input type="hidden" name="sort" value="<?= htmlspecialchars($selectedSort, ENT_QUOTES, 'UTF-8') ?>">
+
+                    <!-- Loại hình -->
+                    <div class="col-6 col-md-3">
+                        <label class="nature-label text-white-50 small mb-1">Loại hình</label>
+                        <select name="activity_type" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
+                            <option value="">Tất cả loại hình</option>
+                            <option value="camping" <?= (($filters['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
+                            <option value="trekking" <?= (($filters['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>🥾 Trekking (Đi bộ)</option>
+                            <option value="leo_nui" <?= (($filters['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking)</option>
+                            <option value="phuot" <?= (($filters['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
+                            <option value="da_ngoai" <?= (($filters['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại picnic</option>
+                        </select>
+                    </div>
+
+                    <!-- Mức độ khó -->
+                    <div class="col-6 col-md-3">
+                        <label class="nature-label text-white-50 small mb-1">Mức độ khó</label>
+                        <select name="difficulty" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
+                            <option value="">Tất cả độ khó</option>
+                            <option value="easy" <?= (($filters['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới)</option>
+                            <option value="medium" <?= (($filters['difficulty'] ?? '') === 'medium') ? 'selected' : '' ?>>🟡 Trung bình</option>
+                            <option value="hard" <?= (($filters['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc)</option>
+                            <option value="extreme" <?= (($filters['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao</option>
+                        </select>
+                    </div>
+
+                    <!-- Vùng miền -->
+                    <div class="col-6 col-md-3">
+                        <label class="nature-label text-white-50 small mb-1">Vùng miền</label>
+                        <select name="region" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
+                            <option value="">Tất cả vùng miền</option>
+                            <option value="Tây Bắc" <?= (($filters['region'] ?? '') === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                            <option value="Đông Bắc" <?= (($filters['region'] ?? '') === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                            <option value="Bắc Bộ" <?= (($filters['region'] ?? '') === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                            <option value="Bắc Trung Bộ" <?= (($filters['region'] ?? '') === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                            <option value="Nam Trung Bộ" <?= (($filters['region'] ?? '') === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                            <option value="Tây Nguyên" <?= (($filters['region'] ?? '') === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                            <option value="Đông Nam Bộ" <?= (($filters['region'] ?? '') === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                            <option value="Tây Nam Bộ" <?= (($filters['region'] ?? '') === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                        </select>
+                    </div>
+
+                    <!-- Nút Áp dụng & Xóa lọc -->
+                    <div class="col-6 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-success rounded-pill flex-grow-1">
+                            <i class="bi bi-funnel-fill me-1"></i> Lọc bài
+                        </button>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts<?= !empty($selectedCategoryId) ? '?category=' . (int)$selectedCategoryId : '' ?>" 
+                           class="btn btn-sm btn-outline-secondary rounded-pill text-white-50" title="Xóa bộ lọc">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
         <style>
             .sort-pill {
                 display: inline-flex;
@@ -122,6 +238,31 @@ $filterQuery = $catQuery . $sortQuery;
 
     <!-- Post list grid -->
     <?php require __DIR__ . '/../partials/post-cards.php'; ?>
+
+    <!-- AJAX Tải thêm bài viết & Tự động cuộn (Infinite Scroll - Phúc) -->
+    <div class="text-center my-4" id="load-more-container">
+        <?php if ($currentPage < $totalPages): ?>
+            <div class="d-flex flex-wrap align-items-center justify-content-center gap-3">
+                <button type="button" 
+                        id="btnLoadMorePosts" 
+                        class="nature-btn-secondary px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm"
+                        data-current-page="<?= $currentPage ?>"
+                        data-total-pages="<?= $totalPages ?>"
+                        data-category-id="<?= htmlspecialchars((string)($selectedCategoryId ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                        data-sort="<?= htmlspecialchars($selectedSort, ENT_QUOTES, 'UTF-8') ?>">
+                    <i class="bi bi-arrow-down-circle-fill" style="color: var(--color-moss, #9bbd55);"></i>
+                    <span class="btn-text">Tải thêm bài viết</span>
+                </button>
+                <div class="form-check form-switch d-inline-flex align-items-center gap-2 text-white-50 small">
+                    <input class="form-check-input" type="checkbox" id="toggleInfiniteScroll">
+                    <label class="form-check-label" for="toggleInfiniteScroll">Tự động cuộn (Infinite Scroll)</label>
+                </div>
+            </div>
+        <?php endif; ?>
+        <div id="no-more-posts-msg" class="text-white-50 small py-3" style="display: <?= ($currentPage >= $totalPages && $totalPosts > 0) ? 'block' : 'none' ?>;">
+            <i class="bi bi-check2-circle text-success me-1"></i>Bạn đã xem hết tất cả bài viết.
+        </div>
+    </div>
 
     <!-- Thanh phân trang Bootstrap (FR03 - Tuần 4 - Phúc) -->
     <?php if ($totalPages > 1): ?>
@@ -302,6 +443,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 120);
     } else {
         updateSlidebarState();
+    }
+    // Khởi tạo tính năng AJAX: Tìm kiếm gợi ý & Tải thêm bài viết (Phúc)
+    if (window.ForumAjax) {
+        window.ForumAjax.initSearchAutocomplete('forumSearchInput', 'searchSuggestionsDropdown');
+        window.ForumAjax.initInfiniteScroll({
+            btnId: 'btnLoadMorePosts',
+            rowId: 'post-cards-row'
+        });
     }
 });
 </script>
