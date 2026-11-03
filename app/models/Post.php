@@ -548,6 +548,20 @@ class Post extends Model {
      */
     public function search(string $keyword, ?int $categoryId = null, string $sort = 'hot'): array {
         try {
+            $params = [];
+            $where = ["p.status = 'published'"];
+
+            if ($categoryId !== null) {
+                $where[] = "p.category_id = :cat";
+                $params['cat'] = $categoryId;
+            }
+
+            $pattern = '%' . trim($keyword) . '%';
+            $where[] = "(p.title LIKE :kw1 OR p.content LIKE :kw2 OR p.location LIKE :kw3)";
+            $params['kw1'] = $pattern;
+            $params['kw2'] = $pattern;
+            $params['kw3'] = $pattern;
+
             $sql = "SELECT p.*, u.username, c.name AS category_name,
                            (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
                            COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
@@ -558,12 +572,9 @@ class Post extends Model {
                     FROM posts p
                     JOIN users u ON u.id = p.user_id
                     JOIN categories c ON c.id = p.category_id
-                    WHERE p.status = 'published'
-                      AND (:cat IS NULL OR p.category_id = :cat)
-                      AND (p.title LIKE :kw OR p.content LIKE :kw OR p.location LIKE :kw)"
+                    WHERE " . implode(' AND ', $where)
                     . $this->buildOrderByClause($sort);
-            $pattern = '%' . trim($keyword) . '%';
-            return Database::query($sql, ['cat' => $categoryId, 'kw' => $pattern]);
+            return Database::query($sql, $params);
         } catch (PDOException $ex) {
             return [];
         }

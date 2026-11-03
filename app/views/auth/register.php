@@ -70,14 +70,34 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                 <!-- Password -->
                 <div class="mb-3">
                     <label for="password" class="nature-label">Mật khẩu (tối thiểu 8 ký tự)</label>
-                    <input class="nature-input" 
-                           id="password" 
-                           name="password" 
-                           type="password" 
-                           required 
-                           minlength="8" 
-                           autocomplete="new-password"
-                           placeholder="••••••••">
+                    <div style="position: relative;">
+                        <input class="nature-input" 
+                               style="padding-right: 3rem;"
+                               id="password" 
+                               name="password" 
+                               type="password" 
+                               required 
+                               minlength="8" 
+                               autocomplete="new-password"
+                               placeholder="••••••••">
+                        <button type="button" 
+                                class="btn-toggle-password" 
+                                data-target="password"
+                                onclick="togglePasswordVisibility('password', this)"
+                                aria-label="Hiện hoặc ẩn mật khẩu"
+                                style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                            <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="icon-eye-closed" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                <line x1="2" x2="22" y1="2" y2="22"/>
+                            </svg>
+                        </button>
+                    </div>
                     <?php if (!empty($errors['password'])): ?>
                         <div class="text-danger small mt-1"><?= htmlspecialchars($errors['password'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
@@ -86,14 +106,34 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                 <!-- Confirm Password -->
                 <div class="mb-4">
                     <label for="password_confirmation" class="nature-label">Nhập lại mật khẩu</label>
-                    <input class="nature-input" 
-                           id="password_confirmation" 
-                           name="password_confirmation" 
-                           type="password" 
-                           required 
-                           minlength="8" 
-                           autocomplete="new-password"
-                           placeholder="••••••••">
+                    <div style="position: relative;">
+                        <input class="nature-input" 
+                               style="padding-right: 3rem;"
+                               id="password_confirmation" 
+                               name="password_confirmation" 
+                               type="password" 
+                               required 
+                               minlength="8" 
+                               autocomplete="new-password"
+                               placeholder="••••••••">
+                        <button type="button" 
+                                class="btn-toggle-password" 
+                                data-target="password_confirmation"
+                                onclick="togglePasswordVisibility('password_confirmation', this)"
+                                aria-label="Hiện hoặc ẩn mật khẩu xác nhận"
+                                style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                            <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="icon-eye-closed" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                <line x1="2" x2="22" y1="2" y2="22"/>
+                            </svg>
+                        </button>
+                    </div>
                     <?php if (!empty($errors['password_confirmation'])): ?>
                         <div class="text-danger small mt-1"><?= htmlspecialchars($errors['password_confirmation'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>

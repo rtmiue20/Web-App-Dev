@@ -65,8 +65,9 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                                 id="btn-toggle-pw"
                                 class="btn-toggle-password" 
                                 data-target="password"
+                                onclick="togglePasswordVisibility('password', this)"
                                 aria-label="Hiện hoặc ẩn mật khẩu"
-                                style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                                style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
                             <!-- Eye Open -->
                             <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
@@ -134,21 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('btn-submit-login');
     const alertBox = document.getElementById('login-alert-box');
     const alertText = document.getElementById('login-alert-text');
-
-    // Password Show/Hide Toggle
-    const toggleBtn = document.getElementById('btn-toggle-pw');
-    if (toggleBtn && passwordInput) {
-        toggleBtn.addEventListener('click', function() {
-            const isPw = passwordInput.type === 'password';
-            passwordInput.type = isPw ? 'text' : 'password';
-            const iconOpen = toggleBtn.querySelector('.icon-eye-open');
-            const iconClosed = toggleBtn.querySelector('.icon-eye-closed');
-            if (iconOpen && iconClosed) {
-                iconOpen.style.display = isPw ? 'none' : 'block';
-                iconClosed.style.display = isPw ? 'block' : 'none';
-            }
-        });
-    }
 
     if (!loginForm) return;
 

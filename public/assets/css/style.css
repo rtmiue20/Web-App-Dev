@@ -1146,3 +1146,63 @@ body {
   opacity: 0.65;
   font-weight: 300;
 }
+
+/* ==========================================================================
+   Tool Item Marquee (Chạy chữ tự động cho dụng cụ có tên dài khi đăng bài)
+   ========================================================================== */
+.tool-card-label {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.tool-title-marquee {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+.tool-title-marquee.has-overflow {
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+}
+
+.tool-title-inner {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.tool-title-marquee.has-overflow .tool-title-inner {
+  will-change: transform;
+  animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+}
+
+/* Tạm dừng chạy chữ khi rê chuột hoặc focus để đọc hoặc click dễ dàng */
+.tool-item label:hover .tool-title-inner,
+.tool-item label:focus-within .tool-title-inner {
+  animation-play-state: paused;
+}
+
+@keyframes toolTextMarquee {
+  0%, 20% {
+    transform: translateX(0);
+  }
+  68%, 82% {
+    transform: translateX(var(--marquee-distance, -80px));
+  }
+  94%, 100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-title-marquee.has-overflow .tool-title-inner {
+    animation: none;
+  }
+  .tool-title-marquee.has-overflow {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}

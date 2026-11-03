@@ -177,6 +177,28 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                 </div>
 
                 <?php if (!empty($products)): ?>
+                    <style>
+                        .tool-card-label { overflow: hidden; max-width: 100%; }
+                        .tool-title-marquee { position: relative; width: 100%; max-width: 100%; overflow: hidden; white-space: nowrap; line-height: 1.35; }
+                        .tool-title-marquee.has-overflow {
+                            mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                            -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                        }
+                        .tool-title-inner { display: inline-block; white-space: nowrap; }
+                        .tool-title-marquee.has-overflow .tool-title-inner {
+                            will-change: transform;
+                            animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+                        }
+                        .tool-item label:hover .tool-title-inner,
+                        .tool-item label:focus-within .tool-title-inner {
+                            animation-play-state: paused;
+                        }
+                        @keyframes toolTextMarquee {
+                            0%, 20% { transform: translateX(0); }
+                            68%, 82% { transform: translateX(var(--marquee-distance, -80px)); }
+                            94%, 100% { transform: translateX(0); }
+                        }
+                    </style>
                     <div class="rounded-4 p-3 border" style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12) !important;">
                         <!-- Filter search box -->
                         <div class="mb-3">
@@ -205,8 +227,8 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                                 }
                             ?>
                                 <div class="col tool-item" data-name="<?= htmlspecialchars(mb_strtolower($prod['name']), ENT_QUOTES, 'UTF-8') ?>">
-                                    <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative" 
-                                           style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important;">
+                                    <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative tool-card-label" 
+                                           style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important; overflow: hidden;">
                                         <input type="checkbox" 
                                                name="product_ids[]" 
                                                value="<?= $pId ?>" 
@@ -218,9 +240,9 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                                              alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>" 
                                              class="rounded-2 object-fit-cover flex-shrink-0" 
                                              style="width: 44px; height: 44px; border: 1px solid rgba(0,0,0,0.06);">
-                                        <div class="min-w-0 flex-grow-1" style="font-size: 13px;">
-                                            <div class="fw-semibold text-truncate text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                                <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>
+                                        <div class="min-w-0 flex-grow-1 overflow-hidden" style="font-size: 13px;">
+                                            <div class="tool-title-marquee fw-semibold text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <span class="tool-title-inner"><?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?></span>
                                             </div>
                                             <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 11px;">
                                                 <span><?= htmlspecialchars($prod['category_name'] ?? 'Dụng cụ', ENT_QUOTES, 'UTF-8') ?></span>
@@ -537,13 +559,37 @@ const MapPicker = (() => {
     return { open, close, search, confirm };
 })();
 
-// Xử lý bộ chọn Dụng cụ (Tools Selection)
+// Xử lý bộ chọn Dụng cụ (Tools Selection) & Chạy chữ Marquee
 function updateSelectedToolsCounter() {
     var checkedBoxes = document.querySelectorAll('.tool-checkbox:checked');
     var badge = document.getElementById('selectedToolsCount');
     if (badge) {
         badge.textContent = checkedBoxes.length;
     }
+}
+
+function initToolMarquees() {
+    var marquees = document.querySelectorAll('.tool-title-marquee');
+    if (!marquees.length) return;
+
+    marquees.forEach(function(marquee) {
+        var inner = marquee.querySelector('.tool-title-inner');
+        if (!inner) return;
+
+        marquee.classList.remove('has-overflow');
+        var overflow = inner.scrollWidth - marquee.clientWidth;
+        if (overflow > 2) {
+            marquee.classList.add('has-overflow');
+            var distance = overflow + 10;
+            var duration = Math.min(14, Math.max(6, Math.round(distance / 22) + 3));
+            inner.style.setProperty('--marquee-distance', '-' + distance + 'px');
+            inner.style.setProperty('--marquee-duration', duration + 's');
+        } else {
+            marquee.classList.remove('has-overflow');
+            inner.style.removeProperty('--marquee-distance');
+            inner.style.removeProperty('--marquee-duration');
+        }
+    });
 }
 
 function filterToolsList(keyword) {
@@ -557,10 +603,21 @@ function filterToolsList(keyword) {
             item.style.display = 'none';
         }
     });
+    setTimeout(initToolMarquees, 50);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedToolsCounter();
+    initToolMarquees();
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(initToolMarquees);
+    }
+});
+
+window.addEventListener('load', initToolMarquees);
+window.addEventListener('resize', function() {
+    clearTimeout(window._marqueeResizeTimer);
+    window._marqueeResizeTimer = setTimeout(initToolMarquees, 150);
 });
 </script>
 
