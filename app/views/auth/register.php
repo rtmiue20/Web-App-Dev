@@ -45,6 +45,7 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                            autocomplete="username" 
                            placeholder="Ví dụ: phuotthubienhoa"
                            value="<?= htmlspecialchars($old['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    <div id="username-feedback" class="ajax-validation-feedback small mt-1" style="display: none;"></div>
                     <?php if (!empty($errors['username'])): ?>
                         <div class="text-danger small mt-1"><?= htmlspecialchars($errors['username'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
@@ -62,6 +63,7 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                            autocomplete="email" 
                            placeholder="ban@daingoai.vn"
                            value="<?= htmlspecialchars($old['email'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    <div id="email-feedback" class="ajax-validation-feedback small mt-1" style="display: none;"></div>
                     <?php if (!empty($errors['email'])): ?>
                         <div class="text-danger small mt-1"><?= htmlspecialchars($errors['email'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
@@ -140,7 +142,7 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="nature-btn-primary mb-3">
+                <button type="submit" id="registerSubmitBtn" class="nature-btn-primary mb-3">
                     Đăng ký tài khoản
                 </button>
             </form>
@@ -157,3 +159,11 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.ForumAjax) {
+        window.ForumAjax.initRegisterLiveValidation();
+    }
+});
+</script>

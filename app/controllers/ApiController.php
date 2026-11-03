@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Comment.php';
 require_once __DIR__ . '/../models/Post.php';
+require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../services/WeatherService.php';
 require_once __DIR__ . '/../services/VietnamAddressService.php';
 require_once __DIR__ . '/../helpers/Session.php';
@@ -11,7 +12,13 @@ require_once __DIR__ . '/../helpers/Response.php';
 
 /**
  * Controller ApiController - Xử lý các endpoint AJAX (JSON) & Tích hợp Web Service ngoài
- * Phục vụ FR06 (Thời tiết Open-Meteo, Bản đồ, Địa chỉ hành chính), FR07 (Bình luận AJAX), FR08 (Thích bài AJAX)
+ * Phục vụ:
+ * 1. FR08: Like/vote bài viết & Thích bình luận không reload trang
+ * 2. FR07: Bình luận realtime đa cấp (polling/fetch định kỳ), xóa bình luận
+ * 3. FR04: Tìm kiếm gợi ý (autocomplete) khi gõ
+ * 4. FR03: Phân trang / "tải thêm" bài viết (Infinite Scroll)
+ * 5. FR01: Kiểm tra trùng username/email ngay khi đăng ký
+ * 6. FR06: Thời tiết Open-Meteo, Bản đồ, Địa chỉ hành chính Việt Nam
  */
 class ApiController extends Controller
 {
@@ -19,6 +26,7 @@ class ApiController extends Controller
     private VietnamAddressService $addressService;
     private Comment $comments;
     private Post $posts;
+    private User $users;
 
     public function __construct()
     {
@@ -26,6 +34,7 @@ class ApiController extends Controller
         $this->addressService = new VietnamAddressService();
         $this->comments = new Comment();
         $this->posts = new Post();
+        $this->users = new User();
     }
 
     /**
@@ -75,7 +84,7 @@ class ApiController extends Controller
 
     /**
      * GET /api/comments?post_id=...
-     * Lấy danh sách bình luận của bài viết qua AJAX (FR07)
+     * Lấy danh sách bình luận của bài viết qua AJAX (FR07 - Hỗ trợ Realtime Polling)
      */
     public function listComments(): void
     {
@@ -89,20 +98,22 @@ class ApiController extends Controller
         $currentUserId = (int)($user['id'] ?? 0);
         $canModerate = Auth::isModerator($user);
 
-        $rows = $this->comments->getByPostId($postId);
+        $rows = $this->comments->getByPostId($postId, $currentUserId);
         $formatted = [];
         foreach ($rows as $row) {
             $cmUserId = (int)($row['user_id'] ?? 0);
             $formatted[] = [
-                'id'         => (int)($row['id'] ?? 0),
-                'post_id'    => (int)($row['post_id'] ?? $postId),
-                'user_id'    => $cmUserId,
-                'parent_id'  => !empty($row['parent_id']) ? (int)$row['parent_id'] : null,
-                'username'   => htmlspecialchars((string)($row['username'] ?? 'Thành viên'), ENT_QUOTES, 'UTF-8'),
-                'role_name'  => htmlspecialchars((string)($row['role_name'] ?? 'member'), ENT_QUOTES, 'UTF-8'),
-                'content'    => htmlspecialchars((string)($row['content'] ?? ''), ENT_QUOTES, 'UTF-8'),
-                'created_at' => !empty($row['created_at']) ? date('d/m/Y H:i', strtotime((string)$row['created_at'])) : date('d/m/Y H:i'),
-                'can_delete' => ($canModerate || ($currentUserId > 0 && $currentUserId === $cmUserId))
+                'id'          => (int)($row['id'] ?? 0),
+                'post_id'     => (int)($row['post_id'] ?? $postId),
+                'user_id'     => $cmUserId,
+                'parent_id'   => !empty($row['parent_id']) ? (int)$row['parent_id'] : null,
+                'username'    => htmlspecialchars((string)($row['username'] ?? 'Thành viên'), ENT_QUOTES, 'UTF-8'),
+                'role_name'   => htmlspecialchars((string)($row['role_name'] ?? 'member'), ENT_QUOTES, 'UTF-8'),
+                'content'     => htmlspecialchars((string)($row['content'] ?? ''), ENT_QUOTES, 'UTF-8'),
+                'created_at'  => !empty($row['created_at']) ? date('d/m/Y H:i', strtotime((string)$row['created_at'])) : date('d/m/Y H:i'),
+                'can_delete'  => ($canModerate || ($currentUserId > 0 && $currentUserId === $cmUserId)),
+                'likes_count' => (int)($row['likes_count'] ?? 0),
+                'user_liked'  => !empty($row['user_liked'])
             ];
         }
 
@@ -110,7 +121,7 @@ class ApiController extends Controller
             'success' => true,
             'data'    => [
                 'comments' => $formatted,
-                'tree'     => $this->comments->getTreeByPostId($postId),
+                'tree'     => $this->comments->getTreeByPostId($postId, $currentUserId),
                 'total'    => count($formatted)
             ]
         ]);
@@ -242,8 +253,121 @@ class ApiController extends Controller
     }
 
     /**
+     * POST /api/comments/like (hoặc /api/comments.php?action=like)
+     * Thích hoặc Bỏ thích bình luận bằng AJAX không reload trang (FR07, FR08)
+     */
+    public function likeComment(): void
+    {
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bình luận.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $commentId = (int)($json['comment_id'] ?? $_POST['comment_id'] ?? 0);
+        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+
+        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+            Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
+            return;
+        }
+
+        if ($commentId <= 0) {
+            Response::json(['success' => false, 'message' => 'Bình luận không hợp lệ.'], 400);
+            return;
+        }
+
+        $user = Session::get('user');
+        $userId = (int)($user['id'] ?? 0);
+
+        $result = $this->comments->toggleLike($commentId, $userId);
+
+        Response::json([
+            'success' => true,
+            'data'    => [
+                'comment_id'  => $commentId,
+                'liked'       => $result['liked'],
+                'likes_count' => $result['likes_count']
+            ]
+        ]);
+    }
+
+    /**
+     * GET /api/check-user (hoặc /api/check-user.php)
+     * Kiểm tra trùng username hoặc email ngay khi đăng ký bằng AJAX (FR01)
+     */
+    public function checkUserAvailability(): void
+    {
+        $field = trim((string)($_GET['field'] ?? ''));
+        $username = trim((string)($_GET['username'] ?? ''));
+        $email = trim((string)($_GET['email'] ?? ''));
+
+        // 1. Kiểm tra username
+        if ($username !== '' || $field === 'username') {
+            $val = $username !== '' ? $username : trim((string)($_GET['value'] ?? ''));
+            if (mb_strlen($val) < 3) {
+                Response::json([
+                    'success'   => true,
+                    'available' => false,
+                    'field'     => 'username',
+                    'message'   => 'Tên người dùng phải có ít nhất 3 ký tự.'
+                ]);
+                return;
+            }
+            if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $val)) {
+                Response::json([
+                    'success'   => true,
+                    'available' => false,
+                    'field'     => 'username',
+                    'message'   => 'Tên chỉ chứa chữ cái, số, gạch dưới (_) hoặc gạch ngang (-).'
+                ]);
+                return;
+            }
+
+            $exists = $this->users->existsByUsername($val);
+            Response::json([
+                'success'   => true,
+                'available' => !$exists,
+                'field'     => 'username',
+                'message'   => $exists ? 'Tên người dùng này đã được sử dụng.' : 'Tên người dùng hợp lệ và có thể đăng ký.'
+            ]);
+            return;
+        }
+
+        // 2. Kiểm tra email
+        if ($email !== '' || $field === 'email') {
+            $val = $email !== '' ? $email : trim((string)($_GET['value'] ?? ''));
+            if (!filter_var($val, FILTER_VALIDATE_EMAIL)) {
+                Response::json([
+                    'success'   => true,
+                    'available' => false,
+                    'field'     => 'email',
+                    'message'   => 'Định dạng email chưa hợp lệ.'
+                ]);
+                return;
+            }
+
+            $exists = $this->users->existsByEmail($val);
+            Response::json([
+                'success'   => true,
+                'available' => !$exists,
+                'field'     => 'email',
+                'message'   => $exists ? 'Địa chỉ email này đã được đăng ký tài khoản.' : 'Địa chỉ email hợp lệ và có thể sử dụng.'
+            ]);
+            return;
+        }
+
+        Response::json(['success' => false, 'message' => 'Thiếu thông tin username hoặc email cần kiểm tra.'], 400);
+    }
+
+    /**
      * GET /api/posts
-     * Danh sách hoặc gợi ý tìm kiếm bài viết dạng JSON
+     * Danh sách bài viết dạng JSON, hỗ trợ Tìm kiếm gợi ý (Autocomplete) và Phân trang AJAX (Infinite Scroll)
      */
     public function posts(): void
     {
@@ -251,11 +375,44 @@ class ApiController extends Controller
         $categoryId = isset($_GET['category']) && $_GET['category'] !== '' ? (int)$_GET['category'] : null;
         $sort = Post::normalizeSort($_GET['sort'] ?? 'hot');
 
+        // Gợi ý tìm kiếm nhanh (Autocomplete khi gõ - FR04)
         if ($keyword !== '' && isset($_GET['suggest'])) {
             $suggestions = $this->posts->suggest($keyword);
+            $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+            $formatted = [];
+            foreach ($suggestions as $s) {
+                $formatted[] = [
+                    'id'       => (int)($s['id'] ?? 0),
+                    'title'    => (string)($s['title'] ?? ''),
+                    'location' => (string)($s['location'] ?? ''),
+                    'url'      => $baseUrl . '/posts/' . (int)($s['id'] ?? 0)
+                ];
+            }
             Response::json([
                 'success' => true,
-                'data'    => $suggestions
+                'data'    => $formatted
+            ]);
+            return;
+        }
+
+        // Phân trang / "Tải thêm" (Infinite Scroll - FR03)
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : null;
+        $limit = isset($_GET['limit']) ? max(1, min(24, (int)$_GET['limit'])) : 6;
+
+        if ($page !== null && $page >= 1) {
+            $totalPosts = $this->posts->countFiltered($categoryId, 'published');
+            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
+            $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $sort);
+
+            Response::json([
+                'success' => true,
+                'data'    => [
+                    'posts'        => $postsList,
+                    'current_page' => $page,
+                    'total_pages'  => $totalPages,
+                    'total_posts'  => $totalPosts,
+                    'has_more'     => ($page < $totalPages)
+                ]
             ]);
             return;
         }

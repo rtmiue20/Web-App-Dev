@@ -95,6 +95,61 @@ const ForumAjax = {
     return this.votePost(postId, 1, btnElement);
   },
 
+  // 1b. Thích / Bỏ thích bình luận qua AJAX không reload trang (FR07, FR08)
+  likeComment: async function (commentId, btnElement) {
+    if (!commentId) return;
+    const csrfToken = this.getCsrfToken();
+    const baseUrl = this.getBaseUrl();
+    if (btnElement) btnElement.disabled = true;
+
+    try {
+      const response = await fetch(`${baseUrl}/api/comments/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+          comment_id: commentId,
+          _csrf: csrfToken,
+        }),
+      });
+
+      const data = await response.json();
+      if (data && data.success && data.data) {
+        const liked = Boolean(data.data.liked);
+        const count = Number(data.data.likes_count || 0);
+
+        document.querySelectorAll(`.comment-like-btn[data-comment-id="${commentId}"]`).forEach(function (btn) {
+          const icon = btn.querySelector('i');
+          const countSpan = btn.querySelector('.comment-likes-count');
+          if (liked) {
+            btn.classList.add('liked');
+            btn.style.setProperty('color', '#ff6b81', 'important');
+            if (icon) {
+              icon.className = 'bi bi-heart-fill';
+            }
+          } else {
+            btn.classList.remove('liked');
+            btn.style.setProperty('color', 'rgba(255, 255, 255, 0.65)', 'important');
+            if (icon) {
+              icon.className = 'bi bi-heart';
+            }
+          }
+          if (countSpan) {
+            countSpan.textContent = count > 0 ? count : '';
+          }
+        });
+      } else {
+        alert((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.');
+      }
+    } catch (err) {
+      console.error('Lỗi khi thích bình luận:', err);
+    } finally {
+      if (btnElement) btnElement.disabled = false;
+    }
+  },
+
   // 2. FR07: Submit new comment or multi-level nested reply via AJAX
   postComment: async function (postId, content, listContainer, parentId = null) {
     if (!postId || !content.trim()) return false;
@@ -192,17 +247,27 @@ const ForumAjax = {
           <div class="d-flex align-items-center gap-3">
             <span class="comment-time" style="color: rgba(255, 255, 255, 0.55);">${cm.created_at || 'Vừa xong'}</span>
             <button type="button"
+                    class="btn btn-sm btn-link p-0 text-decoration-none small d-inline-flex align-items-center gap-1 comment-like-btn ${cm.user_liked ? 'liked' : ''}"
+                    data-comment-id="${cm.id}"
+                    style="${cm.user_liked ? 'color: #ff6b81 !important;' : 'color: rgba(255,255,255,0.65) !important;'}"
+                    onclick="ForumAjax.likeComment(${cm.id}, this)"
+                    title="Thích bình luận">
+              <i class="bi ${cm.user_liked ? 'bi-heart-fill' : 'bi-heart'}"></i>
+              <span class="comment-likes-count">${cm.likes_count ? cm.likes_count : ''}</span>
+            </button>
+            <button type="button"
                     class="btn btn-sm btn-link p-0 text-decoration-none small fw-medium"
                     style="color: #c4e482;"
                     onclick="ForumAjax.toggleReplyBox(${cm.id}, ${postId}, '${safeUsernameAttr}')">
               <i class="bi bi-reply-fill"></i> Trả lời
             </button>
+            ${cm.can_delete ? `
             <button type="button"
                     class="btn btn-sm btn-link text-danger p-0 text-decoration-none small"
                     title="Xóa bình luận"
                     onclick="ForumAjax.deleteComment(${cm.id}, ${postId}, this)">
               <i class="bi bi-trash3"></i>
-            </button>
+            </button>` : ''}
           </div>
         </div>
         <div class="comment-text">${String(cm.content || '').replace(/\n/g, '<br>')}</div>
@@ -533,6 +598,479 @@ const ForumAjax = {
         config.onCoordinateChange(Number(dist.lat), Number(dist.lng), fullName);
       }
     });
+  },
+
+  // =========================================================================
+  // 6. FR07: Bình luận Realtime (Polling định kỳ không reload trang)
+  // =========================================================================
+  _commentPollingTimer: null,
+  startCommentPolling: function (postId, intervalMs) {
+    if (!postId) return;
+    const self = this;
+    const interval = intervalMs || 5000;
+
+    if (this._commentPollingTimer) {
+      clearInterval(this._commentPollingTimer);
+    }
+
+    this._commentPollingTimer = setInterval(function () {
+      if (document.hidden) return; // Tiết kiệm mạng khi chuyển tab
+
+      // Không polling cập nhật nếu người dùng đang gõ trong ô nhập bình luận
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+        return;
+      }
+
+      self.fetchCommentsRealtime(postId);
+    }, interval);
+  },
+
+  fetchCommentsRealtime: async function (postId) {
+    const baseUrl = this.getBaseUrl();
+    try {
+      const response = await fetch(`${baseUrl}/api/comments?post_id=${postId}`);
+      const json = await response.json();
+      if (!json || !json.success || !json.data || !Array.isArray(json.data.comments)) {
+        return;
+      }
+
+      const comments = json.data.comments;
+      const listContainer = document.getElementById('comments-list');
+      if (!listContainer) return;
+
+      const self = this;
+      comments.forEach(function (cm) {
+        const existingNode = document.getElementById(`comment-thread-${cm.id}`) || document.getElementById(`comment-item-${cm.id}`);
+        if (!existingNode) {
+          // Bình luận mới xuất hiện từ thành viên khác: thêm động vào cây giao diện
+          const threadEl = self.buildCommentThreadElement(cm, postId);
+          const parentId = cm.parent_id;
+          if (parentId && parentId > 0) {
+            let childrenContainer = document.getElementById(`comment-children-${parentId}`);
+            if (!childrenContainer) {
+              const parentThread = document.getElementById(`comment-thread-${parentId}`);
+              if (parentThread) {
+                childrenContainer = document.createElement('div');
+                childrenContainer.className = 'comment-children-list';
+                childrenContainer.id = `comment-children-${parentId}`;
+                parentThread.appendChild(childrenContainer);
+              }
+            }
+            if (childrenContainer) {
+              childrenContainer.appendChild(threadEl);
+            } else {
+              listContainer.appendChild(threadEl);
+            }
+          } else {
+            // Bình luận gốc thêm vào cuối danh sách hiện tại
+            listContainer.appendChild(threadEl);
+          }
+
+          const noMsg = document.getElementById('no-comments-msg');
+          if (noMsg) noMsg.remove();
+        } else {
+          // Cập nhật số lượt thích thời gian thực
+          const countSpan = existingNode.querySelector('.comment-likes-count');
+          if (countSpan && typeof cm.likes_count !== 'undefined') {
+            countSpan.textContent = cm.likes_count > 0 ? cm.likes_count : '';
+          }
+        }
+      });
+
+      const countBadge = document.getElementById('comments-count-badge');
+      if (countBadge && typeof json.data.total !== 'undefined') {
+        countBadge.textContent = json.data.total;
+      }
+    } catch (err) {
+      // Bỏ qua lỗi nền khi đang polling
+    }
+  },
+
+  // =========================================================================
+  // 7. FR04: Tìm kiếm gợi ý (Autocomplete khi gõ bằng AJAX)
+  // =========================================================================
+  initSearchAutocomplete: function (inputId, dropdownId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+
+    let debounceTimer = null;
+    let selectedIndex = -1;
+    const baseUrl = this.getBaseUrl();
+    const self = this;
+
+    input.addEventListener('input', function () {
+      const q = input.value.trim();
+      clearTimeout(debounceTimer);
+      selectedIndex = -1;
+
+      if (q.length < 2) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        return;
+      }
+
+      const spinner = document.getElementById('searchSpinner');
+      if (spinner) spinner.style.display = 'inline-block';
+
+      debounceTimer = setTimeout(async function () {
+        try {
+          const res = await fetch(`${baseUrl}/api/posts?q=${encodeURIComponent(q)}&suggest=1`);
+          const json = await res.json();
+          if (spinner) spinner.style.display = 'none';
+
+          if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
+            self.renderSearchSuggestions(dropdown, json.data, q, input);
+          } else {
+            dropdown.innerHTML = '<div class="p-3 text-center text-white-50 small"><i class="bi bi-search me-1"></i>Không tìm thấy gợi ý phù hợp cho "' + self.escapeHtml(q) + '"</div>';
+            dropdown.style.display = 'block';
+          }
+        } catch (err) {
+          if (spinner) spinner.style.display = 'none';
+          dropdown.style.display = 'none';
+        }
+      }, 300);
+    });
+
+    // Bàn phím điều hướng (ArrowUp, ArrowDown, Enter, Escape)
+    input.addEventListener('keydown', function (e) {
+      const items = dropdown.querySelectorAll('.search-suggest-item');
+      if (!items.length || dropdown.style.display === 'none') return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        self.updateSelectedSuggestion(items, selectedIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        self.updateSelectedSuggestion(items, selectedIndex);
+      } else if (e.key === 'Enter') {
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+          e.preventDefault();
+          items[selectedIndex].click();
+        }
+      } else if (e.key === 'Escape') {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    // Đóng dropdown khi bấm ra ngoài
+    document.addEventListener('click', function (e) {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  },
+
+  updateSelectedSuggestion: function (items, index) {
+    items.forEach(function (el, i) {
+      el.classList.toggle('active', i === index);
+      if (i === index) {
+        el.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  },
+
+  renderSearchSuggestions: function (dropdown, items, query, input) {
+    const baseUrl = this.getBaseUrl();
+    const self = this;
+    let html = '';
+
+    items.forEach(function (item) {
+      const title = self.escapeHtml(item.title || '');
+      const location = item.location ? self.escapeHtml(item.location) : '';
+      const url = item.url ? item.url : `${baseUrl}/posts/${item.id}`;
+
+      html += `
+        <a href="${url}" class="search-suggest-item">
+          <div class="search-suggest-icon">
+            <i class="bi bi-compass-fill"></i>
+          </div>
+          <div class="flex-grow-1 min-w-0">
+            <div class="search-suggest-title text-truncate">${title}</div>
+            ${location ? `<div class="search-suggest-location text-truncate"><i class="bi bi-geo-alt me-1"></i>${location}</div>` : ''}
+          </div>
+          <i class="bi bi-arrow-up-right small opacity-50"></i>
+        </a>
+      `;
+    });
+
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+  },
+
+  escapeHtml: function (str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  },
+
+  // =========================================================================
+  // 8. FR03: Phân trang / "Tải thêm" (Infinite Scroll bằng AJAX)
+  // =========================================================================
+  initInfiniteScroll: function (config) {
+    const btn = document.getElementById(config.btnId);
+    const row = document.getElementById(config.rowId);
+    const toggle = document.getElementById('toggleInfiniteScroll');
+    const noMoreMsg = document.getElementById('no-more-posts-msg');
+    if (!btn || !row) return;
+
+    let currentPage = Number(btn.getAttribute('data-current-page') || 1);
+    let totalPages = Number(btn.getAttribute('data-total-pages') || 1);
+    const categoryId = btn.getAttribute('data-category-id') || '';
+    const sort = btn.getAttribute('data-sort') || 'hot';
+    let isLoading = false;
+    const baseUrl = this.getBaseUrl();
+    const self = this;
+
+    async function loadNextPage() {
+      if (isLoading || currentPage >= totalPages) return;
+      isLoading = true;
+
+      const originalBtnHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang tải thêm bài viết...';
+
+      const nextPage = currentPage + 1;
+      let url = `${baseUrl}/api/posts?page=${nextPage}&limit=6&sort=${encodeURIComponent(sort)}`;
+      if (categoryId !== '') {
+        url += `&category=${encodeURIComponent(categoryId)}`;
+      }
+
+      try {
+        const response = await fetch(url);
+        const json = await response.json();
+
+        if (json && json.success && json.data && Array.isArray(json.data.posts)) {
+          currentPage = nextPage;
+          btn.setAttribute('data-current-page', String(currentPage));
+
+          json.data.posts.forEach(function (post) {
+            const cardCol = document.createElement('div');
+            cardCol.className = 'col-12 col-md-6 col-lg-4 rise-in';
+            cardCol.innerHTML = self.buildPostCardHtml(post);
+            row.appendChild(cardCol);
+          });
+
+          if (currentPage >= totalPages || !json.data.has_more) {
+            btn.style.display = 'none';
+            if (toggle) {
+              const toggleWrapper = toggle.closest('div');
+              if (toggleWrapper) toggleWrapper.style.display = 'none';
+            }
+            if (noMoreMsg) noMoreMsg.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi tải thêm bài viết:', err);
+      } finally {
+        isLoading = false;
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+      }
+    }
+
+    btn.addEventListener('click', function () {
+      loadNextPage();
+    });
+
+    // Tự động tải khi cuộn (Infinite scroll) nếu bật toggle
+    window.addEventListener('scroll', function () {
+      if (!toggle || !toggle.checked) return;
+      if (isLoading || currentPage >= totalPages) return;
+
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const threshold = document.documentElement.offsetHeight - 450;
+      if (scrollPosition >= threshold) {
+        loadNextPage();
+      }
+    });
+  },
+
+  buildPostCardHtml: function (post) {
+    const baseUrl = this.getBaseUrl();
+    const postId = Number(post.id);
+    const title = this.escapeHtml(post.title || '');
+    const catName = this.escapeHtml(post.category_name || 'Dã ngoại');
+    const location = post.location ? this.escapeHtml(post.location) : '';
+    const voteScore = Number(post.vote_score ?? post.likes ?? 0);
+    const commentsCount = Number(post.comments_count || 0);
+
+    const defaultImages = [
+      `${baseUrl}/assets/img/tent-forest.png`,
+      `${baseUrl}/assets/img/ta-xua-trek.png`
+    ];
+    let img = post.image_url;
+    if (!img) {
+      img = defaultImages[postId % defaultImages.length];
+    } else if (!img.startsWith('http')) {
+      img = `${baseUrl}/${img.replace(/^\/+/, '')}`;
+    }
+
+    return `
+      <article class="paper-card h-100 d-flex flex-column">
+        <div class="card-header-meta">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="card-meta-tag">${catName}</span>
+            ${location ? `<span class="badge text-bg-light border small text-muted text-truncate" style="max-width: 170px;"><i class="bi bi-geo-alt me-1"></i>${location}</span>` : ''}
+          </div>
+          <h2 class="card-title text-truncate">
+            <a href="${baseUrl}/posts/${postId}" style="color: inherit; text-decoration: none;">${title}</a>
+          </h2>
+        </div>
+        <div class="card-image-box">
+          <img src="${img}" alt="${title}" loading="lazy">
+          <a href="${baseUrl}/posts/${postId}" class="card-action-btn" aria-label="Xem chi tiết: ${title}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 7h10v10"/><path d="M7 17 17 7"/>
+            </svg>
+          </a>
+        </div>
+        <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2 text-muted small mt-auto flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="d-inline-flex align-items-center rounded-pill border px-1 py-0" style="background: rgba(34, 40, 31, 0.05); border-color: rgba(34, 40, 31, 0.14) !important;">
+              <button type="button" class="btn btn-sm border-0 px-2 py-0 vote-up-btn" data-post-id="${postId}" onclick="ForumAjax.votePost(${postId}, 1, this)" title="Upvote (+1)" style="color: #2f5e2e; font-size: 0.85rem;">
+                <i class="bi bi-caret-up-fill"></i>
+              </button>
+              <span class="fw-bold px-1 vote-score" data-post-id="${postId}" style="font-size: 0.82rem; color: #22281f; min-width: 20px; text-align: center;">${voteScore}</span>
+              <button type="button" class="btn btn-sm border-0 px-2 py-0 vote-down-btn" data-post-id="${postId}" onclick="ForumAjax.votePost(${postId}, -1, this)" title="Downvote (-1)" style="color: #8c3b2b; font-size: 0.85rem;">
+                <i class="bi bi-caret-down-fill"></i>
+              </button>
+            </div>
+            <a href="${baseUrl}/posts/${postId}#comments-list" class="text-decoration-none text-muted d-inline-flex align-items-center px-2 py-1 rounded-pill" style="background: rgba(34, 40, 31, 0.05); font-size: 0.8rem;" title="Số bình luận">
+              <i class="bi bi-chat-dots me-1"></i> ${commentsCount}
+            </a>
+          </div>
+          <span style="font-size: 0.78rem;">${this.escapeHtml(post.username || '')}</span>
+        </div>
+      </article>
+    `;
+  },
+
+  // =========================================================================
+  // 9. FR01: Kiểm tra trùng username / email ngay khi đăng ký bằng AJAX
+  // =========================================================================
+  initRegisterLiveValidation: function () {
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const submitBtn = document.getElementById('registerSubmitBtn') || document.querySelector('button[type="submit"]');
+    const baseUrl = this.getBaseUrl();
+    const self = this;
+
+    let usernameTimer = null;
+    let emailTimer = null;
+    let isUsernameAvailable = true;
+    let isEmailAvailable = true;
+
+    function updateSubmitBtn() {
+      if (submitBtn) {
+        submitBtn.disabled = (!isUsernameAvailable || !isEmailAvailable);
+        submitBtn.style.opacity = (!isUsernameAvailable || !isEmailAvailable) ? '0.6' : '1';
+      }
+    }
+
+    if (usernameInput) {
+      const feedback = document.getElementById('username-feedback');
+
+      usernameInput.addEventListener('input', function () {
+        const val = usernameInput.value.trim();
+        clearTimeout(usernameTimer);
+
+        if (val.length < 3) {
+          usernameInput.classList.remove('is-valid-ajax', 'is-invalid-ajax');
+          if (feedback) feedback.style.display = 'none';
+          isUsernameAvailable = true;
+          updateSubmitBtn();
+          return;
+        }
+
+        if (feedback) {
+          feedback.innerHTML = '<span class="text-secondary"><span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang kiểm tra tên tài khoản...</span>';
+          feedback.style.display = 'block';
+        }
+
+        usernameTimer = setTimeout(async function () {
+          try {
+            const res = await fetch(`${baseUrl}/api/check-user?username=${encodeURIComponent(val)}`);
+            const json = await res.json();
+            if (json && json.success) {
+              if (json.available) {
+                usernameInput.classList.add('is-valid-ajax');
+                usernameInput.classList.remove('is-invalid-ajax');
+                if (feedback) {
+                  feedback.innerHTML = '<span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i>' + self.escapeHtml(json.message) + '</span>';
+                }
+                isUsernameAvailable = true;
+              } else {
+                usernameInput.classList.add('is-invalid-ajax');
+                usernameInput.classList.remove('is-valid-ajax');
+                if (feedback) {
+                  feedback.innerHTML = '<span class="text-danger fw-medium"><i class="bi bi-x-circle-fill me-1"></i>' + self.escapeHtml(json.message) + '</span>';
+                }
+                isUsernameAvailable = false;
+              }
+            }
+          } catch (err) {
+            // bỏ qua lỗi tạm thời
+          }
+          updateSubmitBtn();
+        }, 350);
+      });
+    }
+
+    if (emailInput) {
+      const feedback = document.getElementById('email-feedback');
+
+      emailInput.addEventListener('input', function () {
+        const val = emailInput.value.trim();
+        clearTimeout(emailTimer);
+
+        if (val.indexOf('@') === -1 || val.indexOf('.') === -1) {
+          emailInput.classList.remove('is-valid-ajax', 'is-invalid-ajax');
+          if (feedback) feedback.style.display = 'none';
+          isEmailAvailable = true;
+          updateSubmitBtn();
+          return;
+        }
+
+        if (feedback) {
+          feedback.innerHTML = '<span class="text-secondary"><span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang kiểm tra email...</span>';
+          feedback.style.display = 'block';
+        }
+
+        emailTimer = setTimeout(async function () {
+          try {
+            const res = await fetch(`${baseUrl}/api/check-user?email=${encodeURIComponent(val)}`);
+            const json = await res.json();
+            if (json && json.success) {
+              if (json.available) {
+                emailInput.classList.add('is-valid-ajax');
+                emailInput.classList.remove('is-invalid-ajax');
+                if (feedback) {
+                  feedback.innerHTML = '<span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i>' + self.escapeHtml(json.message) + '</span>';
+                }
+                isEmailAvailable = true;
+              } else {
+                emailInput.classList.add('is-invalid-ajax');
+                emailInput.classList.remove('is-valid-ajax');
+                if (feedback) {
+                  feedback.innerHTML = '<span class="text-danger fw-medium"><i class="bi bi-x-circle-fill me-1"></i>' + self.escapeHtml(json.message) + '</span>';
+                }
+                isEmailAvailable = false;
+              }
+            }
+          } catch (err) {
+            // bỏ qua lỗi tạm thời
+          }
+          updateSubmitBtn();
+        }, 350);
+      });
+    }
   },
 };
 

@@ -80,24 +80,36 @@ class App
         $router->get('/api/comments', [$api, 'listComments']);
         $router->get('/api/comments.php', [$api, 'listComments']);
         $router->post('/api/comments', function () use ($api) {
-            if (($_GET['action'] ?? '') === 'delete') {
+            $act = $_GET['action'] ?? '';
+            if ($act === 'delete') {
                 $api->deleteComment();
+            } elseif ($act === 'like') {
+                $api->likeComment();
             } else {
                 $api->createComment();
             }
         });
         $router->post('/api/comments.php', function () use ($api) {
-            if (($_GET['action'] ?? '') === 'delete') {
+            $act = $_GET['action'] ?? '';
+            if ($act === 'delete') {
                 $api->deleteComment();
+            } elseif ($act === 'like') {
+                $api->likeComment();
             } else {
                 $api->createComment();
             }
         });
         $router->post('/api/comments/delete', [$api, 'deleteComment']);
+        $router->post('/api/comments/like', [$api, 'likeComment']);
+        $router->get('/api/check-user', [$api, 'checkUserAvailability']);
+        $router->get('/api/check-user.php', [$api, 'checkUserAvailability']);
+        $router->get('/api/check-email', [$api, 'checkUserAvailability']);
         $router->post('/api/likes', [$api, 'votePost']);
         $router->post('/api/likes.php', [$api, 'votePost']);
         $router->post('/api/votes', [$api, 'votePost']);
         $router->get('/api/posts', [$api, 'posts']);
+        $router->get('/api/posts.php', [$api, 'posts']);
+        $router->get('/api/search/suggest', [$api, 'posts']);
         $router->get('/api/posts.php', [$api, 'posts']);
 
         // 6. Admin & Moderator Area (RBAC: moderator & admin)

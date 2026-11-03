@@ -78,6 +78,15 @@ CREATE TABLE post_likes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS comment_likes (
+  comment_id INT UNSIGNED NOT NULL,                               -- PK + FK -> comments
+  user_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> users
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (comment_id, user_id),
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ===== Người 4: tags, post_tags =====
 CREATE TABLE tags (
   id   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,                   -- PK

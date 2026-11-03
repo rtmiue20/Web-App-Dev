@@ -262,7 +262,8 @@ class PostController extends Controller {
             return;
         }
 
-        $commentsTree = $this->comments->getTreeByPostId($id);
+        $currentUserId = Auth::check() ? (int)Auth::id() : 0;
+        $commentsTree = $this->comments->getTreeByPostId($id, $currentUserId);
         $totalComments = $this->comments->countByPost($id);
         $canManage = $this->canManagePost($post);
         $tools = $this->products->getByPostId($id);

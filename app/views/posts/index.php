@@ -22,6 +22,28 @@ $filterQuery = $catQuery . $sortQuery;
         </div>
     </div>
 
+    <!-- Thanh Tìm kiếm Gợi ý Autocomplete bằng AJAX (FR04 - Phúc) -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-12 col-md-8 col-lg-7">
+            <div class="search-autocomplete-wrapper position-relative">
+                <div class="input-group search-input-group shadow-sm">
+                    <span class="input-group-text bg-transparent border-end-0 ps-3" style="color: var(--color-moss, #9bbd55);">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           id="forumSearchInput" 
+                           class="form-control border-start-0 border-end-0 nature-search-input" 
+                           placeholder="Tìm nhanh bài viết, địa điểm (ví dụ: Tà Xùa, Đà Lạt, lều cắm trại...)" 
+                           autocomplete="off">
+                    <span class="input-group-text bg-transparent border-start-0 pe-3" id="searchSpinner" style="display: none;">
+                        <span class="spinner-border spinner-border-sm text-success" role="status"></span>
+                    </span>
+                </div>
+                <div id="searchSuggestionsDropdown" class="search-autocomplete-dropdown shadow-lg" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Category Slidebar (FR03 - Tuần 4 - Phúc) -->
     <?php if (!empty($categories)): ?>
         <div class="category-slidebar-container mb-4 pb-2" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
@@ -122,6 +144,31 @@ $filterQuery = $catQuery . $sortQuery;
 
     <!-- Post list grid -->
     <?php require __DIR__ . '/../partials/post-cards.php'; ?>
+
+    <!-- AJAX Tải thêm bài viết & Tự động cuộn (Infinite Scroll - Phúc) -->
+    <div class="text-center my-4" id="load-more-container">
+        <?php if ($currentPage < $totalPages): ?>
+            <div class="d-flex flex-wrap align-items-center justify-content-center gap-3">
+                <button type="button" 
+                        id="btnLoadMorePosts" 
+                        class="nature-btn-secondary px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm"
+                        data-current-page="<?= $currentPage ?>"
+                        data-total-pages="<?= $totalPages ?>"
+                        data-category-id="<?= htmlspecialchars((string)($selectedCategoryId ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                        data-sort="<?= htmlspecialchars($selectedSort, ENT_QUOTES, 'UTF-8') ?>">
+                    <i class="bi bi-arrow-down-circle-fill" style="color: var(--color-moss, #9bbd55);"></i>
+                    <span class="btn-text">Tải thêm bài viết</span>
+                </button>
+                <div class="form-check form-switch d-inline-flex align-items-center gap-2 text-white-50 small">
+                    <input class="form-check-input" type="checkbox" id="toggleInfiniteScroll">
+                    <label class="form-check-label" for="toggleInfiniteScroll">Tự động cuộn (Infinite Scroll)</label>
+                </div>
+            </div>
+        <?php endif; ?>
+        <div id="no-more-posts-msg" class="text-white-50 small py-3" style="display: <?= ($currentPage >= $totalPages && $totalPosts > 0) ? 'block' : 'none' ?>;">
+            <i class="bi bi-check2-circle text-success me-1"></i>Bạn đã xem hết tất cả bài viết.
+        </div>
+    </div>
 
     <!-- Thanh phân trang Bootstrap (FR03 - Tuần 4 - Phúc) -->
     <?php if ($totalPages > 1): ?>
@@ -302,6 +349,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 120);
     } else {
         updateSlidebarState();
+    }
+    // Khởi tạo tính năng AJAX: Tìm kiếm gợi ý & Tải thêm bài viết (Phúc)
+    if (window.ForumAjax) {
+        window.ForumAjax.initSearchAutocomplete('forumSearchInput', 'searchSuggestionsDropdown');
+        window.ForumAjax.initInfiniteScroll({
+            btnId: 'btnLoadMorePosts',
+            rowId: 'post-cards-row'
+        });
     }
 });
 </script>

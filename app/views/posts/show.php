@@ -344,7 +344,7 @@ $galleryCount = count($galleryImages);
     <!-- Comments Section (Hỗ trợ Bình luận lồng nhau nhiều cấp - Multi-level Nested Replies) -->
     <?php $canComment = class_exists('Auth') ? Auth::isMember() : $isLoggedIn; ?>
     <section class="mt-5" aria-label="Bình luận">
-        <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <h2 class="h4 mb-0 text-white d-flex align-items-center gap-2">
                 <i class="bi bi-chat-left-text-fill" style="color: var(--color-moss);"></i>
                 <span>Bình luận & Thảo luận</span>
@@ -352,6 +352,12 @@ $galleryCount = count($galleryImages);
                     <?= (int)($totalComments ?? count($comments ?? [])) ?>
                 </span>
             </h2>
+            <span class="badge rounded-pill border fw-normal py-1 px-3 d-inline-flex align-items-center gap-1" 
+                  id="realtime-comment-status" 
+                  style="background: rgba(155, 189, 85, 0.12); color: #c4e482; border-color: rgba(155, 189, 85, 0.35) !important; font-size: 11px;">
+                <span class="spinner-grow spinner-grow-sm text-success" style="width: 7px; height: 7px;" role="status"></span>
+                Trực tiếp (Realtime)
+            </span>
         </div>
 
         <!-- Comment input form -->
@@ -419,6 +425,15 @@ $galleryCount = count($galleryImages);
                                 <span class="comment-time" style="color: rgba(255, 255, 255, 0.55);">
                                     <?= !empty($cm['created_at']) ? date('d/m/Y H:i', strtotime((string)$cm['created_at'])) : '' ?>
                                 </span>
+                                <button type="button"
+                                        class="btn btn-sm btn-link p-0 text-decoration-none small d-inline-flex align-items-center gap-1 comment-like-btn <?= !empty($cm['user_liked']) ? 'liked' : '' ?>"
+                                        data-comment-id="<?= $cmId ?>"
+                                        style="<?= !empty($cm['user_liked']) ? 'color: #ff6b81 !important;' : 'color: rgba(255,255,255,0.65) !important;' ?>"
+                                        onclick="if(window.ForumAjax) window.ForumAjax.likeComment(<?= $cmId ?>, this)"
+                                        title="Thích bình luận">
+                                    <i class="bi <?= !empty($cm['user_liked']) ? 'bi-heart-fill' : 'bi-heart' ?>"></i>
+                                    <span class="comment-likes-count"><?= !empty($cm['likes_count']) ? (int)$cm['likes_count'] : '' ?></span>
+                                </button>
                                 <?php if ($canComment && $cmId > 0): ?>
                                     <button type="button"
                                             class="btn btn-sm btn-link p-0 text-decoration-none small fw-medium"
@@ -924,10 +939,13 @@ function submitComment() {
     });
 }
 
-// ── Weather & Tool Marquee ───────────────────────────────────────
+// ── Weather & Tool Marquee & Realtime Comments ───────────────────
 document.addEventListener('DOMContentLoaded', function() {
     if (window.initToolMarquees) {
         window.initToolMarquees();
+    }
+    if (window.ForumAjax) {
+        window.ForumAjax.startCommentPolling(<?= (int)$post['id'] ?>);
     }
     const weatherElem = document.getElementById('weather-info');
     if (weatherElem) {

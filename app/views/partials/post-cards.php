@@ -22,7 +22,7 @@ $defaultImages = [
         <?php endif; ?>
     </div>
 <?php else: ?>
-    <div class="row g-4">
+    <div class="row g-4" id="post-cards-row">
         <?php foreach ($posts as $idx => $post): 
             $postId = (int)$post['id'];
             $img = !empty($post['image_url']) 

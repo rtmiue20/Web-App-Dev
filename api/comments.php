@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $api->listComments();
 } elseif ($action === 'delete') {
     $api->deleteComment();
+} elseif ($action === 'like') {
+    $api->likeComment();
 } else {
     $api->createComment();
 }
