@@ -6,7 +6,7 @@ require_once __DIR__ . '/../core/Database.php';
  * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 đến 4)
  * Gọi các Stored Procedures: sp_user_get_by_email, sp_user_get_by_id, 
  * sp_user_exists, sp_user_register, sp_user_update_profile,
- * sp_user_change_password, sp_user_count, sp_user_list
+ * sp_user_change_password, sp_user_update_role, sp_user_count, sp_user_list
  */
 class User extends Model
 {
@@ -71,9 +71,6 @@ class User extends Model
     }
 
     /**
-     * Tìm người dùng qua ID (gọi routine sp_user_get_by_id)
-     */
-    /**
      * Tìm người dùng qua username
      */
     public function findByUsername(string $username): ?User
@@ -93,6 +90,9 @@ class User extends Model
         }
     }
 
+    /**
+     * Tìm người dùng qua ID (gọi routine sp_user_get_by_id)
+     */
     public function findById(int $id): ?User
     {
         try {
@@ -255,6 +255,29 @@ class User extends Model
                 ]) >= 0;
             } catch (PDOException $ex) {
                 error_log('Error resetting password: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Cập nhật vai trò (Phân quyền RBAC: guest / member / moderator / admin) cho người dùng
+     */
+    public function updateRole(int $userId, int $roleId): bool
+    {
+        try {
+            Database::call('sp_user_update_role', [$userId, $roleId]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_update_role fallback: ' . $e->getMessage());
+            try {
+                $sql = 'UPDATE users SET role_id = :role_id WHERE id = :id';
+                return Database::execute($sql, [
+                    'role_id' => $roleId,
+                    'id'      => $userId
+                ]) >= 0;
+            } catch (PDOException $ex) {
+                error_log('Error updating user role: ' . $ex->getMessage());
                 return false;
             }
         }

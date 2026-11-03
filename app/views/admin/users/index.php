@@ -1,30 +1,39 @@
 <?php
-$title = 'Quản lý Thành viên';
+$title = 'Quản lý Thành viên & Phân quyền RBAC';
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
 $totalCount = (int)($totalCount ?? 0);
 $memberCount = (int)($memberCount ?? 0);
+$moderatorCount = (int)($moderatorCount ?? 0);
 $adminCount = (int)($adminCount ?? 0);
+$guestCount = (int)($guestCount ?? 0);
 $searchQuery = (string)($searchQuery ?? '');
 $selectedRole = (string)($selectedRole ?? 'all');
 $users = $users ?? [];
+$roles = $roles ?? [
+    ['id' => 1, 'name' => 'member'],
+    ['id' => 2, 'name' => 'admin'],
+    ['id' => 3, 'name' => 'moderator'],
+    ['id' => 4, 'name' => 'guest'],
+];
 $resetResult = $resetResult ?? null;
+$currentAdminId = Auth::id();
 ?>
-<div class="app-container" style="max-width: 1140px;">
+<div class="app-container" style="max-width: 1180px;">
     <!-- Breadcrumb & Header -->
     <div class="mb-3">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-2" style="font-size: 13px;">
                 <li class="breadcrumb-item"><a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" class="text-white-50 text-decoration-none">Quản trị</a></li>
-                <li class="breadcrumb-item active text-white" aria-current="page">Thành viên</li>
+                <li class="breadcrumb-item active text-white" aria-current="page">Thành viên & Phân quyền (RBAC)</li>
             </ol>
         </nav>
     </div>
 
     <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div>
-            <h1 class="page-title">Quản lý Thành viên</h1>
-            <p class="page-subtitle">Xem thông tin danh sách tài khoản đã đăng ký và hỗ trợ cấp lại mật khẩu khi thành viên quên.</p>
+            <h1 class="page-title">Quản lý Thành viên & Phân quyền RBAC</h1>
+            <p class="page-subtitle">Phân quyền 4 cấp độ (<strong>Guest / Member / Moderator / Admin</strong>), xem hồ sơ và hỗ trợ cấp lại mật khẩu.</p>
         </div>
         <div class="d-flex gap-2">
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" class="nature-btn-secondary px-3 py-2 text-white border-white-20 d-inline-flex align-items-center" style="height: 44px; font-size: 14px;">
@@ -57,10 +66,10 @@ $resetResult = $resetResult ?? null;
         </div>
     <?php endif; ?>
 
-    <!-- Summary Stats Cards -->
+    <!-- Summary Stats Cards (4 cấp RBAC) -->
     <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-4">
-            <div class="nature-card py-3 px-4" style="border-radius: 22px;">
+        <div class="col-6 col-lg-3">
+            <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <span class="text-muted small">Tổng tài khoản</span>
@@ -72,21 +81,34 @@ $resetResult = $resetResult ?? null;
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-4">
-            <div class="nature-card py-3 px-4" style="border-radius: 22px;">
+        <div class="col-6 col-lg-3">
+            <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <span class="text-muted small">Thành viên (Member)</span>
-                        <h3 class="fw-normal mb-0 mt-1 text-primary"><?= (int)$memberCount ?></h3>
+                        <h3 class="fw-normal mb-0 mt-1 text-success"><?= (int)$memberCount ?></h3>
                     </div>
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(13, 110, 253, 0.12); color: #0d6efd;">
+                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(25, 135, 84, 0.12); color: #198754;">
                         <i class="bi bi-person-check-fill fs-5"></i>
                     </span>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-4">
-            <div class="nature-card py-3 px-4" style="border-radius: 22px;">
+        <div class="col-6 col-lg-3">
+            <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted small">Điều hành viên (Mod)</span>
+                        <h3 class="fw-normal mb-0 mt-1 text-primary"><?= (int)$moderatorCount ?></h3>
+                    </div>
+                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(13, 110, 253, 0.12); color: #0d6efd;">
+                        <i class="bi bi-shield-check fs-5"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <span class="text-muted small">Quản trị viên (Admin)</span>
@@ -118,9 +140,11 @@ $resetResult = $resetResult ?? null;
             </div>
             <div class="col-12 col-sm-6 col-md-4">
                 <select name="role" id="userRoleFilter" class="form-select rounded-pill py-2 shadow-none">
-                    <option value="all" <?= $selectedRole === 'all' ? 'selected' : '' ?>>Tất cả vai trò</option>
-                    <option value="member" <?= $selectedRole === 'member' ? 'selected' : '' ?>>Thành viên (member)</option>
+                    <option value="all" <?= $selectedRole === 'all' ? 'selected' : '' ?>>Tất cả vai trò (RBAC)</option>
                     <option value="admin" <?= $selectedRole === 'admin' ? 'selected' : '' ?>>Quản trị viên (admin)</option>
+                    <option value="moderator" <?= $selectedRole === 'moderator' ? 'selected' : '' ?>>Điều hành viên (moderator)</option>
+                    <option value="member" <?= $selectedRole === 'member' ? 'selected' : '' ?>>Thành viên (member)</option>
+                    <option value="guest" <?= $selectedRole === 'guest' ? 'selected' : '' ?>>Khách / Chỉ xem (guest)</option>
                 </select>
             </div>
             <div class="col-12 col-sm-6 col-md-2 text-md-end d-flex gap-2 justify-content-md-end">
@@ -152,25 +176,29 @@ $resetResult = $resetResult ?? null;
                 <table class="table align-middle mb-0" id="usersTable">
                     <thead>
                         <tr>
-                            <th scope="col" style="width: 70px;">ID</th>
-                            <th scope="col" style="min-width: 220px;">Thành viên</th>
-                            <th scope="col" style="min-width: 200px;">Email</th>
-                            <th scope="col" class="text-center" style="width: 140px;">Vai trò</th>
-                            <th scope="col" class="text-center" style="width: 120px;">Số bài viết</th>
-                            <th scope="col" style="width: 160px;">Ngày đăng ký</th>
-                            <th scope="col" class="text-end" style="width: 170px;">Thao tác</th>
+                            <th scope="col" style="width: 60px;">ID</th>
+                            <th scope="col" style="min-width: 200px;">Thành viên</th>
+                            <th scope="col" style="min-width: 190px;">Email</th>
+                            <th scope="col" class="text-center" style="width: 140px;">Vai trò hiện tại</th>
+                            <th scope="col" style="width: 220px;">Phân quyền (RBAC)</th>
+                            <th scope="col" class="text-center" style="width: 105px;">Bài viết</th>
+                            <th scope="col" style="width: 140px;">Ngày đăng ký</th>
+                            <th scope="col" class="text-end" style="width: 120px;">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($users as $u): 
-                            $isAdmin = ($u['role_name'] ?? '') === 'admin';
+                            $uId = (int)($u['id'] ?? 0);
+                            $uRoleName = strtolower(trim((string)($u['role_name'] ?? 'member')));
+                            $uRoleId = (int)($u['role_id'] ?? 1);
                             $postCount = (int)($u['total_posts'] ?? 0);
                             $avatar = !empty($u['avatar_path']) ? $u['avatar_path'] : $baseUrl . '/placeholder-user.jpg';
                             $bio = !empty($u['bio']) ? $u['bio'] : 'Chưa cập nhật tiểu sử cá nhân';
                             $joinedDate = !empty($u['created_at']) ? date('d/m/Y H:i', strtotime($u['created_at'])) : '—';
+                            $isSelf = ($uId === $currentAdminId);
                         ?>
                             <tr class="user-row">
-                                <td class="fw-medium text-muted">#<?= (int)$u['id'] ?></td>
+                                <td class="fw-medium text-muted">#<?= $uId ?></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="rounded-circle overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center" 
@@ -186,6 +214,9 @@ $resetResult = $resetResult ?? null;
                                         <div>
                                             <div class="fw-semibold text-dark user-name">
                                                 <?= htmlspecialchars($u['username'], ENT_QUOTES, 'UTF-8') ?>
+                                                <?php if ($isSelf): ?>
+                                                    <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size: 10px;">Bạn</span>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="text-muted small d-md-none">
                                                 <?= htmlspecialchars($u['email'], ENT_QUOTES, 'UTF-8') ?>
@@ -199,15 +230,49 @@ $resetResult = $resetResult ?? null;
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <?php if ($isAdmin): ?>
+                                    <?php if ($uRoleName === 'admin'): ?>
                                         <span class="badge rounded-pill text-bg-danger px-3 py-1" style="font-size: 11px; font-weight: 500;">
                                             <i class="bi bi-shield-lock-fill me-1"></i>ADMIN
+                                        </span>
+                                    <?php elseif ($uRoleName === 'moderator'): ?>
+                                        <span class="badge rounded-pill text-bg-primary px-3 py-1" style="font-size: 11px; font-weight: 500;">
+                                            <i class="bi bi-shield-check me-1"></i>MODERATOR
+                                        </span>
+                                    <?php elseif ($uRoleName === 'guest'): ?>
+                                        <span class="badge rounded-pill text-bg-secondary px-3 py-1" style="font-size: 11px; font-weight: 500;">
+                                            <i class="bi bi-eye me-1"></i>GUEST
                                         </span>
                                     <?php else: ?>
                                         <span class="badge rounded-pill text-bg-success px-3 py-1" style="font-size: 11px; font-weight: 500;">
                                             <i class="bi bi-person-check me-1"></i>MEMBER
                                         </span>
                                     <?php endif; ?>
+                                </td>
+                                <td>
+                                    <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users/<?= $uId ?>/role" class="d-flex align-items-center gap-1 m-0">
+                                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                        <select name="role_id" class="form-select form-select-sm rounded-pill shadow-none" style="font-size: 12px; min-width: 135px;" <?= $isSelf ? 'disabled title="Không thể tự đổi quyền của chính mình"' : '' ?>>
+                                            <?php foreach ($roles as $r): 
+                                                $rId = (int)($r['id'] ?? 0);
+                                                $rName = strtolower((string)($r['name'] ?? ''));
+                                                $rLabel = match ($rName) {
+                                                    'admin'     => 'Admin (Quản trị)',
+                                                    'moderator' => 'Moderator (Kiểm duyệt)',
+                                                    'guest'     => 'Guest (Chỉ xem)',
+                                                    default     => 'Member (Thành viên)',
+                                                };
+                                            ?>
+                                                <option value="<?= $rId ?>" <?= ($uRoleId === $rId || $uRoleName === $rName) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($rLabel, ENT_QUOTES, 'UTF-8') ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <?php if (!$isSelf): ?>
+                                            <button type="submit" class="btn btn-sm btn-outline-dark rounded-pill px-2 py-1" style="font-size: 11px;" title="Lưu phân quyền RBAC">
+                                                Lưu
+                                            </button>
+                                        <?php endif; ?>
+                                    </form>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge rounded-pill <?= $postCount > 0 ? 'text-bg-light border text-dark' : 'text-bg-light text-muted border' ?> px-2 py-1">
@@ -221,10 +286,10 @@ $resetResult = $resetResult ?? null;
                                     <!-- Nút Xem chi tiết Modal -->
                                     <button type="button" 
                                             class="admin-action-btn btn-view-user me-1" 
-                                            data-id="<?= (int)$u['id'] ?>"
+                                            data-id="<?= $uId ?>"
                                             data-username="<?= htmlspecialchars($u['username'], ENT_QUOTES, 'UTF-8') ?>"
                                             data-email="<?= htmlspecialchars($u['email'], ENT_QUOTES, 'UTF-8') ?>"
-                                            data-role="<?= htmlspecialchars($u['role_name'] ?? 'member', ENT_QUOTES, 'UTF-8') ?>"
+                                            data-role="<?= htmlspecialchars($uRoleName, ENT_QUOTES, 'UTF-8') ?>"
                                             data-posts="<?= $postCount ?>"
                                             data-joined="<?= htmlspecialchars($joinedDate, ENT_QUOTES, 'UTF-8') ?>"
                                             data-bio="<?= htmlspecialchars($bio, ENT_QUOTES, 'UTF-8') ?>"
@@ -236,7 +301,7 @@ $resetResult = $resetResult ?? null;
                                     <!-- Nút Cấp lại Mật khẩu -->
                                     <button type="button" 
                                             class="admin-action-btn btn-reset-password"
-                                            data-id="<?= (int)$u['id'] ?>"
+                                            data-id="<?= $uId ?>"
                                             data-username="<?= htmlspecialchars($u['username'], ENT_QUOTES, 'UTF-8') ?>"
                                             data-email="<?= htmlspecialchars($u['email'], ENT_QUOTES, 'UTF-8') ?>"
                                             title="Cấp lại mật khẩu cho thành viên">
@@ -398,6 +463,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (role === 'admin') {
                 badge.className = 'badge rounded-pill text-bg-danger mt-1';
                 badge.textContent = 'Quản trị viên (Admin)';
+            } else if (role === 'moderator') {
+                badge.className = 'badge rounded-pill text-bg-primary mt-1';
+                badge.textContent = 'Điều hành viên (Moderator)';
+            } else if (role === 'guest') {
+                badge.className = 'badge rounded-pill text-bg-secondary mt-1';
+                badge.textContent = 'Khách (Guest)';
             } else {
                 badge.className = 'badge rounded-pill text-bg-success mt-1';
                 badge.textContent = 'Thành viên (Member)';
@@ -435,7 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Nút chuyển từ modal xem chi tiết sang cấp lại mật khẩu
     const btnSwitch = document.getElementById('btnSwitchToResetPassword');
     if (btnSwitch) {
         btnSwitch.addEventListener('click', function() {

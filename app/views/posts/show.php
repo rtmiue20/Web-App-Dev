@@ -161,7 +161,8 @@ $galleryCount = count($galleryImages);
                 <i class="bi bi-calendar-event me-1"></i>
                 <?= !empty($post['created_at']) ? date('d/m/Y H:i', strtotime($post['created_at'])) : '' ?>
             </span>
-            <span class="ms-auto d-flex align-items-center gap-2">
+            <span class="ms-auto d-flex align-items-center flex-wrap gap-2">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                 <?php if (!empty($canManage)): ?>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/edit" 
                        class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle"
@@ -180,13 +181,46 @@ $galleryCount = count($galleryImages);
                         </button>
                     </form>
                 <?php endif; ?>
-                <button type="button" 
-                        id="btn-like-post" 
-                        class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle"
-                        onclick="ForumAjax.toggleLike(<?= (int)$post['id'] ?>, this)">
-                    <i class="bi bi-heart-fill text-danger me-1"></i> 
-                    <span class="like-count"><?= (int)($post['likes'] ?? 0) ?></span> thích
-                </button>
+                <?php
+                    $currentVote = (int)($userVote ?? 0);
+                    $voteScore = (int)($post['vote_score'] ?? $post['likes'] ?? 0);
+                    $upvotesCount = (int)($post['upvotes'] ?? max(0, $voteScore));
+                    $downvotesCount = (int)($post['downvotes'] ?? 0);
+                ?>
+                <div class="d-inline-flex align-items-center rounded-pill border px-1 py-1"
+                     id="vote-widget-<?= (int)$post['id'] ?>"
+                     style="background: rgba(34, 40, 31, 0.06); border-color: rgba(34, 40, 31, 0.2) !important;">
+                    <button type="button"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-up-btn <?= $currentVote === 1 ? 'active' : '' ?>"
+                            data-post-id="<?= (int)$post['id'] ?>"
+                            onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, 1, this)"
+                            title="Upvote bài viết hữu ích (+1)"
+                            style="<?= $currentVote === 1 ? 'background: #2f5e2e; color: #fff; font-weight: 600;' : 'color: #2f5e2e; font-weight: 600;' ?>">
+                        <i class="bi bi-caret-up-fill"></i>
+                        <span class="d-none d-sm-inline small">Upvote</span>
+                    </button>
+
+                    <span class="fw-bold px-2 vote-score like-count"
+                          data-post-id="<?= (int)$post['id'] ?>"
+                          style="font-size: 0.95rem; color: #22281f; min-width: 30px; text-align: center;"
+                          title="Tổng điểm Vote (Upvotes - Downvotes)">
+                        <?= $voteScore ?>
+                    </span>
+
+                    <button type="button"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-down-btn <?= $currentVote === -1 ? 'active' : '' ?>"
+                            data-post-id="<?= (int)$post['id'] ?>"
+                            onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, -1, this)"
+                            title="Downvote bài viết (-1)"
+                            style="<?= $currentVote === -1 ? 'background: #b02a37; color: #fff; font-weight: 600;' : 'color: #8c3b2b; font-weight: 600;' ?>">
+                        <i class="bi bi-caret-down-fill"></i>
+                    </button>
+                </div>
+                <span class="small text-muted vote-breakdown"
+                      data-post-id="<?= (int)$post['id'] ?>"
+                      title="Chi tiết lượt Upvote / Downvote">
+                    (+<?= $upvotesCount ?> / -<?= $downvotesCount ?>)
+                </span>
             </span>
         </div>
 
@@ -285,14 +319,21 @@ $galleryCount = count($galleryImages);
     </article>
 
 
-    <!-- Comments Section -->
+    <!-- Comments Section (Hỗ trợ Bình luận lồng nhau nhiều cấp - Multi-level Nested Replies) -->
+    <?php $canComment = class_exists('Auth') ? Auth::isMember() : $isLoggedIn; ?>
     <section class="mt-5" aria-label="Bình luận">
-        <h2 class="h4 mb-4 text-white">
-            <i class="bi bi-chat-left-text-fill me-2" style="color: var(--color-moss);"></i>Bình luận
-        </h2>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h2 class="h4 mb-0 text-white d-flex align-items-center gap-2">
+                <i class="bi bi-chat-left-text-fill" style="color: var(--color-moss);"></i>
+                <span>Bình luận & Thảo luận</span>
+                <span class="badge rounded-pill px-3 py-1" id="comments-count-badge" style="background: rgba(155, 189, 85, 0.2); color: #c4e482; font-size: 14px;">
+                    <?= (int)($totalComments ?? count($comments ?? [])) ?>
+                </span>
+            </h2>
+        </div>
 
         <!-- Comment input form -->
-        <?php if ($isLoggedIn): ?>
+        <?php if ($canComment): ?>
             <div class="nature-card mb-4" style="border-radius: 28px; padding: 1.5rem;">
                 <form id="comment-form" onsubmit="event.preventDefault(); submitComment();">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
@@ -313,31 +354,87 @@ $galleryCount = count($galleryImages);
             </div>
         <?php else: ?>
             <div class="nature-alert nature-alert-success mb-4 d-flex justify-content-between align-items-center">
-                <span>Vui lòng đăng nhập để tham gia thảo luận và gửi bình luận.</span>
+                <span>Vui lòng đăng nhập tài khoản Thành viên để tham gia thảo luận và trả lời bình luận.</span>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-secondary py-1 px-3">
                     Đăng nhập
                 </a>
             </div>
         <?php endif; ?>
 
-        <!-- List of Comments -->
-        <div id="comments-list">
-            <?php if (!empty($comments)): ?>
-                <?php foreach ($comments as $cm): ?>
-                    <div class="comment-card">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="comment-author">
-                                <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cm['username'] ?? 'Người dùng', ENT_QUOTES, 'UTF-8') ?>
-                            </span>
-                            <span class="comment-time">
-                                <?= !empty($cm['created_at']) ? date('d/m/Y H:i', strtotime($cm['created_at'])) : '' ?>
-                            </span>
+        <!-- Recursive Multi-level Comments Tree -->
+        <?php
+        $postIdForComments = (int)($post['id'] ?? 0);
+        $renderCommentTree = function (array $nodes, int $depth = 0) use (&$renderCommentTree, $canComment, $postIdForComments): void {
+            foreach ($nodes as $cm) {
+                $cmId = (int)($cm['id'] ?? 0);
+                $cmUserId = (int)($cm['user_id'] ?? 0);
+                $cmUsername = (string)($cm['username'] ?? 'Người dùng');
+                $cmRole = strtolower((string)($cm['role_name'] ?? 'member'));
+                $parentUsername = $cm['parent_username'] ?? null;
+                $canDeleteCm = class_exists('Auth') ? Auth::canDeleteComment($cmUserId) : false;
+                $isReply = ($depth > 0 || !empty($cm['parent_id']));
+                $safeJsUsername = htmlspecialchars(addslashes($cmUsername), ENT_QUOTES, 'UTF-8');
+                ?>
+                <div class="comment-thread-node <?= $isReply ? 'comment-reply-node' : '' ?>" id="comment-thread-<?= $cmId ?>">
+                    <div class="comment-card" id="comment-item-<?= $cmId ?>">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                            <div class="d-flex align-items-center flex-wrap">
+                                <span class="comment-author">
+                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <?php if ($cmRole === 'admin'): ?>
+                                    <span class="badge rounded-pill text-bg-danger ms-1" style="font-size: 10px;">ADMIN</span>
+                                <?php elseif ($cmRole === 'moderator'): ?>
+                                    <span class="badge rounded-pill text-bg-primary ms-1" style="font-size: 10px;">MOD</span>
+                                <?php endif; ?>
+                                <?php if (!empty($parentUsername)): ?>
+                                    <span class="badge rounded-pill ms-2 fw-normal" style="background: rgba(155, 189, 85, 0.16); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.35); font-size: 11px;">
+                                        <i class="bi bi-reply-fill me-1"></i>@<?= htmlspecialchars((string)$parentUsername, ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="comment-time" style="color: rgba(255, 255, 255, 0.55);">
+                                    <?= !empty($cm['created_at']) ? date('d/m/Y H:i', strtotime((string)$cm['created_at'])) : '' ?>
+                                </span>
+                                <?php if ($canComment && $cmId > 0): ?>
+                                    <button type="button"
+                                            class="btn btn-sm btn-link p-0 text-decoration-none small fw-medium"
+                                            style="color: #c4e482;"
+                                            onclick="if(window.ForumAjax) window.ForumAjax.toggleReplyBox(<?= $cmId ?>, <?= $postIdForComments ?>, '<?= $safeJsUsername ?>')">
+                                        <i class="bi bi-reply-fill"></i> Trả lời
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($canDeleteCm && $cmId > 0): ?>
+                                    <button type="button"
+                                            class="btn btn-sm text-danger p-0 border-0 bg-transparent"
+                                            title="Xóa bình luận"
+                                            onclick="if(window.ForumAjax) window.ForumAjax.deleteComment(<?= $cmId ?>, <?= $postIdForComments ?>, this)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         <div class="comment-text">
-                            <?= nl2br(htmlspecialchars($cm['content'] ?? '', ENT_QUOTES, 'UTF-8')) ?>
+                            <?= nl2br(htmlspecialchars((string)($cm['content'] ?? ''), ENT_QUOTES, 'UTF-8')) ?>
                         </div>
+                        <div id="reply-box-container-<?= $cmId ?>" class="mt-2" style="display: none;"></div>
                     </div>
-                <?php endforeach; ?>
+
+                    <div class="comment-children-list" id="comment-children-<?= $cmId ?>">
+                        <?php if (!empty($cm['children']) && is_array($cm['children'])): ?>
+                            <?php $renderCommentTree($cm['children'], $depth + 1); ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php
+            }
+        };
+        ?>
+
+        <div id="comments-list">
+            <?php if (!empty($comments)): ?>
+                <?php $renderCommentTree($comments, 0); ?>
             <?php else: ?>
                 <div class="text-white-50 small fst-italic py-3" id="no-comments-msg">
                     Chưa có bình luận nào. Hãy để lại lời nhắn đầu tiên!
@@ -345,7 +442,58 @@ $galleryCount = count($galleryImages);
             <?php endif; ?>
         </div>
     </section>
+
+    <!-- Modal Hộp thoại xác nhận xóa bình luận -->
+    <div class="modal fade" id="deleteCommentModal" tabindex="-1" aria-labelledby="deleteCommentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 26px; background: var(--color-paper, #f2f3ef); color: var(--color-ink, #23261f);">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(220, 53, 69, 0.14); color: #dc3545;">
+                            <i class="bi bi-trash3-fill fs-5"></i>
+                        </span>
+                        <h5 class="modal-title fw-semibold mb-0" id="deleteCommentModalLabel">Xác nhận xóa bình luận</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <p class="mb-0 text-secondary small">
+                        Bạn có chắc chắn muốn xóa bình luận này (cùng các phản hồi trả lời bên dưới nếu có) không? Hành động này không thể hoàn tác.
+                    </p>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4" id="btnConfirmDeleteComment">
+                        <i class="bi bi-trash3 me-1"></i> Xóa bình luận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+/* ── Nested Comments Tree Styles (Bình luận lồng nhau nhiều cấp) ── */
+.comment-thread-node {
+    position: relative;
+}
+.comment-children-list {
+    margin-left: 1.75rem;
+    padding-left: 1.1rem;
+    border-left: 2px solid rgba(155, 189, 85, 0.4);
+}
+.comment-reply-node > .comment-card {
+    background: rgba(255, 255, 255, 0.065);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-left: 3px solid var(--color-moss, #9bbd55);
+}
+@media (max-width: 576px) {
+    .comment-children-list {
+        margin-left: 0.75rem;
+        padding-left: 0.65rem;
+    }
+}
+</style>
 
 <!-- ══════════════════════════════════════════════════════════════════
      CAROUSEL + LIGHTBOX STYLES

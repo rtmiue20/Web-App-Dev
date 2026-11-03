@@ -10,7 +10,6 @@ class HomeController extends Controller
     {
         $postModel = new Post();
         $userModel = new User();
-        $categoryModel = new Category();
 
         $postCount = $postModel->count();
         $userCount = $userModel->count();
@@ -33,14 +32,16 @@ class HomeController extends Controller
             ['label' => 'Bài mới nhất',   'title' => 'Sau cơn mưa trên đỉnh Tà Xùa', 'tag' => 'trek'],
         ];
 
-        $recentPosts = $postModel->getAll();
+        $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
+        $recentPosts = $postModel->getAll(null, $selectedSort);
 
         $this->render('home/index', [
-            'title'       => 'Trang chủ',
-            'stats'       => $stats,
-            'topics'      => $topics,
-            'recentPosts' => array_slice($recentPosts, 0, 4),
-            'active'      => 'home',
+            'title'        => 'Trang chủ',
+            'stats'        => $stats,
+            'topics'       => $topics,
+            'recentPosts'  => array_slice($recentPosts, 0, 4),
+            'selectedSort' => $selectedSort,
+            'active'       => 'home',
         ]);
     }
 }
