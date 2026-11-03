@@ -25,6 +25,9 @@ public/uploads/posts/*
 !public/uploads/posts/d6836428ccffe08a05c012b7b823d6b7.jpg
 !public/uploads/posts/f4bd5ba478164663f5039e68f394cf4b.jpg
 
+public/uploads/products/*
+!public/uploads/products/.gitkeep
+
 # Cache, locks & temporary files
 storage/cache/*
 !storage/cache/.gitkeep

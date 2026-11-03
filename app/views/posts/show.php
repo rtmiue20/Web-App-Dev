@@ -441,6 +441,14 @@ $galleryCount = count($galleryImages);
                     68%, 82% { transform: translateX(var(--marquee-distance, -80px)); }
                     94%, 100% { transform: translateX(0); }
                 }
+                .btn-shop-link {
+                    transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+                    text-decoration: none !important;
+                }
+                .btn-shop-link:hover {
+                    transform: translateY(-1px);
+                    filter: brightness(1.08);
+                }
             </style>
             <div class="post-tools-section mt-5 pt-4 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -448,10 +456,10 @@ $galleryCount = count($galleryImages);
                         <span class="nature-badge" style="background: rgba(155, 189, 85, 0.18); color: var(--color-ink); border-color: rgba(155, 189, 85, 0.4);">
                             <i class="bi bi-tools me-1 text-success"></i>Dụng cụ chuyến đi
                         </span>
-                        <h3 class="h5 fw-semibold mb-0" style="color: var(--color-ink);">Trang thiết bị đã sử dụng (Tools)</h3>
+                        <h3 class="h5 fw-semibold mb-0" style="color: var(--color-ink);">Công cụ hữu dụng tác giả sử dụng</h3>
                     </div>
                     <span class="small text-muted">
-                        <i class="bi bi-check-circle-fill text-success me-1"></i><?= count($tools) ?> dụng cụ được chia sẻ
+                        <i class="bi bi-check-circle-fill text-success me-1"></i><?= count($tools) ?> dụng cụ được chia sẻ kèm link &amp; giá
                     </span>
                 </div>
 
@@ -466,44 +474,89 @@ $galleryCount = count($galleryImages);
                             $toolImg = $baseUrl . '/' . ltrim($rawToolImg, '/');
                         }
                         $toolLink = trim((string)($tool['link'] ?? ''));
+                        if ($toolLink !== '' && !preg_match('#^https?://#i', $toolLink)) {
+                            $toolLink = 'https://' . $toolLink;
+                        }
+
+                        // Nhận diện sàn thương mại điện tử
+                        $linkLower = mb_strtolower($toolLink);
+                        $badgeName = 'Nơi mua sản phẩm';
+                        $badgeIcon = 'bi-bag-check';
+                        $badgeStyle = 'background: #2e7d32; color: #fff; border: 1px solid #2e7d32; box-shadow: 0 3px 8px rgba(46, 125, 50, 0.25);';
+
+                        if (strpos($linkLower, 'shopee') !== false || strpos($linkLower, 'shp.ee') !== false) {
+                            $badgeName = 'Mua tại Shopee';
+                            $badgeIcon = 'bi-bag-fill';
+                            $badgeStyle = 'background: #ee4d2d; color: #fff; border: 1px solid #ee4d2d; box-shadow: 0 3px 10px rgba(238, 77, 45, 0.35);';
+                        } elseif (strpos($linkLower, 'lazada') !== false || strpos($linkLower, 'laz.vn') !== false) {
+                            $badgeName = 'Mua tại Lazada';
+                            $badgeIcon = 'bi-cart4';
+                            $badgeStyle = 'background: #0f146d; color: #fff; border: 1px solid #0f146d; box-shadow: 0 3px 10px rgba(15, 20, 109, 0.35);';
+                        } elseif (strpos($linkLower, 'tiki.vn') !== false || strpos($linkLower, 'ti.ki') !== false) {
+                            $badgeName = 'Mua tại Tiki';
+                            $badgeIcon = 'bi-shop';
+                            $badgeStyle = 'background: #1a94ff; color: #fff; border: 1px solid #1a94ff; box-shadow: 0 3px 10px rgba(26, 148, 255, 0.35);';
+                        } elseif (strpos($linkLower, 'tiktok.com') !== false) {
+                            $badgeName = 'Mua tại TikTok Shop';
+                            $badgeIcon = 'bi-tiktok';
+                            $badgeStyle = 'background: #000000; color: #fff; border: 1px solid #222; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);';
+                        }
                     ?>
                         <div class="col">
                             <div class="tool-post-card p-3 rounded-4 border d-flex gap-3 align-items-center h-100 position-relative overflow-hidden" 
-                                 style="background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.08) !important; transition: transform 0.2s ease, box-shadow 0.2s ease; max-width: 100%;">
+                                 style="background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.08) !important; box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: transform 0.2s ease, box-shadow 0.2s ease; max-width: 100%;">
                                 <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
                                      alt="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>" 
                                      class="rounded-3 object-fit-cover flex-shrink-0" 
-                                     style="width: 72px; height: 72px; border: 1px solid rgba(0,0,0,0.06);">
+                                     style="width: 78px; height: 78px; border: 1px solid rgba(0,0,0,0.08);">
                                 
-                                <div class="flex-grow-1 min-w-0 overflow-hidden">
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <?php if (!empty($tool['category_name'])): ?>
-                                            <span class="badge rounded-pill bg-light text-dark border text-uppercase" style="font-size: 10px; letter-spacing: 0.4px;">
-                                                <?= htmlspecialchars($tool['category_name'], ENT_QUOTES, 'UTF-8') ?>
-                                            </span>
+                                <div class="flex-grow-1 min-w-0 overflow-hidden d-flex flex-column justify-content-between h-100">
+                                    <div>
+                                        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                            <?php if (!empty($tool['category_name'])): ?>
+                                                <span class="badge rounded-pill bg-light text-dark border text-uppercase" style="font-size: 10px; letter-spacing: 0.4px;">
+                                                    <?= htmlspecialchars($tool['category_name'], ENT_QUOTES, 'UTF-8') ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle" style="font-size: 10px;">
+                                                    <i class="bi bi-person-check-fill me-1"></i>Tác giả chia sẻ
+                                                </span>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($tool['price']) && (float)$tool['price'] > 0): ?>
+                                                <span class="fw-bold small text-success">
+                                                    <?= number_format((float)$tool['price'], 0, ',', '.') ?> đ
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <span class="tool-title-inner"><?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+
+                                        <?php if (!empty($tool['description'])): ?>
+                                            <div class="text-muted small mb-2" style="font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="<?= htmlspecialchars($tool['description'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= htmlspecialchars($tool['description'], ENT_QUOTES, 'UTF-8') ?>
+                                            </div>
                                         <?php endif; ?>
-                                        <span class="fw-bold small text-success">
-                                            <?= number_format((float)($tool['price'] ?? 0), 0, ',', '.') ?> đ
-                                        </span>
                                     </div>
 
-                                    <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <span class="tool-title-inner"><?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    </div>
-
-                                    <div class="d-flex align-items-center justify-content-between gap-2">
-                                        <small class="text-muted text-truncate flex-grow-1 min-w-0" style="font-size: 11.5px;" title="<?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>
-                                        </small>
+                                    <div class="pt-1 mt-auto d-flex justify-content-end">
                                         <?php if ($toolLink !== ''): ?>
                                             <a href="<?= htmlspecialchars($toolLink, ENT_QUOTES, 'UTF-8') ?>" 
                                                target="_blank" 
                                                rel="noopener noreferrer" 
-                                               class="nature-btn-secondary px-2 py-1 text-dark border-dark-subtle flex-shrink-0"
-                                               style="font-size: 11px; white-space: nowrap;"
-                                               title="Xem nơi mua hoặc thông số">
-                                                Nơi mua <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                               class="btn btn-sm rounded-pill px-3 py-1 btn-shop-link fw-semibold d-inline-flex align-items-center gap-1.5 text-nowrap"
+                                               style="<?= $badgeStyle ?> font-size: 11.5px;"
+                                               title="Mở liên kết mua sản phẩm tại tab mới">
+                                                <i class="bi <?= $badgeIcon ?>"></i>
+                                                <span><?= $badgeName ?></span>
+                                                <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 10px;"></i>
                                             </a>
+                                        <?php else: ?>
+                                            <span class="badge rounded-pill bg-light text-muted border px-2.5 py-1" style="font-size: 11px;">
+                                                <i class="bi bi-check2-circle text-success me-1"></i>Đồ dùng khuyên mang
+                                            </span>
                                         <?php endif; ?>
                                     </div>
                                 </div>

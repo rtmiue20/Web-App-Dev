@@ -101,15 +101,39 @@ $totalItems = count($products ?? []);
                                 </div>
 
                                 <div>
-                                    <?php if ($prodLink !== ''): ?>
+                                    <?php if ($prodLink !== ''): 
+                                        $linkLower = mb_strtolower($prodLink);
+                                        $btnName = 'Xem nơi mua';
+                                        $btnIcon = 'bi-box-arrow-up-right';
+                                        $btnStyle = 'background: #2e7d32; color: #fff; border-color: #2e7d32;';
+
+                                        if (strpos($linkLower, 'shopee') !== false || strpos($linkLower, 'shp.ee') !== false) {
+                                            $btnName = 'Mua tại Shopee';
+                                            $btnIcon = 'bi-bag-fill';
+                                            $btnStyle = 'background: #ee4d2d; color: #fff; border-color: #ee4d2d;';
+                                        } elseif (strpos($linkLower, 'lazada') !== false || strpos($linkLower, 'laz.vn') !== false) {
+                                            $btnName = 'Mua tại Lazada';
+                                            $btnIcon = 'bi-cart4';
+                                            $btnStyle = 'background: #0f146d; color: #fff; border-color: #0f146d;';
+                                        } elseif (strpos($linkLower, 'tiki.vn') !== false || strpos($linkLower, 'ti.ki') !== false) {
+                                            $btnName = 'Mua tại Tiki';
+                                            $btnIcon = 'bi-shop';
+                                            $btnStyle = 'background: #1a94ff; color: #fff; border-color: #1a94ff;';
+                                        } elseif (strpos($linkLower, 'tiktok.com') !== false) {
+                                            $btnName = 'TikTok Shop';
+                                            $btnIcon = 'bi-tiktok';
+                                            $btnStyle = 'background: #111111; color: #fff; border-color: #111111;';
+                                        }
+                                    ?>
                                         <a href="<?= htmlspecialchars($prodLink, ENT_QUOTES, 'UTF-8') ?>" 
                                            target="_blank" 
                                            rel="noopener noreferrer"
-                                           class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle d-inline-flex align-items-center gap-1"
-                                           style="font-size: 12.5px;"
-                                           title="Xem nơi mua hoặc thông số kỹ thuật chi tiết">
-                                            <span>Xem nơi mua</span>
-                                            <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i>
+                                           class="btn btn-sm rounded-pill py-1 px-3 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm text-nowrap"
+                                           style="<?= $btnStyle ?> font-size: 12px;"
+                                           title="Xem nơi mua hoặc đặt mua trực tiếp">
+                                            <i class="bi <?= $btnIcon ?>"></i>
+                                            <span><?= $btnName ?></span>
+                                            <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 10px;"></i>
                                         </a>
                                     <?php else: ?>
                                         <span class="badge rounded-pill text-bg-light border text-muted px-3 py-2" style="font-size: 12px;">

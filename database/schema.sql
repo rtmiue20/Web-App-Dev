@@ -117,7 +117,8 @@ CREATE TABLE products (
   price       DECIMAL(10, 0) NOT NULL DEFAULT 0,
   image_url   VARCHAR(255) NULL,
   description TEXT NULL,
-  link        VARCHAR(255) NULL,
+  link        TEXT NULL,
+  is_shared   TINYINT(1) NOT NULL DEFAULT 1,                      -- 1: Vào kho cộng đồng, 0: Chỉ dùng riêng cho bài viết
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
@@ -726,11 +727,12 @@ END$$
 DROP PROCEDURE IF EXISTS sp_product_list_by_category$$
 CREATE PROCEDURE sp_product_list_by_category(IN p_category_id INT)
 BEGIN
-    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.is_shared, p.created_at,
            c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
-    WHERE p_category_id IS NULL OR p.category_id = p_category_id
+    WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
+      AND p.is_shared = 1
     ORDER BY p.id DESC;
 END$$
 
@@ -752,11 +754,12 @@ CREATE PROCEDURE sp_product_create(
     IN p_price DECIMAL(10,0),
     IN p_image_url VARCHAR(255),
     IN p_description TEXT,
-    IN p_link VARCHAR(255)
+    IN p_link TEXT,
+    IN p_is_shared TINYINT
 )
 BEGIN
-    INSERT INTO products (category_id, name, price, image_url, description, link)
-    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link);
+    INSERT INTO products (category_id, name, price, image_url, description, link, is_shared)
+    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link, COALESCE(p_is_shared, 1));
 
     SELECT LAST_INSERT_ID() AS product_id;
 END$$
@@ -769,7 +772,8 @@ CREATE PROCEDURE sp_product_update(
     IN p_price DECIMAL(10,0),
     IN p_image_url VARCHAR(255),
     IN p_description TEXT,
-    IN p_link VARCHAR(255)
+    IN p_link TEXT,
+    IN p_is_shared TINYINT
 )
 BEGIN
     UPDATE products
@@ -778,7 +782,8 @@ BEGIN
         price = p_price,
         image_url = COALESCE(p_image_url, image_url),
         description = p_description,
-        link = p_link
+        link = p_link,
+        is_shared = COALESCE(p_is_shared, is_shared)
     WHERE id = p_id;
 
     SELECT ROW_COUNT() AS affected_rows;
