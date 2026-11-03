@@ -1461,3 +1461,94 @@ body {
   box-shadow: 0 0 0 2px rgba(214, 57, 57, 0.2) !important;
 }
 
+/* ==========================================================================
+   Advanced Feature 3 & 4: Notifications Dropdown
+   ========================================================================== */
+.notifications-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 340px;
+  max-width: 90vw;
+  background: rgba(30, 36, 28, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  z-index: 1050;
+  overflow: hidden;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.18s ease;
+}
+
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.notification-item.unread {
+  background: rgba(155, 189, 85, 0.1);
+  border-left: 3px solid #9bbd55;
+}
+
+.notification-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(155, 189, 85, 0.2);
+  color: #9bbd55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.notification-content {
+  flex-grow: 1;
+  min-width: 0;
+  font-size: 0.83rem;
+  line-height: 1.35;
+  color: #e5e9de;
+}
+
+.notification-time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 3px;
+}
+
+/* ==========================================================================
+   Advanced Feature: Bookmark & Follow Buttons
+   ========================================================================== */
+.bookmark-btn {
+  transition: all 0.2s ease;
+}
+
+.bookmark-btn:hover {
+  transform: scale(1.05);
+}
+
+.bookmark-btn.bookmarked {
+  background: rgba(231, 76, 60, 0.12) !important;
+  color: #e74c3c !important;
+  border-color: rgba(231, 76, 60, 0.35) !important;
+}
+
+.follow-user-btn {
+  transition: all 0.2s ease;
+}
+
+.follow-user-btn.following {
+  background: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+

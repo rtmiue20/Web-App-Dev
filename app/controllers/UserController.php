@@ -128,21 +128,107 @@ class UserController extends Controller
         return $user;
     }
 
+    public function show(int $id): void
+    {
+        $targetUser = (new User())->findById($id);
+        if ($targetUser === null) {
+            http_response_code(404);
+            $this->render('errors/404', ['title' => 'Không tìm thấy người dùng']);
+            return;
+        }
+
+        $currentUserId = Auth::check() ? (int)Auth::id() : 0;
+        $gamification = Gamification::calculate($id);
+
+        $followModel = new Follow();
+        $isFollowing = $followModel->isFollowingUser($currentUserId, $id);
+        $followersCount = $followModel->getFollowersCount($id);
+        $followingCount = $followModel->getFollowingCount($id);
+
+        $posts = [];
+        try {
+            $posts = Database::query(
+                "SELECT p.*, c.name AS category_name,
+                        (SELECT image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                        COALESCE((SELECT SUM(vote) FROM post_likes WHERE post_id = p.id), 0) AS vote_score,
+                        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count
+                 FROM posts p
+                 JOIN categories c ON c.id = p.category_id
+                 WHERE p.user_id = :uid AND p.status = 'published'
+                 ORDER BY p.created_at DESC",
+                ['uid' => $id]
+            );
+        } catch (Exception $e) {}
+
+        $this->render('users/show', [
+            'title'          => 'Hồ sơ của ' . $targetUser->getUsername(),
+            'targetUser'     => [
+                'id'          => $targetUser->getId(),
+                'username'    => $targetUser->getUsername(),
+                'email'       => $targetUser->getEmail(),
+                'bio'         => $targetUser->getBio(),
+                'avatar_path' => $targetUser->getAvatarPath(),
+                'role_name'   => $targetUser->getRoleName(),
+                'created_at'  => $targetUser->getCreatedAt(),
+            ],
+            'gamification'   => $gamification,
+            'isFollowing'    => $isFollowing,
+            'followersCount' => $followersCount,
+            'followingCount' => $followingCount,
+            'posts'          => $posts,
+            'isOwnProfile'   => ($currentUserId === $id),
+        ]);
+    }
+
     private function renderProfile(User $user, array $errors = [], array $old = []): void
     {
+        $userId = $user->getId();
+        $gamification = Gamification::calculate($userId);
+
+        $bookmarkModel = new Bookmark();
+        $bookmarks = $bookmarkModel->getByUserId($userId, 1, 20);
+
+        $followModel = new Follow();
+        $followersCount = $followModel->getFollowersCount($userId);
+        $followingCount = $followModel->getFollowingCount($userId);
+        $followingUsers = $followModel->getFollowingUsers($userId, 20);
+        $followingCategories = $followModel->getFollowingCategories($userId);
+
+        $myPosts = [];
+        try {
+            $myPosts = Database::query(
+                "SELECT p.*, c.name AS category_name,
+                        (SELECT image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                        COALESCE((SELECT SUM(vote) FROM post_likes WHERE post_id = p.id), 0) AS vote_score,
+                        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count
+                 FROM posts p
+                 JOIN categories c ON c.id = p.category_id
+                 WHERE p.user_id = :uid
+                 ORDER BY p.created_at DESC",
+                ['uid' => $userId]
+            );
+        } catch (Exception $e) {}
+
         $this->render('users/profile', [
             'user' => [
-                'id' => $user->getId(),
-                'username' => $user->getUsername(),
-                'email' => $user->getEmail(),
-                'role_id' => $user->getRoleId(),
-                'role_name' => $user->getRoleName(),
-                'created_at' => $user->getCreatedAt(),
-                'bio' => $user->getBio(),
+                'id'          => $user->getId(),
+                'username'    => $user->getUsername(),
+                'email'       => $user->getEmail(),
+                'role_id'     => $user->getRoleId(),
+                'role_name'   => $user->getRoleName(),
+                'created_at'  => $user->getCreatedAt(),
+                'bio'         => $user->getBio(),
                 'avatar_path' => $user->getAvatarPath(),
             ],
-            'errors' => $errors,
-            'old' => $old,
+            'gamification'        => $gamification,
+            'bookmarks'           => $bookmarks,
+            'followersCount'      => $followersCount,
+            'followingCount'      => $followingCount,
+            'followingUsers'      => $followingUsers,
+            'followingCategories' => $followingCategories,
+            'myPosts'             => $myPosts,
+            'errors'              => $errors,
+            'old'                 => $old,
         ]);
     }
 }

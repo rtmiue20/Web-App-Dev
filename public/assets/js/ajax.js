@@ -1072,6 +1072,351 @@ const ForumAjax = {
       });
     }
   },
+
+  // =========================================================================
+  // 10. Tính năng nâng cao: Lưu bài viết (Bookmark) qua AJAX
+  // =========================================================================
+  toggleBookmark: async function (postId, btn) {
+    const baseUrl = this.getBaseUrl();
+    const csrfToken = this.getCsrfToken();
+    const self = this;
+
+    try {
+      const res = await fetch(`${baseUrl}/api/posts/${postId}/bookmark`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+          post_id: postId,
+          _csrf: csrfToken,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        alert((json && json.message) || 'Không thể thực hiện lưu bài viết.');
+        return false;
+      }
+
+      if (btn) {
+        const bookmarked = Boolean(json.data && json.data.bookmarked);
+        btn.classList.toggle('bookmarked', bookmarked);
+        btn.classList.toggle('text-danger', bookmarked);
+        btn.classList.toggle('text-dark', !bookmarked);
+
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.className = bookmarked ? 'bi bi-bookmark-heart-fill' : 'bi bi-bookmark-heart';
+        }
+        const text = btn.querySelector('.bookmark-text');
+        if (text) {
+          text.textContent = bookmarked ? 'Đã lưu' : 'Lưu bài';
+        }
+        btn.title = bookmarked ? 'Bỏ lưu bài viết' : 'Lưu bài viết vào bộ sưu tập';
+      }
+      return true;
+    } catch (err) {
+      console.error('Lỗi lưu bài viết:', err);
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 11. Tính năng nâng cao: Theo dõi / Bỏ theo dõi người dùng (Follow User)
+  // =========================================================================
+  toggleFollowUser: async function (userId, btn) {
+    const baseUrl = this.getBaseUrl();
+    const csrfToken = this.getCsrfToken();
+
+    try {
+      const res = await fetch(`${baseUrl}/api/users/${userId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          _csrf: csrfToken,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        alert((json && json.message) || 'Không thể thực hiện theo dõi.');
+        return false;
+      }
+
+      const isFollowing = Boolean(json.data && json.data.following);
+      const followersCount = json.data ? json.data.followers_count : 0;
+
+      if (btn) {
+        btn.classList.toggle('following', isFollowing);
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.className = isFollowing ? 'bi bi-check-lg me-1' : 'bi bi-person-plus-fill me-1';
+        }
+        const text = btn.querySelector('.follow-btn-text');
+        if (text) {
+          text.textContent = isFollowing ? 'Đang theo dõi' : 'Theo dõi';
+        }
+        if (btn.id === 'btnFollowUser') {
+          btn.style.background = isFollowing ? '#6c757d' : 'var(--color-moss, #9bbd55)';
+        }
+      }
+
+      // Cập nhật số lượng người theo dõi nếu có counter trên trang
+      const counter1 = document.getElementById('userFollowersCount');
+      if (counter1) {
+        counter1.textContent = followersCount;
+      }
+      const counter2 = document.getElementById('authorFollowersCount');
+      if (counter2) {
+        counter2.innerHTML = '<i class="bi bi-people me-1"></i>' + followersCount + ' người theo dõi';
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Lỗi theo dõi người dùng:', err);
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 12. Tính năng nâng cao: Theo dõi chuyên mục (Follow Category)
+  // =========================================================================
+  toggleFollowCategory: async function (categoryId, btn) {
+    const baseUrl = this.getBaseUrl();
+    const csrfToken = this.getCsrfToken();
+
+    try {
+      const res = await fetch(`${baseUrl}/api/categories/${categoryId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+          category_id: categoryId,
+          _csrf: csrfToken,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        alert((json && json.message) || 'Không thể thực hiện thao tác.');
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('Lỗi theo dõi chuyên mục:', err);
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 13. Tính năng nâng cao: Báo cáo vi phạm (Report)
+  // =========================================================================
+  submitReport: async function (form, targetId, targetType) {
+    const baseUrl = this.getBaseUrl();
+    const csrfToken = this.getCsrfToken();
+    const reasonInput = form.querySelector('[name="reason"]');
+    const detailsInput = form.querySelector('[name="details"]');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    const details = detailsInput ? detailsInput.value.trim() : '';
+
+    if (!reason) {
+      alert('Vui lòng chọn lý do báo cáo vi phạm.');
+      return false;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang gửi...';
+    }
+
+    try {
+      const res = await fetch(`${baseUrl}/api/reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+          target_id: targetId,
+          target_type: targetType,
+          reason: reason,
+          details: details,
+          _csrf: csrfToken,
+        }),
+      });
+
+      const json = await res.json();
+      alert((json && json.message) || 'Đã gửi báo cáo vi phạm.');
+
+      // Đóng modal Bootstrap nếu có
+      const modalEl = form.closest('.modal');
+      if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+        const m = window.bootstrap.Modal.getInstance(modalEl);
+        if (m) m.hide();
+      }
+      form.reset();
+      return true;
+    } catch (err) {
+      console.error('Lỗi gửi báo cáo:', err);
+      alert('Có lỗi xảy ra khi gửi báo cáo vi phạm.');
+      return false;
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Gửi báo cáo';
+      }
+    }
+  },
+
+  // =========================================================================
+  // 14. Tính năng nâng cao: Thông báo thời gian thực (Notifications)
+  // =========================================================================
+  toggleNotificationsDropdown: function () {
+    const menu = document.getElementById('notificationsDropdownMenu');
+    if (!menu) return;
+
+    if (menu.style.display === 'block') {
+      menu.style.display = 'none';
+    } else {
+      menu.style.display = 'block';
+      this.fetchNotifications();
+    }
+  },
+
+  fetchNotifications: async function () {
+    const baseUrl = this.getBaseUrl();
+    const container = document.getElementById('notificationsListContainer');
+    const badge = document.getElementById('navUnreadBadge');
+    const self = this;
+
+    try {
+      const res = await fetch(`${baseUrl}/api/notifications`);
+      const json = await res.json();
+
+      if (!json || !json.success || !json.data) return;
+
+      const unreadCount = Number(json.data.unread_count || 0);
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      if (!container) return;
+
+      const items = json.data.notifications || [];
+      if (items.length === 0) {
+        container.innerHTML = '<div class="text-center py-4 text-white-50 small"><i class="bi bi-bell-slash d-block fs-3 mb-1 opacity-50"></i>Bạn chưa có thông báo mới nào.</div>';
+        return;
+      }
+
+      let html = '';
+      items.forEach(function (n) {
+        const isUnread = Number(n.is_read) === 0;
+        let iconClass = 'bi-bell-fill';
+        let iconColor = '#9bbd55';
+        if (n.type === 'like_post' || n.type === 'like_comment') {
+          iconClass = 'bi-heart-fill';
+          iconColor = '#ff6b81';
+        } else if (n.type === 'comment_post' || n.type === 'reply_comment') {
+          iconClass = 'bi-chat-dots-fill';
+          iconColor = '#3498db';
+        } else if (n.type === 'follow_user') {
+          iconClass = 'bi-person-plus-fill';
+          iconColor = '#2ecc71';
+        }
+
+        let linkUrl = `${baseUrl}/posts/${n.target_id}`;
+        if (n.type === 'follow_user') {
+          linkUrl = `${baseUrl}/users/${n.actor_id}`;
+        }
+
+        html += `
+          <a href="${linkUrl}" class="notification-item ${isUnread ? 'unread' : ''}">
+            <div class="notification-icon" style="background: ${iconColor}22; color: ${iconColor};">
+              <i class="bi ${iconClass}"></i>
+            </div>
+            <div class="notification-content">
+              <div class="fw-medium">${self.escapeHtml(n.content)}</div>
+              <div class="notification-time">${self.escapeHtml(n.created_at || 'Vừa xong')}</div>
+            </div>
+          </a>
+        `;
+      });
+
+      container.innerHTML = html;
+    } catch (err) {
+      console.error('Lỗi tải thông báo:', err);
+    }
+  },
+
+  markAllNotificationsRead: async function () {
+    const baseUrl = this.getBaseUrl();
+    const csrfToken = this.getCsrfToken();
+    const badge = document.getElementById('navUnreadBadge');
+
+    try {
+      await fetch(`${baseUrl}/api/notifications/read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({ _csrf: csrfToken }),
+      });
+
+      if (badge) {
+        badge.style.display = 'none';
+      }
+      const unreadItems = document.querySelectorAll('.notification-item.unread');
+      unreadItems.forEach(function (item) {
+        item.classList.remove('unread');
+      });
+    } catch (err) {
+      console.error('Lỗi đánh dấu đã đọc thông báo:', err);
+    }
+  },
+
+  startNotificationPolling: function () {
+    const self = this;
+    // Tải ngay lần đầu
+    this.fetchNotifications();
+    // Sau đó lặp lại mỗi 25 giây
+    setInterval(function () {
+      self.fetchNotifications();
+    }, 25000);
+
+    // Đóng dropdown thông báo khi bấm ra ngoài
+    document.addEventListener('click', function (e) {
+      const menu = document.getElementById('notificationsDropdownMenu');
+      const btn = document.getElementById('btnNotificationToggle');
+      if (menu && menu.style.display === 'block') {
+        if (!menu.contains(e.target) && btn && !btn.contains(e.target)) {
+          menu.style.display = 'none';
+        }
+      }
+    });
+  },
 };
+
+// Khởi chạy polling thông báo nếu có chuông thông báo trên trang
+document.addEventListener('DOMContentLoaded', function () {
+  if (document.getElementById('btnNotificationToggle') && window.ForumAjax) {
+    window.ForumAjax.startNotificationPolling();
+  }
+});
 
 window.ForumAjax = ForumAjax;

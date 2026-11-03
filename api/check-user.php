@@ -9,3 +9,4 @@ require_once __DIR__ . '/../app/controllers/ApiController.php';
 Session::init();
 $api = new ApiController();
 $api->checkUserAvailability();
+

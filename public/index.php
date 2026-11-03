@@ -22,6 +22,7 @@ require_once __DIR__ . '/../app/helpers/Response.php';
 require_once __DIR__ . '/../app/helpers/Upload.php';
 require_once __DIR__ . '/../app/helpers/functions.php';
 require_once __DIR__ . '/../app/helpers/DemoSeeder.php';
+require_once __DIR__ . '/../app/helpers/Gamification.php';
 
 require_once __DIR__ . '/../app/core/Database.php';
 require_once __DIR__ . '/../app/core/Model.php';
@@ -34,6 +35,10 @@ require_once __DIR__ . '/../app/models/Category.php';
 require_once __DIR__ . '/../app/models/Post.php';
 require_once __DIR__ . '/../app/models/Comment.php';
 require_once __DIR__ . '/../app/models/Product.php';
+require_once __DIR__ . '/../app/models/Bookmark.php';
+require_once __DIR__ . '/../app/models/Follow.php';
+require_once __DIR__ . '/../app/models/Notification.php';
+require_once __DIR__ . '/../app/models/Report.php';
 
 require_once __DIR__ . '/../app/services/WeatherService.php';
 require_once __DIR__ . '/../app/services/VietnamAddressService.php';
@@ -48,6 +53,7 @@ require_once __DIR__ . '/../app/controllers/PostController.php';
 require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/ProductController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
+require_once __DIR__ . '/../app/controllers/ModerationController.php';
 require_once __DIR__ . '/../app/controllers/ApiController.php';
 require_once __DIR__ . '/../app/controllers/admin/DashboardController.php';
 require_once __DIR__ . '/../app/controllers/admin/PostAdminController.php';

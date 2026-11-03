@@ -119,6 +119,99 @@ if (empty($editImages) && !empty($post['image_url'])) {
                 </div>
             </div>
 
+            <!-- Bài viết dạng "Chuyến đi" (Trip Info: Cung đường, thời gian, chi phí, độ khó, vùng miền, đồ cần mang) -->
+            <div class="card border-0 rounded-4 mb-4" style="background: rgba(155, 189, 85, 0.08); border: 1px solid rgba(155, 189, 85, 0.3) !important;">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px; background: var(--color-moss, #9bbd55); color: #1c2219;">
+                            <i class="bi bi-signpost-2-fill"></i>
+                        </span>
+                        <div>
+                            <h3 class="h6 fw-bold mb-0 text-dark">Thông tin hành trình "Chuyến đi" (Trip Details)</h3>
+                            <span class="text-muted small" style="font-size: 11.5px;">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc và chuẩn bị chuyến đi</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Loại hình -->
+                        <div class="col-12 col-md-4">
+                            <label for="activity_type" class="nature-label">Loại hình dã ngoại</label>
+                            <?php $currAct = $old['activity_type'] ?? $post['activity_type'] ?? ''; ?>
+                            <select class="nature-input" id="activity_type" name="activity_type">
+                                <option value="">-- Chọn loại hình --</option>
+                                <option value="camping" <?= ($currAct === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
+                                <option value="trekking" <?= ($currAct === 'trekking') ? 'selected' : '' ?>>🥾 Đi bộ đường dài (Trekking)</option>
+                                <option value="leo_nui" <?= ($currAct === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking / Mountain)</option>
+                                <option value="phuot" <?= ($currAct === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
+                                <option value="da_ngoai" <?= ($currAct === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại ngoài trời</option>
+                            </select>
+                        </div>
+
+                        <!-- Mức độ khó -->
+                        <div class="col-12 col-md-4">
+                            <label for="difficulty" class="nature-label">Mức độ khó</label>
+                            <?php $currDiff = $old['difficulty'] ?? $post['difficulty'] ?? 'medium'; ?>
+                            <select class="nature-input" id="difficulty" name="difficulty">
+                                <option value="easy" <?= ($currDiff === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới, gia đình)</option>
+                                <option value="medium" <?= ($currDiff === 'medium') ? 'selected' : '' ?>>🟡 Trung bình (Cần thể lực cơ bản)</option>
+                                <option value="hard" <?= ($currDiff === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc, dài ngày)</option>
+                                <option value="extreme" <?= ($currDiff === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao (Chuyên nghiệp)</option>
+                            </select>
+                        </div>
+
+                        <!-- Vùng miền -->
+                        <div class="col-12 col-md-4">
+                            <label for="region" class="nature-label">Vùng miền</label>
+                            <?php $currReg = $old['region'] ?? $post['region'] ?? ''; ?>
+                            <select class="nature-input" id="region" name="region">
+                                <option value="">-- Chọn vùng miền --</option>
+                                <option value="Tây Bắc" <?= ($currReg === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                                <option value="Đông Bắc" <?= ($currReg === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                                <option value="Bắc Bộ" <?= ($currReg === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                                <option value="Bắc Trung Bộ" <?= ($currReg === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                                <option value="Nam Trung Bộ" <?= ($currReg === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                                <option value="Tây Nguyên" <?= ($currReg === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                                <option value="Đông Nam Bộ" <?= ($currReg === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                                <option value="Tây Nam Bộ" <?= ($currReg === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Cung đường -->
+                        <div class="col-12 col-md-5">
+                            <label for="route" class="nature-label">Cung đường di chuyển</label>
+                            <input type="text" class="nature-input" id="route" name="route" 
+                                   placeholder="Ví dụ: Hà Nội - Đèo Đá Trắng - Tà Xùa (220km)" 
+                                   value="<?= htmlspecialchars((string)($old['route'] ?? $post['route'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <!-- Thời gian -->
+                        <div class="col-12 col-md-3">
+                            <label for="trip_duration" class="nature-label">Thời gian</label>
+                            <input type="text" class="nature-input" id="trip_duration" name="trip_duration" 
+                                   placeholder="Ví dụ: 2 ngày 1 đêm" 
+                                   value="<?= htmlspecialchars((string)($old['trip_duration'] ?? $post['trip_duration'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <!-- Chi phí dự tính -->
+                        <div class="col-12 col-md-4">
+                            <label for="estimated_cost" class="nature-label">Chi phí dự tính</label>
+                            <input type="text" class="nature-input" id="estimated_cost" name="estimated_cost" 
+                                   placeholder="Ví dụ: 1.200.000 đ/người" 
+                                   value="<?= htmlspecialchars((string)($old['estimated_cost'] ?? $post['estimated_cost'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                    </div>
+
+                    <!-- Đồ cần mang -->
+                    <div>
+                        <label for="gear_needed" class="nature-label">Đồ cần mang (Checklist trang bị mang theo)</label>
+                        <textarea class="nature-textarea" id="gear_needed" name="gear_needed" rows="2" 
+                                  placeholder="Ví dụ: Lều 2 lớp chống mưa, túi ngủ nhiệt, giày trekking bám tốt, áo gió, đèn pin đội đầu, bình nước 2L, bộ sơ cứu y tế..."><?= htmlspecialchars((string)($old['gear_needed'] ?? $post['gear_needed'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── Images Section ──────────────────────────────────────── -->
             <div class="mb-4">
                 <label class="nature-label">Ảnh bài viết</label>

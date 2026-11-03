@@ -41,10 +41,18 @@ CREATE TABLE posts (
   title       VARCHAR(200) NOT NULL,
   content     TEXT NOT NULL,
   location    VARCHAR(150),
+  route       VARCHAR(255) NULL,                                  -- Cung đường chuyến đi
+  trip_duration VARCHAR(100) NULL,                                -- Thời gian chuyến đi
+  estimated_cost VARCHAR(100) NULL,                               -- Chi phí dự tính
+  gear_needed TEXT NULL,                                          -- Đồ cần mang
+  difficulty  ENUM('easy', 'medium', 'hard', 'extreme') NULL DEFAULT 'medium', -- Mức độ khó
+  region      VARCHAR(50) NULL,                                   -- Vùng miền (Bắc, Trung, Nam, Tây Bắc, Tây Nguyên)
+  activity_type VARCHAR(50) NULL,                                 -- Loại hình (trekking, camping, leo_nui, phuot, da_ngoai)
   lat         DECIMAL(10, 7) NULL,
   lng         DECIMAL(10, 7) NULL,
   status      ENUM('pending', 'published', 'rejected', 'hidden') NOT NULL DEFAULT 'pending',
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FULLTEXT idx_posts_fulltext (title, content, location),
   FOREIGN KEY (user_id)     REFERENCES users(id)      ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -120,6 +128,62 @@ CREATE TABLE post_products (
   PRIMARY KEY (post_id, product_id),
   FOREIGN KEY (post_id)    REFERENCES posts(id)    ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ===== Tính năng nâng cao: bookmarks, follows, notifications, reports =====
+CREATE TABLE IF NOT EXISTS post_bookmarks (
+  user_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> users
+  post_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> posts
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, post_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_follows (
+  follower_id  INT UNSIGNED NOT NULL,                             -- PK + FK -> users
+  following_id INT UNSIGNED NOT NULL,                             -- PK + FK -> users
+  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (follower_id, following_id),
+  FOREIGN KEY (follower_id)  REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS category_follows (
+  user_id     INT UNSIGNED NOT NULL,                              -- PK + FK -> users
+  category_id INT UNSIGNED NOT NULL,                              -- PK + FK -> categories
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, category_id),
+  FOREIGN KEY (user_id)     REFERENCES users(id)      ON DELETE CASCADE,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,                               -- Người nhận thông báo
+  actor_id   INT UNSIGNED NOT NULL,                               -- Người tương tác
+  type       VARCHAR(50) NOT NULL,                                -- like_post, like_comment, comment_post, reply_comment, follow_user
+  target_id  INT UNSIGNED NOT NULL,                               -- post_id, comment_id, user_id
+  content    VARCHAR(255) NOT NULL,
+  is_read    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id)  REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reports (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  reporter_id INT UNSIGNED NOT NULL,                              -- Người báo cáo
+  target_type ENUM('post', 'comment', 'user') NOT NULL,
+  target_id   INT UNSIGNED NOT NULL,
+  reason      VARCHAR(100) NOT NULL,
+  details     TEXT NULL,
+  status      ENUM('pending', 'resolved', 'dismissed') NOT NULL DEFAULT 'pending',
+  resolved_by INT UNSIGNED NULL,                                  -- Mod / Admin xử lý
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NULL,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ===== Dữ liệu mẫu (để test routines) =====

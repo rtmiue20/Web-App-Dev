@@ -177,6 +177,31 @@ class ApiController extends Controller
         $commentId = $this->comments->create($postId, $userId, $content, $parentId);
         if ($commentId > 0) {
             $totalComments = $this->comments->countByPost($postId);
+
+            // Gửi thông báo đến chủ bài viết hoặc người được trả lời
+            $post = $this->posts->getById($postId);
+            $postTitleShort = $post ? mb_strimwidth($post['title'], 0, 35, '...') : 'bài viết';
+            if ($parentId && $parentUsername) {
+                $parentRow = $this->comments->findById($parentId);
+                if ($parentRow && (int)($parentRow['user_id'] ?? 0) !== $userId) {
+                    Notification::send(
+                        (int)$parentRow['user_id'],
+                        $userId,
+                        'reply_comment',
+                        $postId,
+                        ($user['username'] ?? 'Một thành viên') . ' đã trả lời bình luận của bạn trong bài "' . $postTitleShort . '"'
+                    );
+                }
+            } elseif ($post && (int)$post['user_id'] !== $userId) {
+                Notification::send(
+                    (int)$post['user_id'],
+                    $userId,
+                    'comment_post',
+                    $postId,
+                    ($user['username'] ?? 'Một thành viên') . ' đã bình luận về bài viết "' . $postTitleShort . '" của bạn.'
+                );
+            }
+
             Response::json([
                 'success' => true,
                 'message' => $parentId ? 'Đã gửi câu trả lời thành công!' : 'Đã gửi bình luận thành công!',
@@ -286,6 +311,19 @@ class ApiController extends Controller
         $userId = (int)($user['id'] ?? 0);
 
         $result = $this->comments->toggleLike($commentId, $userId);
+
+        if ($result['liked']) {
+            $cm = $this->comments->getById($commentId);
+            if ($cm && (int)($cm['user_id'] ?? 0) !== $userId) {
+                Notification::send(
+                    (int)$cm['user_id'],
+                    $userId,
+                    'like_comment',
+                    (int)($cm['post_id'] ?? 0),
+                    ($user['username'] ?? 'Một thành viên') . ' đã thích bình luận của bạn.'
+                );
+            }
+        }
 
         Response::json([
             'success' => true,
@@ -459,10 +497,280 @@ class ApiController extends Controller
         $userId = (int)($user['id'] ?? 0);
         $voteData = $this->posts->vote($postId, $userId, $voteType);
 
+        if ($voteData['user_vote'] === 1) {
+            $post = $this->posts->getById($postId);
+            if ($post && (int)($post['user_id'] ?? 0) !== $userId) {
+                Notification::send(
+                    (int)$post['user_id'],
+                    $userId,
+                    'like_post',
+                    $postId,
+                    ($user['username'] ?? 'Một thành viên') . ' đã thích bài viết "' . mb_strimwidth($post['title'], 0, 35, '...') . '" của bạn.'
+                );
+            }
+        }
+
         Response::json([
             'success' => true,
             'data'    => $voteData
         ]);
+    }
+
+    /**
+     * POST /api/posts/{id}/bookmark hoặc /api/bookmarks
+     * Bật / tắt lưu bài viết (Bookmark) qua AJAX
+     */
+    public function toggleBookmark(): void
+    {
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để lưu bài viết này.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
+        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+
+        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+            Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
+            return;
+        }
+
+        if ($postId <= 0) {
+            Response::json(['success' => false, 'message' => 'Bài viết không hợp lệ.'], 400);
+            return;
+        }
+
+        $userId = (int)Auth::id();
+        $bookmarkModel = new Bookmark();
+        $res = $bookmarkModel->toggle($userId, $postId);
+
+        Response::json([
+            'success' => true,
+            'message' => $res['bookmarked'] ? 'Đã lưu bài viết vào bộ sưu tập.' : 'Đã bỏ lưu bài viết.',
+            'data'    => [
+                'post_id'    => $postId,
+                'bookmarked' => $res['bookmarked'],
+                'total'      => $res['total']
+            ]
+        ]);
+    }
+
+    /**
+     * POST /api/users/{id}/follow hoặc /api/follows/user
+     * Theo dõi hoặc Bỏ theo dõi người dùng
+     */
+    public function toggleUserFollow(): void
+    {
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để theo dõi thành viên này.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $followingId = (int)($json['user_id'] ?? $_POST['user_id'] ?? $_GET['user_id'] ?? 0);
+        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+
+        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+            Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
+            return;
+        }
+
+        $followerId = (int)Auth::id();
+        if ($followingId <= 0 || $followingId === $followerId) {
+            Response::json(['success' => false, 'message' => 'Không thể tự theo dõi chính mình.'], 400);
+            return;
+        }
+
+        $followModel = new Follow();
+        $res = $followModel->toggleUserFollow($followerId, $followingId);
+
+        if ($res['following']) {
+            $user = Session::get('user');
+            Notification::send(
+                $followingId,
+                $followerId,
+                'follow_user',
+                $followerId,
+                ($user['username'] ?? 'Một thành viên') . ' đã bắt đầu theo dõi bạn!'
+            );
+        }
+
+        Response::json([
+            'success' => true,
+            'message' => $res['following'] ? 'Đã theo dõi thành viên.' : 'Đã hủy theo dõi.',
+            'data'    => [
+                'user_id'         => $followingId,
+                'following'       => $res['following'],
+                'followers_count' => $res['followers_count']
+            ]
+        ]);
+    }
+
+    /**
+     * POST /api/categories/{id}/follow hoặc /api/follows/category
+     * Theo dõi hoặc Bỏ theo dõi chuyên mục / chủ đề
+     */
+    public function toggleCategoryFollow(): void
+    {
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để theo dõi chuyên mục.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $categoryId = (int)($json['category_id'] ?? $_POST['category_id'] ?? $_GET['category_id'] ?? 0);
+        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+
+        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+            Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
+            return;
+        }
+
+        if ($categoryId <= 0) {
+            Response::json(['success' => false, 'message' => 'Chuyên mục không hợp lệ.'], 400);
+            return;
+        }
+
+        $userId = (int)Auth::id();
+        $followModel = new Follow();
+        $res = $followModel->toggleCategoryFollow($userId, $categoryId);
+
+        Response::json([
+            'success' => true,
+            'message' => $res['following'] ? 'Đã theo dõi chuyên mục này.' : 'Đã hủy theo dõi chuyên mục.',
+            'data'    => [
+                'category_id' => $categoryId,
+                'following'   => $res['following']
+            ]
+        ]);
+    }
+
+    /**
+     * GET /api/notifications
+     * Lấy danh sách thông báo và số lượng chưa đọc của user hiện tại
+     */
+    public function notifications(): void
+    {
+        if (!Auth::check()) {
+            Response::json(['success' => false, 'message' => 'Chưa đăng nhập.', 'data' => ['notifications' => [], 'unread_count' => 0]]);
+            return;
+        }
+
+        $userId = (int)Auth::id();
+        $notifModel = new Notification();
+        $list = $notifModel->getByUserId($userId, 15);
+        $unreadCount = $notifModel->getUnreadCount($userId);
+
+        Response::json([
+            'success' => true,
+            'data'    => [
+                'notifications' => $list,
+                'unread_count'  => $unreadCount
+            ]
+        ]);
+    }
+
+    /**
+     * POST /api/notifications/read
+     * Đánh dấu đã đọc một hoặc toàn bộ thông báo
+     */
+    public function readNotification(): void
+    {
+        if (!Auth::check()) {
+            Response::json(['success' => false, 'message' => 'Chưa đăng nhập.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $userId = (int)Auth::id();
+        $id = isset($json['id']) ? (int)$json['id'] : 0;
+        $notifModel = new Notification();
+
+        if ($id > 0) {
+            $notifModel->markAsRead($id, $userId);
+        } else {
+            $notifModel->markAllAsRead($userId);
+        }
+
+        $unreadCount = $notifModel->getUnreadCount($userId);
+        Response::json([
+            'success' => true,
+            'data'    => ['unread_count' => $unreadCount]
+        ]);
+    }
+
+    /**
+     * POST /api/reports
+     * Báo cáo vi phạm (report) cho bài viết, bình luận hoặc người dùng
+     */
+    public function report(): void
+    {
+        if (!Auth::check()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để gửi báo cáo vi phạm.'], 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $targetType = trim((string)($json['target_type'] ?? $_POST['target_type'] ?? 'post'));
+        $targetId = (int)($json['target_id'] ?? $_POST['target_id'] ?? 0);
+        $reason = trim((string)($json['reason'] ?? $_POST['reason'] ?? ''));
+        $details = trim((string)($json['details'] ?? $_POST['details'] ?? ''));
+        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+
+        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+            Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
+            return;
+        }
+
+        if (!in_array($targetType, ['post', 'comment', 'user'], true) || $targetId <= 0) {
+            Response::json(['success' => false, 'message' => 'Đối tượng báo cáo không hợp lệ.'], 400);
+            return;
+        }
+
+        if ($reason === '') {
+            Response::json(['success' => false, 'message' => 'Vui lòng chọn lý do báo cáo vi phạm.'], 400);
+            return;
+        }
+
+        $reporterId = (int)Auth::id();
+        $reportModel = new Report();
+        $reportId = $reportModel->create($reporterId, $targetType, $targetId, $reason, $details);
+
+        if ($reportId > 0) {
+            Response::json([
+                'success' => true,
+                'message' => 'Cảm ơn bạn đã gửi báo cáo. Ban điều hành (Moderator) sẽ xem xét và xử lý sớm nhất.'
+            ]);
+            return;
+        }
+
+        Response::json(['success' => false, 'message' => 'Không thể gửi báo cáo. Vui lòng thử lại sau.'], 500);
     }
 }
 
