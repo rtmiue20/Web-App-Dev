@@ -27,7 +27,7 @@ class PostController extends Controller {
     }
 
     /**
-     * Danh sách bài viết theo chuyên mục và phân trang (Tuần 4 - FR03 - Phúc)
+     * Danh sách bài viết theo chuyên mục, tìm kiếm nâng cao (Fulltext & Bộ lọc) và phân trang (Tuần 4 - Phúc)
      */
     public function index(): void {
         $categoryId = null;
@@ -47,32 +47,63 @@ class PostController extends Controller {
         }
 
         $limit = 6; // 6 bài viết mỗi trang cho người dùng
-
-        $totalPosts = $this->posts->countFiltered($categoryId, 'published');
-        $totalPages = 1;
-        if ($totalPosts > 0) {
-            $totalPages = (int)ceil($totalPosts / $limit);
-        }
-
-        if ($page > $totalPages) {
-            $page = $totalPages;
-        }
-
         $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
 
-        $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
+        // Bộ lọc nâng cao (Tìm kiếm full-text, loại hình, độ khó, vùng miền, tag)
+        $keyword = trim((string)($_GET['q'] ?? $_GET['keyword'] ?? ''));
+        $difficulty = trim((string)($_GET['difficulty'] ?? ''));
+        $region = trim((string)($_GET['region'] ?? ''));
+        $activityType = trim((string)($_GET['activity_type'] ?? ''));
+        $tagName = trim((string)($_GET['tag'] ?? ''));
+
+        $filters = [
+            'keyword'       => $keyword,
+            'category_id'   => $categoryId,
+            'difficulty'    => $difficulty,
+            'region'        => $region,
+            'activity_type' => $activityType,
+            'tag_name'      => $tagName,
+            'sort'          => $selectedSort,
+        ];
+
+        $hasAdvancedFilter = ($keyword !== '' || $difficulty !== '' || $region !== '' || $activityType !== '' || $tagName !== '');
+
+        if ($hasAdvancedFilter) {
+            $totalPosts = $this->posts->countAdvancedSearch($filters);
+            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $postsList = $this->posts->advancedSearch($filters, $page, $limit);
+        } else {
+            $totalPosts = $this->posts->countFiltered($categoryId, 'published');
+            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
+        }
+
         $categoriesList = $this->categories->getAll();
 
+        // Lấy danh sách tag phổ biến cho bộ lọc
+        $popularTags = [];
+        try {
+            $popularTags = Database::query("SELECT t.id, t.name, COUNT(pt.post_id) AS post_count FROM tags t JOIN post_tags pt ON pt.tag_id = t.id GROUP BY t.id, t.name ORDER BY post_count DESC LIMIT 12");
+        } catch (Exception $e) {}
+
         $this->render('posts/index', [
-            'title' => 'Bài viết dã ngoại',
-            'posts' => $postsList,
-            'categories' => $categoriesList,
+            'title'              => 'Bài viết dã ngoại',
+            'posts'              => $postsList,
+            'categories'         => $categoriesList,
+            'popularTags'        => $popularTags,
             'selectedCategoryId' => $categoryId,
-            'selectedSort' => $selectedSort,
-            'currentPage' => $page,
-            'totalPages' => $totalPages,
-            'totalPosts' => $totalPosts,
-            'limit' => $limit
+            'selectedSort'       => $selectedSort,
+            'filters'            => $filters,
+            'currentPage'        => $page,
+            'totalPages'         => $totalPages,
+            'totalPosts'         => $totalPosts,
+            'limit'              => $limit
         ]);
     }
 
@@ -199,6 +230,16 @@ class PostController extends Controller {
         // Khi Moderator hoặc Admin đăng thì được 'published' trực tiếp.
         $status = $canPublishDirectly ? 'published' : 'pending';
 
+        $tripData = [
+            'route'          => trim((string)($_POST['route'] ?? '')),
+            'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
+            'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
+            'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
+            'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
+            'region'         => trim((string)($_POST['region'] ?? '')),
+            'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
+        ];
+
         $postId = $this->posts->create(
             $userId, 
             $categoryId, 
@@ -208,7 +249,8 @@ class PostController extends Controller {
             $imageUrls, 
             $lat, 
             $lng,
-            $status
+            $status,
+            $tripData
         );
 
         if ($postId > 0) {
@@ -262,20 +304,34 @@ class PostController extends Controller {
             return;
         }
 
-        $commentsTree = $this->comments->getTreeByPostId($id);
+        $currentUserId = Auth::check() ? (int)Auth::id() : 0;
+        $commentsTree = $this->comments->getTreeByPostId($id, $currentUserId);
         $totalComments = $this->comments->countByPost($id);
         $canManage = $this->canManagePost($post);
         $tools = $this->products->getByPostId($id);
         $userVote = Auth::check() ? $this->posts->getUserVote($id, Auth::id()) : 0;
 
+        $bookmarkModel = new Bookmark();
+        $isBookmarked = $bookmarkModel->isBookmarked($currentUserId, $id);
+
+        $authorId = (int)($post['user_id'] ?? 0);
+        $followModel = new Follow();
+        $isFollowingAuthor = $followModel->isFollowingUser($currentUserId, $authorId);
+        $authorFollowersCount = $followModel->getFollowersCount($authorId);
+        $authorGamification = Gamification::calculate($authorId);
+
         $this->render('posts/show', [
-            'title'         => $post['title'],
-            'post'          => $post,
-            'tools'         => $tools,
-            'comments'      => $commentsTree,
-            'totalComments' => $totalComments,
-            'canManage'     => $canManage,
-            'userVote'      => $userVote
+            'title'                => $post['title'],
+            'post'                 => $post,
+            'tools'                => $tools,
+            'comments'             => $commentsTree,
+            'totalComments'        => $totalComments,
+            'canManage'            => $canManage,
+            'userVote'             => $userVote,
+            'isBookmarked'         => $isBookmarked,
+            'isFollowingAuthor'    => $isFollowingAuthor,
+            'authorFollowersCount' => $authorFollowersCount,
+            'authorGamification'   => $authorGamification,
         ]);
     }
 
@@ -431,6 +487,16 @@ class PostController extends Controller {
             return;
         }
 
+        $tripData = [
+            'route'          => trim((string)($_POST['route'] ?? '')),
+            'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
+            'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
+            'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
+            'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
+            'region'         => trim((string)($_POST['region'] ?? '')),
+            'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
+        ];
+
         $updated = $this->posts->update(
             $id,
             $categoryId,
@@ -439,7 +505,9 @@ class PostController extends Controller {
             $location ?: null,
             $imageUrls,
             $lat,
-            $lng
+            $lng,
+            null,
+            $tripData
         );
 
         if ($updated) {

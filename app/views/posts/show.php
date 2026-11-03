@@ -191,13 +191,12 @@ $galleryCount = count($galleryImages);
                      id="vote-widget-<?= (int)$post['id'] ?>"
                      style="background: rgba(34, 40, 31, 0.06); border-color: rgba(34, 40, 31, 0.2) !important;">
                     <button type="button"
-                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-up-btn <?= $currentVote === 1 ? 'active' : '' ?>"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center justify-content-center vote-up-btn <?= $currentVote === 1 ? 'active' : '' ?>"
                             data-post-id="<?= (int)$post['id'] ?>"
                             onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, 1, this)"
                             title="Upvote bài viết hữu ích (+1)"
                             style="<?= $currentVote === 1 ? 'background: #2f5e2e; color: #fff; font-weight: 600;' : 'color: #2f5e2e; font-weight: 600;' ?>">
                         <i class="bi bi-caret-up-fill"></i>
-                        <span class="d-none d-sm-inline small">Upvote</span>
                     </button>
 
                     <span class="fw-bold px-2 vote-score like-count"
@@ -208,7 +207,7 @@ $galleryCount = count($galleryImages);
                     </span>
 
                     <button type="button"
-                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center gap-1 vote-down-btn <?= $currentVote === -1 ? 'active' : '' ?>"
+                            class="btn btn-sm rounded-pill border-0 px-2 py-1 d-inline-flex align-items-center justify-content-center vote-down-btn <?= $currentVote === -1 ? 'active' : '' ?>"
                             data-post-id="<?= (int)$post['id'] ?>"
                             onclick="ForumAjax.votePost(<?= (int)$post['id'] ?>, -1, this)"
                             title="Downvote bài viết (-1)"
@@ -216,11 +215,31 @@ $galleryCount = count($galleryImages);
                         <i class="bi bi-caret-down-fill"></i>
                     </button>
                 </div>
-                <span class="small text-muted vote-breakdown"
+                <span class="small text-muted vote-breakdown me-2"
                       data-post-id="<?= (int)$post['id'] ?>"
                       title="Chi tiết lượt Upvote / Downvote">
                     (+<?= $upvotesCount ?> / -<?= $downvotesCount ?>)
                 </span>
+
+                <!-- Nút Lưu bài viết (Bookmark) qua AJAX -->
+                <button type="button"
+                        class="btn btn-sm rounded-pill border px-3 py-1 d-inline-flex align-items-center gap-1 bookmark-btn <?= !empty($isBookmarked) ? 'bookmarked text-danger' : 'text-dark' ?>"
+                        id="btnBookmarkPost"
+                        onclick="ForumAjax.toggleBookmark(<?= (int)$post['id'] ?>, this)"
+                        title="<?= !empty($isBookmarked) ? 'Bỏ lưu bài viết' : 'Lưu bài viết vào bộ sưu tập' ?>"
+                        style="background: rgba(34, 40, 31, 0.06); border-color: rgba(34, 40, 31, 0.2) !important;">
+                    <i class="bi <?= !empty($isBookmarked) ? 'bi-bookmark-heart-fill' : 'bi-bookmark-heart' ?>"></i>
+                    <span class="bookmark-text"><?= !empty($isBookmarked) ? 'Đã lưu' : 'Lưu bài' ?></span>
+                </button>
+
+                <!-- Nút Báo cáo vi phạm (Report) -->
+                <button type="button"
+                        class="btn btn-sm rounded-pill border px-2 py-1 text-muted"
+                        data-bs-toggle="modal"
+                        data-bs-target="#reportPostModal"
+                        title="Báo cáo bài viết vi phạm cho Moderator">
+                    <i class="bi bi-flag"></i>
+                </button>
             </span>
         </div>
 
@@ -228,8 +247,174 @@ $galleryCount = count($galleryImages);
             <?= nl2br(htmlspecialchars($post['content'] ?? '', ENT_QUOTES, 'UTF-8')) ?>
         </div>
 
+        <!-- ══════════════════════════════════════════════════════════
+             BÀI VIẾT DẠNG "CHUYẾN ĐI" (Trip Details Widget)
+        ══════════════════════════════════════════════════════════ -->
+        <?php
+        $hasTripInfo = !empty($post['route']) || !empty($post['trip_duration']) || !empty($post['estimated_cost']) || !empty($post['gear_needed']) || !empty($post['difficulty']) || !empty($post['region']) || !empty($post['activity_type']);
+        if ($hasTripInfo):
+            $diffLabels = [
+                'easy'    => ['label' => 'Dễ (Người mới)', 'badge' => 'text-bg-success', 'icon' => 'bi-emoji-smile'],
+                'medium'  => ['label' => 'Trung bình',     'badge' => 'text-bg-primary', 'icon' => 'bi-compass'],
+                'hard'    => ['label' => 'Khó (Dốc cao)',  'badge' => 'text-bg-warning text-dark', 'icon' => 'bi-exclamation-triangle'],
+                'extreme' => ['label' => 'Thử thách cao',  'badge' => 'text-bg-danger',  'icon' => 'bi-fire'],
+            ];
+            $dInfo = $diffLabels[$post['difficulty'] ?? 'medium'] ?? $diffLabels['medium'];
+        ?>
+            <div class="trip-details-card mt-4 p-4 rounded-4" style="background: rgba(155, 189, 85, 0.1); border: 1.5px solid rgba(155, 189, 85, 0.35);">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: var(--color-moss, #9bbd55); color: #1c2219;">
+                            <i class="bi bi-signpost-2-fill fs-5"></i>
+                        </span>
+                        <div>
+                            <h3 class="h5 fw-bold mb-0 text-dark">Hành trình chuyến đi (Trip Info)</h3>
+                            <span class="text-muted small" style="font-size: 11.5px;">Cẩm nang và thông số thực tế của chuyến đi này</span>
+                        </div>
+                    </div>
+
+                    <!-- Badges phân loại -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <?php if (!empty($post['activity_type'])): ?>
+                            <span class="badge rounded-pill text-bg-dark text-capitalize px-3 py-1" style="font-size: 11px;">
+                                <i class="bi bi-activity me-1"></i><?= htmlspecialchars($post['activity_type'], ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php if (!empty($post['region'])): ?>
+                            <span class="badge rounded-pill text-bg-info text-dark px-3 py-1" style="font-size: 11px;">
+                                <i class="bi bi-geo-alt-fill me-1"></i><?= htmlspecialchars($post['region'], ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        <?php endif; ?>
+                        <span class="badge rounded-pill <?= $dInfo['badge'] ?> px-3 py-1" style="font-size: 11px;">
+                            <i class="bi <?= $dInfo['icon'] ?> me-1"></i><?= $dInfo['label'] ?>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <?php if (!empty($post['route'])): ?>
+                        <div class="col-12 col-md-5">
+                            <div class="p-2.5 rounded-3 bg-white border">
+                                <span class="text-muted small d-block mb-1"><i class="bi bi-map-fill text-success me-1"></i>Cung đường:</span>
+                                <strong class="text-dark small"><?= htmlspecialchars($post['route'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($post['trip_duration'])): ?>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2.5 rounded-3 bg-white border">
+                                <span class="text-muted small d-block mb-1"><i class="bi bi-stopwatch text-primary me-1"></i>Thời gian:</span>
+                                <strong class="text-dark small"><?= htmlspecialchars($post['trip_duration'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($post['estimated_cost'])): ?>
+                        <div class="col-6 col-md-4">
+                            <div class="p-2.5 rounded-3 bg-white border">
+                                <span class="text-muted small d-block mb-1"><i class="bi bi-cash-stack text-warning me-1"></i>Chi phí dự tính:</span>
+                                <strong class="text-success small"><?= htmlspecialchars($post['estimated_cost'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($post['gear_needed'])): ?>
+                        <div class="col-12">
+                            <div class="p-3 rounded-3 bg-white border">
+                                <span class="text-muted small d-block mb-1"><i class="bi bi-backpack4-fill text-danger me-1"></i>Đồ cần mang (Checklist trang bị):</span>
+                                <p class="mb-0 text-dark small"><?= nl2br(htmlspecialchars($post['gear_needed'], ENT_QUOTES, 'UTF-8')) ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- ══════════════════════════════════════════════════════════
+             AUTHOR BIO & GAMIFICATION WIDGET
+        ══════════════════════════════════════════════════════════ -->
+        <?php 
+        $authorUser = (new User())->findById((int)$post['user_id']);
+        if ($authorUser):
+            $ag = $authorGamification ?? Gamification::calculate($authorUser->getId());
+            $authorAvatar = upload_url($authorUser->getAvatarPath());
+            $authorId = $authorUser->getId();
+        ?>
+            <div class="author-card-widget mt-4 p-3 rounded-4 border d-flex flex-wrap align-items-center justify-content-between gap-3" 
+                 style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.08) !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <?php if ($authorAvatar): ?>
+                        <img src="<?= htmlspecialchars($authorAvatar, ENT_QUOTES, 'UTF-8') ?>" 
+                             alt="Avatar" 
+                             class="rounded-circle object-fit-cover shadow-sm" 
+                             width="52" height="52">
+                    <?php else: ?>
+                        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                             style="width: 52px; height: 52px; background: #2d3328; color: #fff; font-size: 1.3rem; font-weight: 600;">
+                            <?= htmlspecialchars(mb_strtoupper(mb_substr($authorUser->getUsername(), 0, 1)), ENT_QUOTES, 'UTF-8') ?>
+                        </div>
+                    <?php endif; ?>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/users/<?= $authorId ?>" class="fw-bold text-dark text-decoration-none">
+                                <?= htmlspecialchars($authorUser->getUsername(), ENT_QUOTES, 'UTF-8') ?>
+                            </a>
+                            <!-- Huy hiệu gamification -->
+                            <span class="badge rounded-pill border" style="background: <?= htmlspecialchars($ag['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($ag['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 11px; color: <?= htmlspecialchars($ag['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
+                                <i class="bi <?= htmlspecialchars($ag['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?> me-1"></i><?= htmlspecialchars($ag['title'] ?? 'Tân thủ', ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        </div>
+                        <div class="text-muted small" style="font-size: 11.5px;">
+                            <span><i class="bi bi-star-fill text-warning me-1"></i><?= (int)($ag['points'] ?? 0) ?> điểm uy tín</span>
+                            <span class="mx-2">•</span>
+                            <span id="authorFollowersCount"><i class="bi bi-people me-1"></i><?= (int)($authorFollowersCount ?? 0) ?> người theo dõi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <?php if (Auth::check() && (int)Auth::id() !== $authorId): ?>
+                        <button type="button" 
+                                class="nature-btn-secondary px-3 py-1.5 text-dark border-dark-subtle follow-user-btn <?= !empty($isFollowingAuthor) ? 'following' : '' ?>"
+                                onclick="ForumAjax.toggleFollowUser(<?= $authorId ?>, this)"
+                                style="font-size: 12px; height: 36px;">
+                            <i class="bi <?= !empty($isFollowingAuthor) ? 'bi-check-lg text-success' : 'bi-person-plus-fill' ?> me-1"></i>
+                            <span class="follow-btn-text"><?= !empty($isFollowingAuthor) ? 'Đang theo dõi' : 'Theo dõi tác giả' ?></span>
+                        </button>
+                    <?php elseif (!Auth::check()): ?>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-secondary px-3 py-1.5 text-dark border-dark-subtle" style="font-size: 12px; height: 36px;">
+                            <i class="bi bi-person-plus-fill me-1"></i> Theo dõi
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- Dụng cụ & Trang thiết bị chuyến đi (Tools & Gear) -->
         <?php if (!empty($tools)): ?>
+            <style>
+                .tool-post-card { overflow: hidden; max-width: 100%; box-sizing: border-box; }
+                .tool-title-marquee { position: relative; width: 100%; max-width: 100%; overflow: hidden; white-space: nowrap; line-height: 1.35; }
+                .tool-title-marquee.has-overflow {
+                    mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                    -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                }
+                .tool-title-inner { display: inline-block; white-space: nowrap; }
+                .tool-title-marquee.has-overflow .tool-title-inner {
+                    will-change: transform;
+                    animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+                }
+                .tool-post-card:hover .tool-title-inner,
+                .tool-post-card:focus-within .tool-title-inner {
+                    animation-play-state: paused;
+                }
+                @keyframes toolTextMarquee {
+                    0%, 20% { transform: translateX(0); }
+                    68%, 82% { transform: translateX(var(--marquee-distance, -80px)); }
+                    94%, 100% { transform: translateX(0); }
+                }
+            </style>
             <div class="post-tools-section mt-5 pt-4 border-top" style="border-color: rgba(0,0,0,0.08) !important;">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
@@ -256,13 +441,14 @@ $galleryCount = count($galleryImages);
                         $toolLink = trim((string)($tool['link'] ?? ''));
                     ?>
                         <div class="col">
-                            <div class="p-3 rounded-4 border d-flex gap-3 align-items-center h-100" style="background: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08) !important; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                            <div class="tool-post-card p-3 rounded-4 border d-flex gap-3 align-items-center h-100 position-relative overflow-hidden" 
+                                 style="background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.08) !important; transition: transform 0.2s ease, box-shadow 0.2s ease; max-width: 100%;">
                                 <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
                                      alt="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>" 
                                      class="rounded-3 object-fit-cover flex-shrink-0" 
                                      style="width: 72px; height: 72px; border: 1px solid rgba(0,0,0,0.06);">
                                 
-                                <div class="flex-grow-1 min-w-0">
+                                <div class="flex-grow-1 min-w-0 overflow-hidden">
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <?php if (!empty($tool['category_name'])): ?>
                                             <span class="badge rounded-pill bg-light text-dark border text-uppercase" style="font-size: 10px; letter-spacing: 0.4px;">
@@ -274,12 +460,12 @@ $galleryCount = count($galleryImages);
                                         </span>
                                     </div>
 
-                                    <h4 class="h6 fw-semibold text-truncate mb-1" style="color: var(--color-ink);" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>
-                                    </h4>
+                                    <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <span class="tool-title-inner"><?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
 
                                     <div class="d-flex align-items-center justify-content-between gap-2">
-                                        <small class="text-muted text-truncate" style="font-size: 11.5px;">
+                                        <small class="text-muted text-truncate flex-grow-1 min-w-0" style="font-size: 11.5px;" title="<?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>">
                                             <?= htmlspecialchars($tool['description'] ?? 'Thiết bị dã ngoại', ENT_QUOTES, 'UTF-8') ?>
                                         </small>
                                         <?php if ($toolLink !== ''): ?>
@@ -287,7 +473,7 @@ $galleryCount = count($galleryImages);
                                                target="_blank" 
                                                rel="noopener noreferrer" 
                                                class="nature-btn-secondary px-2 py-1 text-dark border-dark-subtle flex-shrink-0"
-                                               style="font-size: 11px;"
+                                               style="font-size: 11px; white-space: nowrap;"
                                                title="Xem nơi mua hoặc thông số">
                                                 Nơi mua <i class="bi bi-box-arrow-up-right ms-1"></i>
                                             </a>
@@ -322,7 +508,7 @@ $galleryCount = count($galleryImages);
     <!-- Comments Section (Hỗ trợ Bình luận lồng nhau nhiều cấp - Multi-level Nested Replies) -->
     <?php $canComment = class_exists('Auth') ? Auth::isMember() : $isLoggedIn; ?>
     <section class="mt-5" aria-label="Bình luận">
-        <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <h2 class="h4 mb-0 text-white d-flex align-items-center gap-2">
                 <i class="bi bi-chat-left-text-fill" style="color: var(--color-moss);"></i>
                 <span>Bình luận & Thảo luận</span>
@@ -330,6 +516,12 @@ $galleryCount = count($galleryImages);
                     <?= (int)($totalComments ?? count($comments ?? [])) ?>
                 </span>
             </h2>
+            <span class="badge rounded-pill border fw-normal py-1 px-3 d-inline-flex align-items-center gap-1" 
+                  id="realtime-comment-status" 
+                  style="background: rgba(155, 189, 85, 0.12); color: #c4e482; border-color: rgba(155, 189, 85, 0.35) !important; font-size: 11px;">
+                <span class="spinner-grow spinner-grow-sm text-success" style="width: 7px; height: 7px;" role="status"></span>
+                Trực tiếp (Realtime)
+            </span>
         </div>
 
         <!-- Comment input form -->
@@ -397,6 +589,15 @@ $galleryCount = count($galleryImages);
                                 <span class="comment-time" style="color: rgba(255, 255, 255, 0.55);">
                                     <?= !empty($cm['created_at']) ? date('d/m/Y H:i', strtotime((string)$cm['created_at'])) : '' ?>
                                 </span>
+                                <button type="button"
+                                        class="btn btn-sm btn-link p-0 text-decoration-none small d-inline-flex align-items-center gap-1 comment-like-btn <?= !empty($cm['user_liked']) ? 'liked' : '' ?>"
+                                        data-comment-id="<?= $cmId ?>"
+                                        style="<?= !empty($cm['user_liked']) ? 'color: #ff6b81 !important;' : 'color: rgba(255,255,255,0.65) !important;' ?>"
+                                        onclick="if(window.ForumAjax) window.ForumAjax.likeComment(<?= $cmId ?>, this)"
+                                        title="Thích bình luận">
+                                    <i class="bi <?= !empty($cm['user_liked']) ? 'bi-heart-fill' : 'bi-heart' ?>"></i>
+                                    <span class="comment-likes-count"><?= !empty($cm['likes_count']) ? (int)$cm['likes_count'] : '' ?></span>
+                                </button>
                                 <?php if ($canComment && $cmId > 0): ?>
                                     <button type="button"
                                             class="btn btn-sm btn-link p-0 text-decoration-none small fw-medium"
@@ -712,6 +913,55 @@ $galleryCount = count($galleryImages);
 <!-- ══════════════════════════════════════════════════════════════════
      CAROUSEL + LIGHTBOX JAVASCRIPT
 ══════════════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════
+     MODAL BÁO CÁO VI PHẠM (REPORT MODAL)
+══════════════════════════════════════════ -->
+<div class="modal fade" id="reportPostModal" tabindex="-1" aria-labelledby="reportPostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4" style="background: #252b21; color: #f1f1ec; border: 1px solid rgba(255, 255, 255, 0.1) !important;">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+                <h5 class="modal-title d-flex align-items-center gap-2 fs-6 fw-bold text-white" id="reportPostModalLabel">
+                    <i class="bi bi-shield-exclamation text-danger"></i> Báo cáo bài viết vi phạm
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form id="reportPostForm" onsubmit="event.preventDefault(); ForumAjax.submitReport(this, <?= (int)$post['id'] ?>, 'post');">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                <div class="modal-body py-3">
+                    <p class="small text-white-50 mb-3">
+                        Báo cáo của bạn sẽ được gửi trực tiếp đến hàng chờ kiểm duyệt của Ban điều hành (Moderator / Admin) để xử lý.
+                    </p>
+                    <div class="mb-3">
+                        <label for="reportReason" class="form-label small fw-semibold text-white">Lý do vi phạm *</label>
+                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="reportReason" name="reason" required>
+                            <option value="">-- Chọn lý do --</option>
+                            <option value="Spam / Quảng cáo trái phép">Spam / Quảng cáo rác</option>
+                            <option value="Ngôn từ xúc phạm, thù địch">Ngôn từ xúc phạm, thiếu văn hóa</option>
+                            <option value="Thông tin sai lệch hoặc nguy hiểm">Thông tin địa điểm sai lệch / nguy hiểm</option>
+                            <option value="Nội dung vi phạm pháp luật / thuần phong mỹ tục">Vi phạm pháp luật / thuần phong mỹ tục</option>
+                            <option value="Lý do khác">Lý do khác</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="reportDetails" class="form-label small fw-semibold text-white">Mô tả chi tiết (tùy chọn)</label>
+                        <textarea class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3" 
+                                  id="reportDetails" 
+                                  name="details" 
+                                  rows="3" 
+                                  placeholder="Cung cấp thêm ngữ cảnh hoặc chi tiết vi phạm..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-25 pt-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 text-white-50" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4" id="btnSubmitReport">
+                        <i class="bi bi-send-fill me-1"></i> Gửi báo cáo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     'use strict';
@@ -746,7 +996,11 @@ $galleryCount = count($galleryImages);
         // Animate out current
         slides[current].classList.remove('active');
         slides[current].classList.add(outClass);
-        setTimeout(() => slides[current]?.classList.remove(outClass), 450);
+        setTimeout(function() {
+            if (slides[current]) {
+                slides[current].classList.remove(outClass);
+            }
+        }, 450);
 
         current = (next + TOTAL) % TOTAL;
 
@@ -754,7 +1008,9 @@ $galleryCount = count($galleryImages);
         slides[current].classList.add('active');
 
         // Update dots + counter
-        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        dots.forEach(function(d, i) {
+            d.classList.toggle('active', i === current);
+        });
         if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
     }
 
@@ -809,7 +1065,9 @@ $galleryCount = count($galleryImages);
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
             // Sync carousel
-            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            dots.forEach(function(d, i) {
+                d.classList.toggle('active', i === current);
+            });
             if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
         },
 
@@ -817,7 +1075,9 @@ $galleryCount = count($galleryImages);
             current = (current + 1) % TOTAL;
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
-            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+            dots.forEach(function(d, i) {
+                d.classList.toggle('active', i === current);
+            });
             if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
         },
 
@@ -844,7 +1104,7 @@ $galleryCount = count($galleryImages);
     function startTimer() {
         stopTimer();
         if (TOTAL <= 1) return;
-        timer = setInterval(() => {
+        timer = setInterval(function() {
             goToSlide(current + 1, 'left');
         }, AUTO_MS);
     }
@@ -856,7 +1116,9 @@ $galleryCount = count($galleryImages);
     // ── Pause on hover ────────────────────────────────────────────
     if (viewport) {
         viewport.addEventListener('mouseenter', stopTimer);
-        viewport.addEventListener('mouseleave', () => { if (playing) startTimer(); });
+        viewport.addEventListener('mouseleave', function() {
+            if (playing) startTimer();
+        });
     }
 
     // ── Keyboard navigation ───────────────────────────────────────
@@ -881,7 +1143,7 @@ function submitComment() {
     if (!input || !input.value.trim()) return;
 
     const list = document.getElementById('comments-list');
-    ForumAjax.postComment(<?= (int)$post['id'] ?>, input.value, list).then(success => {
+    ForumAjax.postComment(<?= (int)$post['id'] ?>, input.value, list).then(function(success) {
         if (success) {
             input.value = '';
             const noMsg = document.getElementById('no-comments-msg');
@@ -890,8 +1152,14 @@ function submitComment() {
     });
 }
 
-// ── Weather ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── Weather & Tool Marquee & Realtime Comments ───────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.initToolMarquees) {
+        window.initToolMarquees();
+    }
+    if (window.ForumAjax) {
+        window.ForumAjax.startCommentPolling(<?= (int)$post['id'] ?>);
+    }
     const weatherElem = document.getElementById('weather-info');
     if (weatherElem) {
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>

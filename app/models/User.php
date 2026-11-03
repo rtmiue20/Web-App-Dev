@@ -138,6 +138,44 @@ class User extends Model
     }
 
     /**
+     * Kiểm tra username đã tồn tại chưa (phục vụ AJAX kiểm tra ngay khi đăng ký)
+     */
+    public function existsByUsername(string $username): bool
+    {
+        try {
+            $rows = Database::call('sp_user_exists', ['', trim($username)]);
+            return !empty($rows) && (int)($rows[0]['is_exists'] ?? 0) === 1;
+        } catch (PDOException $e) {
+            try {
+                $sql = 'SELECT 1 FROM users WHERE username = :username LIMIT 1';
+                $rows = Database::query($sql, ['username' => trim($username)]);
+                return !empty($rows);
+            } catch (PDOException $ex) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra email đã tồn tại chưa (phục vụ AJAX kiểm tra ngay khi đăng ký)
+     */
+    public function existsByEmail(string $email): bool
+    {
+        try {
+            $rows = Database::call('sp_user_exists', [trim($email), '']);
+            return !empty($rows) && (int)($rows[0]['is_exists'] ?? 0) === 1;
+        } catch (PDOException $e) {
+            try {
+                $sql = 'SELECT 1 FROM users WHERE email = :email LIMIT 1';
+                $rows = Database::query($sql, ['email' => trim($email)]);
+                return !empty($rows);
+            } catch (PDOException $ex) {
+                return false;
+            }
+        }
+    }
+
+    /**
      * Tạo tài khoản người dùng mới (gọi routine sp_user_register)
      */
     public function create(): int

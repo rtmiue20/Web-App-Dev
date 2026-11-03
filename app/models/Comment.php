@@ -38,22 +38,30 @@ class Comment extends Model {
     public function setUsername(?string $username): void { $this->username = $username; }
 
     /**
-     * Lấy danh sách bình luận phẳng theo ID bài viết (có đầy đủ parent_id và role_name)
+     * Lấy danh sách bình luận phẳng theo ID bài viết (có đầy đủ parent_id, role_name và lượt thích)
      */
-    public function getByPostId(int $postId): array {
+    public function getByPostId(int $postId, int $currentUserId = 0): array {
         try {
             $sql = "SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
-                           u.username, r.name AS role_name
+                           u.username, r.name AS role_name,
+                           (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) AS likes_count,
+                           (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.user_id = :current_user_id) AS user_liked
                     FROM comments c
                     JOIN users u ON c.user_id = u.id
                     LEFT JOIN roles r ON r.id = u.role_id
                     WHERE c.post_id = :post_id
                     ORDER BY c.created_at ASC, c.id ASC";
-            return Database::query($sql, ['post_id' => $postId]);
+            return Database::query($sql, ['post_id' => $postId, 'current_user_id' => $currentUserId]);
         } catch (PDOException $e) {
             error_log('Notice: getByPostId fallback query: ' . $e->getMessage());
             try {
-                return Database::call('sp_comment_list', [$postId]);
+                $rows = Database::call('sp_comment_list', [$postId]);
+                foreach ($rows as &$r) {
+                    $r['likes_count'] = 0;
+                    $r['user_liked'] = 0;
+                }
+                unset($r);
+                return $rows;
             } catch (PDOException $ex) {
                 error_log('Error getting comments: ' . $ex->getMessage());
                 return [];
@@ -62,11 +70,40 @@ class Comment extends Model {
     }
 
     /**
+     * Thích hoặc bỏ thích một bình luận (AJAX không reload trang)
+     */
+    public function toggleLike(int $commentId, int $userId): array {
+        if ($commentId <= 0 || $userId <= 0) {
+            return ['liked' => false, 'likes_count' => 0];
+        }
+        try {
+            $checkSql = "SELECT 1 FROM comment_likes WHERE comment_id = :cid AND user_id = :uid";
+            $exists = Database::query($checkSql, ['cid' => $commentId, 'uid' => $userId]);
+            if (!empty($exists)) {
+                $delSql = "DELETE FROM comment_likes WHERE comment_id = :cid AND user_id = :uid";
+                Database::query($delSql, ['cid' => $commentId, 'uid' => $userId]);
+                $liked = false;
+            } else {
+                $insSql = "INSERT IGNORE INTO comment_likes (comment_id, user_id, created_at) VALUES (:cid, :uid, NOW())";
+                Database::query($insSql, ['cid' => $commentId, 'uid' => $userId]);
+                $liked = true;
+            }
+            $countSql = "SELECT COUNT(*) AS total FROM comment_likes WHERE comment_id = :cid";
+            $res = Database::query($countSql, ['cid' => $commentId]);
+            $count = (int)($res[0]['total'] ?? 0);
+            return ['liked' => $liked, 'likes_count' => $count];
+        } catch (PDOException $e) {
+            error_log('Error toggling comment like: ' . $e->getMessage());
+            return ['liked' => false, 'likes_count' => 0];
+        }
+    }
+
+    /**
      * Xây dựng cấu trúc cây bình luận lồng nhau nhiều cấp (Recursive Tree) cho bài viết
      * Bình luận gốc (parent_id = NULL) xếp mới nhất lên trên, các câu trả lời con xếp theo thứ tự thời gian.
      */
-    public function getTreeByPostId(int $postId): array {
-        $rows = $this->getByPostId($postId);
+    public function getTreeByPostId(int $postId, int $currentUserId = 0): array {
+        $rows = $this->getByPostId($postId, $currentUserId);
         if (empty($rows)) {
             return [];
         }

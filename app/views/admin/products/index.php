@@ -152,7 +152,7 @@ document.getElementById('productSearchInput')?.addEventListener('input', functio
     const q = this.value.toLowerCase().trim();
     const rows = document.querySelectorAll('#productsTable .product-row');
     let visible = 0;
-    rows.forEach(row => {
+    rows.forEach(function(row) {
         const name = (row.querySelector('.product-name')?.textContent || '').toLowerCase();
         const match = !q || name.includes(q);
         row.style.display = match ? '' : 'none';
