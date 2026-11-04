@@ -10,15 +10,13 @@ class Session
         if (session_status() === PHP_SESSION_NONE) {
             if (!headers_sent()) {
                 $savePath = session_save_path();
-                if ($savePath === '' || !is_dir($savePath) || !is_writable($savePath)) {
+                if (PHP_SAPI === 'cli' || $savePath === '' || !is_dir($savePath) || !is_writable($savePath)) {
                     $fallbackDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'sessions';
                     if (!is_dir($fallbackDir)) {
                         @mkdir($fallbackDir, 0755, true);
                     }
-                    if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
+                    if (is_dir($fallbackDir)) {
                         session_save_path($fallbackDir);
-                    } elseif (is_writable(sys_get_temp_dir())) {
-                        session_save_path(sys_get_temp_dir());
                     }
                 }
 

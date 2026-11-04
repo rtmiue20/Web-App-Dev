@@ -484,6 +484,12 @@ class ApiController extends Controller
             $json = [];
         }
 
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
+        }
+
         $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
         if ($postId <= 0) {
             Response::json(['success' => false, 'message' => 'Bài viết không hợp lệ.'], 400);
@@ -533,13 +539,13 @@ class ApiController extends Controller
             $json = [];
         }
 
-        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
-        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
-
-        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
             Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
             return;
         }
+
+        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
 
         if ($postId <= 0) {
             Response::json(['success' => false, 'message' => 'Bài viết không hợp lệ.'], 400);
@@ -677,6 +683,12 @@ class ApiController extends Controller
         $list = $notifModel->getByUserId($userId, 15);
         $unreadCount = $notifModel->getUnreadCount($userId);
 
+        foreach ($list as &$n) {
+            $n['content'] = htmlspecialchars((string)($n['content'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $n['actor_username'] = htmlspecialchars((string)($n['actor_username'] ?? ''), ENT_QUOTES, 'UTF-8');
+        }
+        unset($n);
+
         Response::json([
             'success' => true,
             'data'    => [
@@ -701,6 +713,12 @@ class ApiController extends Controller
         $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
         if (!is_array($json)) {
             $json = [];
+        }
+
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
         }
 
         $userId = (int)Auth::id();

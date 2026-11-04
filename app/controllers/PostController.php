@@ -544,6 +544,12 @@ class PostController extends Controller {
             $json = [];
         }
 
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
+        }
+
         $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;
         $voteType = ((int)$voteRaw < 0) ? -1 : 1;
 

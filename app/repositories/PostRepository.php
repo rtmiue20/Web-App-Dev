@@ -87,17 +87,17 @@ class PostRepository extends BaseRepository
     public function findPopularTags(int $limit = 12): array
     {
         try {
-            return $this->query(
-                sprintf(
-                    'SELECT t.id, t.name, COUNT(pt.post_id) AS post_count
-                     FROM tags t
-                     JOIN post_tags pt ON pt.tag_id = t.id
-                     GROUP BY t.id, t.name
-                     ORDER BY post_count DESC
-                     LIMIT %d',
-                    max(1, $limit)
-                )
+            $stmt = $this->db->prepare(
+                'SELECT t.id, t.name, COUNT(pt.post_id) AS post_count
+                 FROM tags t
+                 JOIN post_tags pt ON pt.tag_id = t.id
+                 GROUP BY t.id, t.name
+                 ORDER BY post_count DESC
+                 LIMIT :limit'
             );
+            $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll();
         } catch (PDOException $e) {
             return [];
         }

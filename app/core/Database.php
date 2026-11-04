@@ -52,6 +52,12 @@ class Database
         return self::$connection;
     }
 
+    /** Alias chuẩn Singleton tương thích tài liệu kiến trúc OOP/MVC. */
+    public static function getInstance(): PDO
+    {
+        return self::getConnection();
+    }
+
     /** SELECT / câu lệnh có tham số, trả về nhiều dòng. */
     public static function query(string $sql, array $params = []): array
     {
