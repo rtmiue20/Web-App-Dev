@@ -50,6 +50,7 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
                         <?= json_encode((string) $trip['lat']) ?>,
                         <?= json_encode((string) $trip['lng']) ?>,
                         document.getElementById('trip-weather-info'),
+                        null,
                         document.getElementById('trip-weather-warning'),
                         <?= json_encode(date('Y-m-d', strtotime($trip['starts_at']))) ?>
                     );

@@ -4,8 +4,10 @@ require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Comment.php';
 require_once __DIR__ . '/../models/PlaceReview.php';
+require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../helpers/Auth.php';
 
 /**
  * Controller PostController - Quản lý chức năng bài viết (Tuần 2 & Tuần 3 - Phúc)
@@ -16,26 +18,93 @@ class PostController extends Controller {
     private Post $posts;
     private Category $categories;
     private Comment $comments;
+    private Product $products;
 
     public function __construct() {
         $this->posts = new Post();
         $this->categories = new Category();
         $this->comments = new Comment();
+        $this->products = new Product();
     }
 
     /**
-     * Danh sách bài viết
+     * Danh sách bài viết theo chuyên mục, tìm kiếm nâng cao (Fulltext & Bộ lọc) và phân trang (Tuần 4 - Phúc)
      */
     public function index(): void {
-        $categoryId = isset($_GET['category']) ? (int)$_GET['category'] : null;
-        $postsList = $this->posts->getAll($categoryId);
+        $categoryId = null;
+        if (isset($_GET['category']) && $_GET['category'] !== '') {
+            $categoryId = (int)$_GET['category'];
+            if ($categoryId <= 0) {
+                $categoryId = null;
+            }
+        }
+
+        $page = 1;
+        if (isset($_GET['page'])) {
+            $page = (int)$_GET['page'];
+            if ($page < 1) {
+                $page = 1;
+            }
+        }
+
+        $limit = 6; // 6 bài viết mỗi trang cho người dùng
+        $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
+
+        // Bộ lọc nâng cao (Tìm kiếm full-text, loại hình, độ khó, vùng miền, tag)
+        $keyword = trim((string)($_GET['q'] ?? $_GET['keyword'] ?? ''));
+        $difficulty = trim((string)($_GET['difficulty'] ?? ''));
+        $region = trim((string)($_GET['region'] ?? ''));
+        $activityType = trim((string)($_GET['activity_type'] ?? ''));
+        $tagName = trim((string)($_GET['tag'] ?? ''));
+
+        $filters = [
+            'keyword'       => $keyword,
+            'category_id'   => $categoryId,
+            'difficulty'    => $difficulty,
+            'region'        => $region,
+            'activity_type' => $activityType,
+            'tag_name'      => $tagName,
+            'sort'          => $selectedSort,
+        ];
+
+        $hasAdvancedFilter = ($keyword !== '' || $difficulty !== '' || $region !== '' || $activityType !== '' || $tagName !== '');
+
+        if ($hasAdvancedFilter) {
+            $totalPosts = $this->posts->countAdvancedSearch($filters);
+            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $postsList = $this->posts->advancedSearch($filters, $page, $limit);
+        } else {
+            $totalPosts = $this->posts->countFiltered($categoryId, 'published');
+            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
+        }
+
         $categoriesList = $this->categories->getAll();
 
+        // Lấy danh sách tag phổ biến cho bộ lọc
+        $popularTags = [];
+        try {
+            $popularTags = Database::query("SELECT t.id, t.name, COUNT(pt.post_id) AS post_count FROM tags t JOIN post_tags pt ON pt.tag_id = t.id GROUP BY t.id, t.name ORDER BY post_count DESC LIMIT 12");
+        } catch (Exception $e) {}
+
         $this->render('posts/index', [
-            'title' => 'Bài viết dã ngoại',
-            'posts' => $postsList,
-            'categories' => $categoriesList,
-            'selectedCategoryId' => $categoryId
+            'title'              => 'Bài viết dã ngoại',
+            'posts'              => $postsList,
+            'categories'         => $categoriesList,
+            'popularTags'        => $popularTags,
+            'selectedCategoryId' => $categoryId,
+            'selectedSort'       => $selectedSort,
+            'filters'            => $filters,
+            'currentPage'        => $page,
+            'totalPages'         => $totalPages,
+            'totalPosts'         => $totalPosts,
+            'limit'              => $limit
         ]);
     }
 
@@ -50,9 +119,12 @@ class PostController extends Controller {
         }
 
         $categoriesList = $this->categories->getAll();
+        $allProducts = $this->products->getAll();
         $this->render('posts/create', [
             'title' => 'Viết bài chia sẻ',
             'categories' => $categoriesList,
+            'products' => $allProducts,
+            'selectedProductIds' => [],
             'errors' => [],
             'old' => []
         ]);
@@ -68,12 +140,26 @@ class PostController extends Controller {
             return;
         }
 
+        // Lấy danh sách dụng cụ đã chọn (nếu có, không dùng lambda)
+        $selectedProductIds = [];
+        if (!empty($_POST['product_ids']) && is_array($_POST['product_ids'])) {
+            foreach ($_POST['product_ids'] as $pId) {
+                $cleanId = (int)$pId;
+                if ($cleanId > 0) {
+                    $selectedProductIds[] = $cleanId;
+                }
+            }
+        }
+
         if (!$this->verifyCsrfToken()) {
             http_response_code(419);
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/create', [
                 'title' => 'Viết bài chia sẻ',
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
@@ -104,10 +190,20 @@ class PostController extends Controller {
             $errors['lng'] = 'Kinh độ (Lng) phải nằm trong khoảng -180 đến 180.';
         }
 
-        $imageUrl = null;
+        $imageUrls = [];
+        if (!empty($_FILES['images']['name'])) {
+            try {
+                $imageUrls = Upload::multipleImages($_FILES['images'], 'posts');
+            } catch (Exception $e) {
+                $errors['images'] = $e->getMessage();
+            }
+        }
         if (!empty($_FILES['image']['name'])) {
             try {
-                $imageUrl = Upload::image($_FILES['image'], 'posts');
+                $singleImg = Upload::image($_FILES['image'], 'posts');
+                if (!empty($singleImg)) {
+                    $imageUrls[] = $singleImg;
+                }
             } catch (Exception $e) {
                 $errors['image'] = $e->getMessage();
             }
@@ -115,9 +211,12 @@ class PostController extends Controller {
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/create', [
                 'title' => 'Viết bài chia sẻ',
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => $errors,
                 'old' => $_POST
             ]);
@@ -126,6 +225,21 @@ class PostController extends Controller {
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 1);
+        $canPublishDirectly = Auth::canPublishDirectly($user);
+
+        // Khi member post bài, trạng thái chuyển về 'pending' (Chờ duyệt).
+        // Khi Moderator hoặc Admin đăng thì được 'published' trực tiếp.
+        $status = $canPublishDirectly ? 'published' : 'pending';
+
+        $tripData = [
+            'route'          => trim((string)($_POST['route'] ?? '')),
+            'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
+            'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
+            'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
+            'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
+            'region'         => trim((string)($_POST['region'] ?? '')),
+            'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
+        ];
 
         $postId = $this->posts->create(
             $userId, 
@@ -133,19 +247,42 @@ class PostController extends Controller {
             $title, 
             $content, 
             $location ?: null, 
-            $imageUrl, 
+            $imageUrls, 
             $lat, 
-            $lng
+            $lng,
+            $status,
+            $tripData
         );
 
         if ($postId > 0) {
-            Session::flash('success', 'Đăng bài viết thành công!');
+            // Xử lý các dụng cụ tự nhập (custom tools) kèm link mua (Shopee, Lazada, ...), giá, ảnh
+            $customToolIds = $this->processCustomTools($categoryId > 0 ? $categoryId : null);
+            if (!empty($customToolIds)) {
+                foreach ($customToolIds as $cId) {
+                    $selectedProductIds[] = $cId;
+                }
+            }
+            $selectedProductIds = array_values(array_unique($selectedProductIds));
+
+            // Lưu liên kết dụng cụ của chuyến đi vào bảng post_products
+            if (!empty($selectedProductIds)) {
+                $this->products->syncPostProducts($postId, $selectedProductIds);
+            }
+
+            if ($status === 'pending') {
+                Session::flash('success', 'Đăng bài viết thành công! Bài viết của bạn đang ở trạng thái Chờ duyệt (Pending) và sẽ được hiển thị công khai sau khi Quản trị viên phê duyệt.');
+            } else {
+                Session::flash('success', 'Đăng bài viết thành công!');
+            }
             $this->redirect('/posts/' . $postId);
         } else {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/create', [
                 'title' => 'Viết bài chia sẻ',
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Không thể lưu bài viết. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
@@ -163,17 +300,50 @@ class PostController extends Controller {
             return;
         }
 
-        $commentsList = $this->comments->getByPostId($id);
-        $placeReviews = new PlaceReview();
         $canManage = $this->canManagePost($post);
+        $postStatus = $post['status'] ?? 'published';
+
+        // Nếu bài viết chưa duyệt (pending), bị từ chối (rejected), hoặc bị ẩn (hidden)
+        // Chỉ tác giả bài viết hoặc Admin mới có quyền xem trước
+        if ($postStatus !== 'published' && !$canManage) {
+            http_response_code(404);
+            $this->render('errors/404', [
+                'title' => 'Bài viết chưa được xuất bản',
+                'message' => 'Bài viết này đang chờ duyệt hoặc tạm thời không khả dụng.'
+            ]);
+            return;
+        }
+
+        $currentUserId = Auth::check() ? (int)Auth::id() : 0;
+        $commentsTree = $this->comments->getTreeByPostId($id, $currentUserId);
+        $totalComments = $this->comments->countByPost($id);
+        $tools = $this->products->getByPostId($id);
+        $userVote = Auth::check() ? $this->posts->getUserVote($id, Auth::id()) : 0;
+
+        $bookmarkModel = new Bookmark();
+        $isBookmarked = $bookmarkModel->isBookmarked($currentUserId, $id);
+
+        $authorId = (int)($post['user_id'] ?? 0);
+        $followModel = new Follow();
+        $isFollowingAuthor = $followModel->isFollowingUser($currentUserId, $authorId);
+        $authorFollowersCount = $followModel->getFollowersCount($authorId);
+        $authorGamification = Gamification::calculate($authorId);
+        $placeReviews = new PlaceReview();
 
         $this->render('posts/show', [
-            'title' => $post['title'],
-            'post' => $post,
-            'comments' => $commentsList,
+            'title'                => $post['title'],
+            'post'                 => $post,
             'placeReviews' => $placeReviews->getByPost($id),
             'placeRating' => $placeReviews->getSummary($id),
-            'canManage' => $canManage
+            'tools'                => $tools,
+            'comments'             => $commentsTree,
+            'totalComments'        => $totalComments,
+            'canManage'            => $canManage,
+            'userVote'             => $userVote,
+            'isBookmarked'         => $isBookmarked,
+            'isFollowingAuthor'    => $isFollowingAuthor,
+            'authorFollowersCount' => $authorFollowersCount,
+            'authorGamification'   => $authorGamification,
         ]);
     }
 
@@ -202,10 +372,21 @@ class PostController extends Controller {
         }
 
         $categoriesList = $this->categories->getAll();
+        $allProducts = $this->products->getAll();
+        $tools = $this->products->getByPostId($id);
+
+        $selectedProductIds = [];
+        foreach ($tools as $tool) {
+            $selectedProductIds[] = (int)($tool['id'] ?? 0);
+        }
+
         $this->render('posts/edit', [
             'title' => 'Chỉnh sửa bài viết',
             'post' => $post,
             'categories' => $categoriesList,
+            'products' => $allProducts,
+            'selectedProductIds' => $selectedProductIds,
+            'tools' => $tools,
             'errors' => [],
             'old' => $post
         ]);
@@ -234,13 +415,27 @@ class PostController extends Controller {
             return;
         }
 
+        // Lấy danh sách dụng cụ đã chọn từ form (không dùng lambda)
+        $selectedProductIds = [];
+        if (!empty($_POST['product_ids']) && is_array($_POST['product_ids'])) {
+            foreach ($_POST['product_ids'] as $pId) {
+                $cleanId = (int)$pId;
+                if ($cleanId > 0) {
+                    $selectedProductIds[] = $cleanId;
+                }
+            }
+        }
+
         if (!$this->verifyCsrfToken()) {
             http_response_code(419);
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/edit', [
                 'title' => 'Chỉnh sửa bài viết',
                 'post' => $post,
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
@@ -271,10 +466,20 @@ class PostController extends Controller {
             $errors['lng'] = 'Kinh độ (Lng) phải nằm trong khoảng -180 đến 180.';
         }
 
-        $imageUrl = null;
+        $imageUrls = [];
+        if (!empty($_FILES['images']['name'])) {
+            try {
+                $imageUrls = Upload::multipleImages($_FILES['images'], 'posts');
+            } catch (Exception $e) {
+                $errors['images'] = $e->getMessage();
+            }
+        }
         if (!empty($_FILES['image']['name'])) {
             try {
-                $imageUrl = Upload::image($_FILES['image'], 'posts');
+                $singleImg = Upload::image($_FILES['image'], 'posts');
+                if (!empty($singleImg)) {
+                    $imageUrls[] = $singleImg;
+                }
             } catch (Exception $e) {
                 $errors['image'] = $e->getMessage();
             }
@@ -282,15 +487,28 @@ class PostController extends Controller {
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/edit', [
                 'title' => 'Chỉnh sửa bài viết',
                 'post' => $post,
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => $errors,
                 'old' => array_merge($post, $_POST)
             ]);
             return;
         }
+
+        $tripData = [
+            'route'          => trim((string)($_POST['route'] ?? '')),
+            'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
+            'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
+            'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
+            'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
+            'region'         => trim((string)($_POST['region'] ?? '')),
+            'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
+        ];
 
         $updated = $this->posts->update(
             $id,
@@ -298,25 +516,46 @@ class PostController extends Controller {
             $title,
             $content,
             $location ?: null,
-            $imageUrl,
+            $imageUrls,
             $lat,
-            $lng
+            $lng,
+            null,
+            $tripData
         );
 
         if ($updated) {
+            // Cập nhật thông tin các dụng cụ hiện có (nếu tác giả sửa đổi trực tiếp)
+            $this->processUpdateExistingTools();
+
+            // Xử lý các dụng cụ tự nhập mới (custom tools) kèm link mua, giá, ảnh
+            $customToolIds = $this->processCustomTools($categoryId > 0 ? $categoryId : null);
+            if (!empty($customToolIds)) {
+                foreach ($customToolIds as $cId) {
+                    $selectedProductIds[] = $cId;
+                }
+            }
+            $selectedProductIds = array_values(array_unique($selectedProductIds));
+
+            // Cập nhật danh sách dụng cụ của bài viết trong post_products
+            $this->products->syncPostProducts($id, $selectedProductIds);
+
             Session::flash('success', 'Cập nhật bài viết thành công!');
             $this->redirect('/posts/' . $id);
         } else {
             $categoriesList = $this->categories->getAll();
+            $allProducts = $this->products->getAll();
             $this->render('posts/edit', [
                 'title' => 'Chỉnh sửa bài viết',
                 'post' => $post,
                 'categories' => $categoriesList,
+                'products' => $allProducts,
+                'selectedProductIds' => $selectedProductIds,
                 'errors' => ['form' => 'Không thể lưu thay đổi. Vui lòng thử lại.'],
                 'old' => $_POST
             ]);
         }
     }
+
 
     /**
      * Xử lý xóa bài viết (Tuần 3 - Phúc)
@@ -359,43 +598,192 @@ class PostController extends Controller {
     }
 
     /**
-     * Thích bài viết qua AJAX
+     * Upvote (+1) / Downvote (-1) bài viết qua AJAX
      */
     public function like(int $id): void {
-        header('Content-Type: application/json; charset=utf-8');
-
-        if (!Session::has('user')) {
-            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bài viết.']);
-            exit;
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            return;
         }
+
+        $rawInput = file_get_contents('php://input');
+        $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;
+        $voteType = ((int)$voteRaw < 0) ? -1 : 1;
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
-        $newLikes = $this->posts->toggleLike($id, $userId);
+        $voteData = $this->posts->vote($id, $userId, $voteType);
 
-        echo json_encode([
+        Response::json([
             'success' => true,
-            'data' => [
-                'likes' => $newLikes,
-                'liked' => true
-            ]
+            'data'    => $voteData
         ]);
-        exit;
     }
 
     /**
-     * Kiểm tra quyền quản lý bài viết (Chỉ tác giả hoặc admin)
+     * Xử lý các dụng cụ tự nhập (custom tools) từ form đăng bài / sửa bài
+     * Lưu vào CSDL bảng products với link mua (Shopee, Lazada...), giá, hình ảnh và mô tả
+     * @param int|null $categoryId Chuyên mục của bài viết
+     * @return array Danh sách ID các sản phẩm vừa tạo
+     */
+    private function processCustomTools(?int $categoryId): array
+    {
+        $createdIds = [];
+        $names = $_POST['custom_tool_name'] ?? [];
+        if (!is_array($names)) {
+            return $createdIds;
+        }
+
+        $prices = $_POST['custom_tool_price'] ?? [];
+        $links = $_POST['custom_tool_link'] ?? [];
+        $descs = $_POST['custom_tool_desc'] ?? [];
+        $imageUrls = $_POST['custom_tool_image_url'] ?? [];
+        $sharedList = $_POST['custom_tool_is_shared'] ?? [];
+
+        $count = count($names);
+        for ($i = 0; $i < $count; $i++) {
+            $name = trim((string)($names[$i] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $priceRaw = (string)($prices[$i] ?? '0');
+            $price = (float)preg_replace('/[^\d.]/', '', $priceRaw);
+
+            $link = trim((string)($links[$i] ?? ''));
+            if ($link !== '' && !preg_match('#^https?://#i', $link)) {
+                $link = 'https://' . $link;
+            }
+
+            $desc = trim((string)($descs[$i] ?? ''));
+            $imgUrl = trim((string)($imageUrls[$i] ?? ''));
+            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+
+            // Kiểm tra upload file ảnh từ máy
+            if (!empty($_FILES['custom_tool_file']['name'][$i]) && ($_FILES['custom_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
+                $singleFile = [
+                    'name'     => $_FILES['custom_tool_file']['name'][$i],
+                    'type'     => $_FILES['custom_tool_file']['type'][$i] ?? '',
+                    'tmp_name' => $_FILES['custom_tool_file']['tmp_name'][$i],
+                    'error'    => $_FILES['custom_tool_file']['error'][$i],
+                    'size'     => $_FILES['custom_tool_file']['size'][$i] ?? 0,
+                ];
+                try {
+                    $savedPath = Upload::image($singleFile, 'products');
+                    if (!empty($savedPath)) {
+                        $imgUrl = $savedPath;
+                    }
+                } catch (Exception $e) {
+                    error_log('Upload custom tool image failed: ' . $e->getMessage());
+                }
+            }
+
+            if ($imgUrl === '') {
+                $imgUrl = 'assets/img/tent-forest.png';
+            }
+
+            $newId = $this->products->create(
+                $categoryId > 0 ? $categoryId : null,
+                $name,
+                $price,
+                $imgUrl,
+                $desc ?: 'Dụng cụ được chia sẻ bởi người đăng bài',
+                $link !== '' ? $link : null,
+                $isShared
+            );
+
+            if ($newId > 0) {
+                $createdIds[] = $newId;
+            }
+        }
+
+        return $createdIds;
+    }
+
+    /**
+     * Cập nhật thông tin các dụng cụ đã gắn với bài viết nếu tác giả sửa đổi trực tiếp
+     */
+    private function processUpdateExistingTools(): void
+    {
+        $ids = $_POST['existing_tool_id'] ?? [];
+        if (!is_array($ids)) {
+            return;
+        }
+
+        $names = $_POST['existing_tool_name'] ?? [];
+        $prices = $_POST['existing_tool_price'] ?? [];
+        $links = $_POST['existing_tool_link'] ?? [];
+        $descs = $_POST['existing_tool_desc'] ?? [];
+        $imageUrls = $_POST['existing_tool_image_url'] ?? [];
+        $sharedList = $_POST['existing_tool_is_shared'] ?? [];
+
+        $count = count($ids);
+        for ($i = 0; $i < $count; $i++) {
+            $pId = (int)($ids[$i] ?? 0);
+            if ($pId <= 0) {
+                continue;
+            }
+
+            $name = trim((string)($names[$i] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $priceRaw = (string)($prices[$i] ?? '0');
+            $price = (float)preg_replace('/[^\d.]/', '', $priceRaw);
+
+            $link = trim((string)($links[$i] ?? ''));
+            if ($link !== '' && !preg_match('#^https?://#i', $link)) {
+                $link = 'https://' . $link;
+            }
+
+            $desc = trim((string)($descs[$i] ?? ''));
+            $imgUrl = trim((string)($imageUrls[$i] ?? ''));
+            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+
+            if (!empty($_FILES['existing_tool_file']['name'][$i]) && ($_FILES['existing_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
+                $singleFile = [
+                    'name'     => $_FILES['existing_tool_file']['name'][$i],
+                    'type'     => $_FILES['existing_tool_file']['type'][$i] ?? '',
+                    'tmp_name' => $_FILES['existing_tool_file']['tmp_name'][$i],
+                    'error'    => $_FILES['existing_tool_file']['error'][$i],
+                    'size'     => $_FILES['existing_tool_file']['size'][$i] ?? 0,
+                ];
+                try {
+                    $savedPath = Upload::image($singleFile, 'products');
+                    if (!empty($savedPath)) {
+                        $imgUrl = $savedPath;
+                    }
+                } catch (Exception $e) {
+                    error_log('Upload existing tool image failed: ' . $e->getMessage());
+                }
+            }
+
+            $current = $this->products->findById($pId);
+            $catId = $current['category_id'] ?? null;
+
+            $this->products->update(
+                $pId,
+                $catId,
+                $name,
+                $price,
+                $imgUrl !== '' ? $imgUrl : null,
+                $desc,
+                $link !== '' ? $link : null,
+                $isShared
+            );
+        }
+    }
+
+    /**
+     * Kiểm tra quyền quản lý bài viết (Tác giả bài viết, Moderator hoặc Admin)
      */
     private function canManagePost(array $post): bool {
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            return false;
-        }
-        $userId = (int)($user['id'] ?? 0);
-        $roleName = $user['role_name'] ?? '';
-        $roleId = (int)($user['role_id'] ?? 0);
-        $isAdmin = ($roleName === 'admin' || $roleId === 2);
-        $isAuthor = ($userId > 0 && $userId === (int)($post['user_id'] ?? 0));
-        return $isAdmin || $isAuthor;
+        return Auth::canManagePost($post);
     }
 }

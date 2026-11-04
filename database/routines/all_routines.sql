@@ -169,12 +169,12 @@ END$$
 DROP PROCEDURE IF EXISTS sp_user_list$$
 CREATE PROCEDURE sp_user_list()
 BEGIN
-    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.created_at,
+    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.bio, u.avatar_path, u.created_at,
            COUNT(p.id) AS total_posts
     FROM users u
     INNER JOIN roles r ON r.id = u.role_id
     LEFT JOIN posts p  ON p.user_id = u.id
-    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.created_at
+    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.bio, u.avatar_path, u.created_at
     ORDER BY u.id ASC;
 END$$
 
@@ -226,7 +226,7 @@ CREATE PROCEDURE sp_post_create(
 )
 BEGIN
     INSERT INTO posts (user_id, category_id, title, content, location, lat, lng, status, created_at)
-    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'published'), NOW());
+    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'pending'), NOW());
     
     SELECT LAST_INSERT_ID() AS post_id;
 END$$
@@ -261,6 +261,48 @@ CREATE PROCEDURE sp_post_delete(IN p_id INT)
 BEGIN
     DELETE FROM posts WHERE id = p_id;
     SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_update_status$$
+CREATE PROCEDURE sp_post_update_status(IN p_id INT, IN p_status VARCHAR(20))
+BEGIN
+    UPDATE posts
+    SET status = p_status
+    WHERE id = p_id;
+    
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_list_paginated$$
+CREATE PROCEDURE sp_post_list_paginated(
+    IN p_category_id INT,
+    IN p_status VARCHAR(20),
+    IN p_limit INT,
+    IN p_offset INT
+)
+BEGIN
+    SELECT p.*, 
+           u.username, 
+           c.name AS category_name,
+           (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+           (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
+           (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+    FROM posts p
+    JOIN users u      ON u.id = p.user_id
+    JOIN categories c ON c.id = p.category_id
+    WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
+      AND (p_status IS NULL OR p.status = p_status)
+    ORDER BY p.created_at DESC
+    LIMIT p_limit OFFSET p_offset;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_count_filtered$$
+CREATE PROCEDURE sp_post_count_filtered(IN p_category_id INT, IN p_status VARCHAR(20))
+BEGIN
+    SELECT COUNT(*) AS total
+    FROM posts
+    WHERE (p_category_id IS NULL OR category_id = p_category_id)
+      AND (p_status IS NULL OR status = p_status);
 END$$
 
 DROP PROCEDURE IF EXISTS sp_post_count$$
@@ -466,4 +508,102 @@ BEGIN
     ORDER BY total_posts DESC;
 END$$
 
+-- ==============================================================================
+-- 8. DỤNG CỤ & THIẾT BỊ CHUYẾN ĐI (PRODUCTS & POST TOOLS)
+-- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_product_list_by_category$$
+CREATE PROCEDURE sp_product_list_by_category(IN p_category_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p_category_id IS NULL OR p.category_id = p_category_id
+    ORDER BY p.id DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_get$$
+CREATE PROCEDURE sp_product_get(IN p_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.id = p_id
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_create$$
+CREATE PROCEDURE sp_product_create(
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description TEXT,
+    IN p_link VARCHAR(255)
+)
+BEGIN
+    INSERT INTO products (category_id, name, price, image_url, description, link)
+    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link);
+
+    SELECT LAST_INSERT_ID() AS product_id;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_update$$
+CREATE PROCEDURE sp_product_update(
+    IN p_id INT,
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description TEXT,
+    IN p_link VARCHAR(255)
+)
+BEGIN
+    UPDATE products
+    SET category_id = p_category_id,
+        name = p_name,
+        price = p_price,
+        image_url = COALESCE(p_image_url, image_url),
+        description = p_description,
+        link = p_link
+    WHERE id = p_id;
+
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_delete$$
+CREATE PROCEDURE sp_product_delete(IN p_id INT)
+BEGIN
+    DELETE FROM products WHERE id = p_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_products_get$$
+CREATE PROCEDURE sp_post_products_get(IN p_post_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link,
+           c.name AS category_name
+    FROM post_products pp
+    JOIN products p ON p.id = pp.product_id
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE pp.post_id = p_post_id
+    ORDER BY p.name ASC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_product_add$$
+CREATE PROCEDURE sp_post_product_add(IN p_post_id INT, IN p_product_id INT)
+BEGIN
+    INSERT IGNORE INTO post_products (post_id, product_id)
+    VALUES (p_post_id, p_product_id);
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_products_clear$$
+CREATE PROCEDURE sp_post_products_clear(IN p_post_id INT)
+BEGIN
+    DELETE FROM post_products WHERE post_id = p_post_id;
+END$$
+
 DELIMITER ;
+

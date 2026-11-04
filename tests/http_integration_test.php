@@ -12,10 +12,11 @@ define('BASE', 'http://' . HOST . ':' . PORT);
 $pass = 0; $fail = 0; $results = [];
 
 // ─── Start PHP dev server ────────────────────────────────────────────────────
+$devLogFile = sys_get_temp_dir() . '/php_server_test_' . time() . '.log';
 $descriptors = [
     0 => ['pipe', 'r'],
-    1 => ['pipe', 'w'],
-    2 => ['pipe', 'w'],
+    1 => ['file', $devLogFile, 'w'],
+    2 => ['file', $devLogFile, 'w'],
 ];
 $pipes = [];
 $proc = proc_open(
@@ -28,8 +29,6 @@ $proc = proc_open(
 if (!is_resource($proc)) {
     die("FATAL: Cannot start PHP dev server\n");
 }
-stream_set_blocking($pipes[1], false);
-stream_set_blocking($pipes[2], false);
 
 sleep(2);
 
@@ -43,14 +42,14 @@ echo "PHP Dev Server started on http://" . HOST . ":" . PORT . "\n";
 echo str_repeat("─", 60) . "\n\n";
 
 function httpGet(string $url, bool $followRedirects = true, ?string $cookieFile = null): array {
-    usleep(80000);
+    usleep(150000);
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HEADER => true,
         CURLOPT_FOLLOWLOCATION => $followRedirects,
         CURLOPT_MAXREDIRS => $followRedirects ? 3 : 0,
-        CURLOPT_TIMEOUT => 6,
+        CURLOPT_TIMEOUT => 8,
         CURLOPT_FORBID_REUSE => true,
         CURLOPT_HTTPHEADER => ['Connection: close'],
         CURLOPT_COOKIEFILE => $cookieFile ?? '',
@@ -69,7 +68,7 @@ function httpGet(string $url, bool $followRedirects = true, ?string $cookieFile 
 }
 
 function httpPost(string $url, array $data, ?string $cookieFile = null): array {
-    usleep(80000);
+    usleep(150000);
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -77,7 +76,7 @@ function httpPost(string $url, array $data, ?string $cookieFile = null): array {
         CURLOPT_POSTFIELDS => http_build_query($data),
         CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded', 'Connection: close'],
         CURLOPT_FOLLOWLOCATION => false,
-        CURLOPT_TIMEOUT => 6,
+        CURLOPT_TIMEOUT => 8,
         CURLOPT_FORBID_REUSE => true,
         CURLOPT_COOKIEFILE => $cookieFile ?? '',
         CURLOPT_COOKIEJAR => $cookieFile ?? '',
@@ -117,6 +116,10 @@ function assert_contains(string $label, string $body, string $needle): void {
     if ($ok) { $pass++; } else { $fail++; }
     $results[] = [$ok, $label, 'contains: '.$needle, 'body contains '.$needle];
     echo sprintf("[%s] %-50s %s\n", $icon, $label, $ok ? 'found' : "NOT FOUND in body");
+    if (!$ok) {
+        preg_match('/nature-alert.*?<\/div>/s', $body, $m);
+        echo "   [DEBUG Alert]: " . ($m[0] ?? substr(strip_tags($body), 0, 150)) . "\n";
+    }
 }
 
 // ─── Test Suite ──────────────────────────────────────────────────────────────

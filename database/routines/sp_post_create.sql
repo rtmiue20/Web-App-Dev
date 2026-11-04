@@ -18,7 +18,7 @@ CREATE PROCEDURE sp_post_create(
 )
 BEGIN
     INSERT INTO posts (user_id, category_id, title, content, location, lat, lng, status, created_at)
-    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'published'), NOW());
+    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'pending'), NOW());
     
     SELECT LAST_INSERT_ID() AS post_id;
 END$$

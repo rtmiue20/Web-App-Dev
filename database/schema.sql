@@ -2,6 +2,7 @@
 -- Quy trình: tạo DB -> tạo bảng -> thiết lập cột -> tạo quan hệ (PK/FK) -> routines
 -- Gồm 8 bảng nghiệp vụ và bảng roles dùng để phân quyền.
 
+DROP DATABASE IF EXISTS outdoor_forum;
 CREATE DATABASE IF NOT EXISTS outdoor_forum
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE outdoor_forum;
@@ -12,7 +13,7 @@ CREATE TABLE roles (
   name VARCHAR(30) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
-INSERT INTO roles (name) VALUES ('member'), ('admin');
+INSERT INTO roles (name) VALUES ('member'), ('admin'), ('moderator'), ('guest');
 
 CREATE TABLE users (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,          -- PK
@@ -40,10 +41,18 @@ CREATE TABLE posts (
   title       VARCHAR(200) NOT NULL,
   content     TEXT NOT NULL,
   location    VARCHAR(150),
+  route       VARCHAR(255) NULL,                                  -- Cung đường chuyến đi
+  trip_duration VARCHAR(100) NULL,                                -- Thời gian chuyến đi
+  estimated_cost VARCHAR(100) NULL,                               -- Chi phí dự tính
+  gear_needed TEXT NULL,                                          -- Đồ cần mang
+  difficulty  ENUM('easy', 'medium', 'hard', 'extreme') NULL DEFAULT 'medium', -- Mức độ khó
+  region      VARCHAR(50) NULL,                                   -- Vùng miền (Bắc, Trung, Nam, Tây Bắc, Tây Nguyên)
+  activity_type VARCHAR(50) NULL,                                 -- Loại hình (trekking, camping, leo_nui, phuot, da_ngoai)
   lat         DECIMAL(10, 7) NULL,
   lng         DECIMAL(10, 7) NULL,
-  status      ENUM('pending', 'published', 'hidden') NOT NULL DEFAULT 'published',
+  status      ENUM('pending', 'published', 'rejected', 'hidden') NOT NULL DEFAULT 'pending',
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FULLTEXT idx_posts_fulltext (title, content, location),
   FOREIGN KEY (user_id)     REFERENCES users(id)      ON DELETE CASCADE,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -60,18 +69,30 @@ CREATE TABLE comments (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,             -- PK
   post_id    INT UNSIGNED NOT NULL,                               -- FK -> posts
   user_id    INT UNSIGNED NOT NULL,                               -- FK -> users
+  parent_id  INT UNSIGNED NULL DEFAULT NULL,                      -- FK -> comments (Bình luận lồng nhau nhiều cấp)
   content    TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id)   REFERENCES posts(id)    ON DELETE CASCADE,
+  FOREIGN KEY (user_id)   REFERENCES users(id)    ON DELETE CASCADE,
+  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE post_likes (
   post_id INT UNSIGNED NOT NULL,                                  -- PK + FK -> posts
   user_id INT UNSIGNED NOT NULL,                                  -- PK + FK -> users
+  vote    TINYINT NOT NULL DEFAULT 1,                             -- 1: Upvote (+1), -1: Downvote (-1)
   PRIMARY KEY (post_id, user_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS comment_likes (
+  comment_id INT UNSIGNED NOT NULL,                               -- PK + FK -> comments
+  user_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> users
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (comment_id, user_id),
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ===== Người 4: tags, post_tags =====
@@ -86,6 +107,84 @@ CREATE TABLE post_tags (
   PRIMARY KEY (post_id, tag_id),
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   FOREIGN KEY (tag_id)  REFERENCES tags(id)  ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ===== Người 5: products, post_products (Dụng cụ & Dụng cụ chuyến đi) =====
+CREATE TABLE products (
+  id          INT AUTO_INCREMENT PRIMARY KEY,                     -- PK
+  category_id INT UNSIGNED NULL,                                  -- FK -> categories
+  name        VARCHAR(150) NOT NULL,
+  price       DECIMAL(10, 0) NOT NULL DEFAULT 0,
+  image_url   VARCHAR(255) NULL,
+  description TEXT NULL,
+  link        TEXT NULL,
+  is_shared   TINYINT(1) NOT NULL DEFAULT 1,                      -- 1: Vào kho cộng đồng, 0: Chỉ dùng riêng cho bài viết
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE post_products (
+  post_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> posts
+  product_id INT NOT NULL,                                        -- PK + FK -> products
+  PRIMARY KEY (post_id, product_id),
+  FOREIGN KEY (post_id)    REFERENCES posts(id)    ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ===== Tính năng nâng cao: bookmarks, follows, notifications, reports =====
+CREATE TABLE IF NOT EXISTS post_bookmarks (
+  user_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> users
+  post_id    INT UNSIGNED NOT NULL,                               -- PK + FK -> posts
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, post_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_follows (
+  follower_id  INT UNSIGNED NOT NULL,                             -- PK + FK -> users
+  following_id INT UNSIGNED NOT NULL,                             -- PK + FK -> users
+  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (follower_id, following_id),
+  FOREIGN KEY (follower_id)  REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS category_follows (
+  user_id     INT UNSIGNED NOT NULL,                              -- PK + FK -> users
+  category_id INT UNSIGNED NOT NULL,                              -- PK + FK -> categories
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, category_id),
+  FOREIGN KEY (user_id)     REFERENCES users(id)      ON DELETE CASCADE,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,                               -- Người nhận thông báo
+  actor_id   INT UNSIGNED NOT NULL,                               -- Người tương tác
+  type       VARCHAR(50) NOT NULL,                                -- like_post, like_comment, comment_post, reply_comment, follow_user
+  target_id  INT UNSIGNED NOT NULL,                               -- post_id, comment_id, user_id
+  content    VARCHAR(255) NOT NULL,
+  is_read    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id)  REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reports (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  reporter_id INT UNSIGNED NOT NULL,                              -- Người báo cáo
+  target_type ENUM('post', 'comment', 'user') NOT NULL,
+  target_id   INT UNSIGNED NOT NULL,
+  reason      VARCHAR(100) NOT NULL,
+  details     TEXT NULL,
+  status      ENUM('pending', 'resolved', 'dismissed') NOT NULL DEFAULT 'pending',
+  resolved_by INT UNSIGNED NULL,                                  -- Mod / Admin xử lý
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NULL,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ===== Dữ liệu mẫu (để test routines) =====
@@ -256,6 +355,16 @@ BEGIN
     UPDATE users SET password_hash = p_password_hash WHERE id = p_user_id;
 END$$
 
+DROP PROCEDURE IF EXISTS sp_user_update_role$$
+CREATE PROCEDURE sp_user_update_role(
+    IN p_user_id INT,
+    IN p_role_id INT
+)
+BEGIN
+    UPDATE users SET role_id = p_role_id WHERE id = p_user_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
 DROP PROCEDURE IF EXISTS sp_user_exists$$
 CREATE PROCEDURE sp_user_exists(IN p_email VARCHAR(120), IN p_username VARCHAR(50))
 BEGIN
@@ -330,7 +439,7 @@ CREATE PROCEDURE sp_post_create(
 )
 BEGIN
     INSERT INTO posts (user_id, category_id, title, content, location, lat, lng, status, created_at)
-    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'published'), NOW());
+    VALUES (p_user_id, p_category_id, p_title, p_content, p_location, p_lat, p_lng, IFNULL(p_status, 'pending'), NOW());
     
     SELECT LAST_INSERT_ID() AS post_id;
 END$$
@@ -410,18 +519,25 @@ END$$
 DROP PROCEDURE IF EXISTS sp_comment_list$$
 CREATE PROCEDURE sp_comment_list(IN p_post_id INT)
 BEGIN
-    SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+    SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
+           u.username, r.name AS role_name
     FROM comments c
     JOIN users u ON c.user_id = u.id
+    LEFT JOIN roles r ON r.id = u.role_id
     WHERE c.post_id = p_post_id
-    ORDER BY c.created_at DESC;
+    ORDER BY c.created_at ASC, c.id ASC;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_comment_create$$
-CREATE PROCEDURE sp_comment_create(IN p_post_id INT, IN p_user_id INT, IN p_content TEXT)
+CREATE PROCEDURE sp_comment_create(
+    IN p_post_id INT,
+    IN p_user_id INT,
+    IN p_content TEXT,
+    IN p_parent_id INT
+)
 BEGIN
-    INSERT INTO comments (post_id, user_id, content, created_at)
-    VALUES (p_post_id, p_user_id, p_content, NOW());
+    INSERT INTO comments (post_id, user_id, parent_id, content, created_at)
+    VALUES (p_post_id, p_user_id, p_parent_id, p_content, NOW());
     
     SELECT LAST_INSERT_ID() AS comment_id;
 END$$
@@ -443,8 +559,41 @@ END$$
 
 
 -- ==============================================================================
--- 5. LƯỢT THÍCH (POST LIKES)
+-- 5. LƯỢT THÍCH & VOTE (POST LIKES / UPVOTE / DOWNVOTE)
 -- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_post_vote$$
+CREATE PROCEDURE sp_post_vote(IN p_post_id INT, IN p_user_id INT, IN p_vote TINYINT)
+BEGIN
+    DECLARE v_existing TINYINT DEFAULT NULL;
+    DECLARE v_user_vote TINYINT DEFAULT 0;
+
+    SELECT vote INTO v_existing
+    FROM post_likes
+    WHERE post_id = p_post_id AND user_id = p_user_id
+    LIMIT 1;
+
+    IF v_existing IS NOT NULL THEN
+        IF v_existing = p_vote THEN
+            DELETE FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
+            SET v_user_vote = 0;
+        ELSE
+            UPDATE post_likes SET vote = p_vote WHERE post_id = p_post_id AND user_id = p_user_id;
+            SET v_user_vote = p_vote;
+        END IF;
+    ELSE
+        INSERT INTO post_likes (post_id, user_id, vote) VALUES (p_post_id, p_user_id, p_vote);
+        SET v_user_vote = p_vote;
+    END IF;
+
+    SELECT
+        COALESCE(SUM(vote), 0) AS score,
+        COUNT(CASE WHEN vote = 1 THEN 1 END) AS upvotes,
+        COUNT(CASE WHEN vote = -1 THEN 1 END) AS downvotes,
+        v_user_vote AS user_vote
+    FROM post_likes
+    WHERE post_id = p_post_id;
+END$$
 
 DROP PROCEDURE IF EXISTS sp_toggle_like$$
 DROP PROCEDURE IF EXISTS sp_post_toggle_like$$
@@ -452,15 +601,16 @@ CREATE PROCEDURE sp_post_toggle_like(IN p_post_id INT, IN p_user_id INT)
 BEGIN
     DECLARE v_liked INT DEFAULT 0;
     
-    IF EXISTS (SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id) THEN
+    IF EXISTS (SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id AND vote = 1) THEN
         DELETE FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
         SET v_liked = 0;
     ELSE
-        INSERT INTO post_likes (post_id, user_id) VALUES (p_post_id, p_user_id);
+        INSERT INTO post_likes (post_id, user_id, vote) VALUES (p_post_id, p_user_id, 1)
+        ON DUPLICATE KEY UPDATE vote = 1;
         SET v_liked = 1;
     END IF;
     
-    SELECT COUNT(*) AS likes, v_liked AS is_liked 
+    SELECT COALESCE(SUM(vote), 0) AS likes, v_liked AS is_liked 
     FROM post_likes 
     WHERE post_id = p_post_id;
 END$$
@@ -475,7 +625,7 @@ DROP PROCEDURE IF EXISTS sp_post_is_liked$$
 CREATE PROCEDURE sp_post_is_liked(IN p_post_id INT, IN p_user_id INT)
 BEGIN
     SELECT EXISTS (
-        SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id
+        SELECT 1 FROM post_likes WHERE post_id = p_post_id AND user_id = p_user_id AND vote = 1
     ) AS is_liked;
 END$$
 
@@ -568,6 +718,107 @@ BEGIN
     LEFT JOIN posts p ON p.user_id = u.id
     GROUP BY u.id, u.username
     ORDER BY total_posts DESC;
+END$$
+
+-- ==============================================================================
+-- 8. DỤNG CỤ & THIẾT BỊ CHUYẾN ĐI (PRODUCTS & POST TOOLS)
+-- ==============================================================================
+
+DROP PROCEDURE IF EXISTS sp_product_list_by_category$$
+CREATE PROCEDURE sp_product_list_by_category(IN p_category_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.is_shared, p.created_at,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
+      AND p.is_shared = 1
+    ORDER BY p.id DESC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_get$$
+CREATE PROCEDURE sp_product_get(IN p_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
+           c.name AS category_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.id = p_id
+    LIMIT 1;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_create$$
+CREATE PROCEDURE sp_product_create(
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description TEXT,
+    IN p_link TEXT,
+    IN p_is_shared TINYINT
+)
+BEGIN
+    INSERT INTO products (category_id, name, price, image_url, description, link, is_shared)
+    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link, COALESCE(p_is_shared, 1));
+
+    SELECT LAST_INSERT_ID() AS product_id;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_update$$
+CREATE PROCEDURE sp_product_update(
+    IN p_id INT,
+    IN p_category_id INT,
+    IN p_name VARCHAR(150),
+    IN p_price DECIMAL(10,0),
+    IN p_image_url VARCHAR(255),
+    IN p_description TEXT,
+    IN p_link TEXT,
+    IN p_is_shared TINYINT
+)
+BEGIN
+    UPDATE products
+    SET category_id = p_category_id,
+        name = p_name,
+        price = p_price,
+        image_url = COALESCE(p_image_url, image_url),
+        description = p_description,
+        link = p_link,
+        is_shared = COALESCE(p_is_shared, is_shared)
+    WHERE id = p_id;
+
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_product_delete$$
+CREATE PROCEDURE sp_product_delete(IN p_id INT)
+BEGIN
+    DELETE FROM products WHERE id = p_id;
+    SELECT ROW_COUNT() AS affected_rows;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_products_get$$
+CREATE PROCEDURE sp_post_products_get(IN p_post_id INT)
+BEGIN
+    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link,
+           c.name AS category_name
+    FROM post_products pp
+    JOIN products p ON p.id = pp.product_id
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE pp.post_id = p_post_id
+    ORDER BY p.name ASC;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_product_add$$
+CREATE PROCEDURE sp_post_product_add(IN p_post_id INT, IN p_product_id INT)
+BEGIN
+    INSERT IGNORE INTO post_products (post_id, product_id)
+    VALUES (p_post_id, p_product_id);
+END$$
+
+DROP PROCEDURE IF EXISTS sp_post_products_clear$$
+CREATE PROCEDURE sp_post_products_clear(IN p_post_id INT)
+BEGIN
+    DELETE FROM post_products WHERE post_id = p_post_id;
 END$$
 
 DELIMITER ;

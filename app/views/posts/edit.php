@@ -1,9 +1,21 @@
 <?php
 $title = 'Chỉnh sửa bài viết';
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$currentImage = !empty($post['image_url']) 
-    ? (str_starts_with($post['image_url'], 'http') ? $post['image_url'] : $baseUrl . '/' . ltrim($post['image_url'], '/'))
-    : null;
+
+// Collect current images for thumbnail previews
+$editImages = [];
+if (!empty($post['images']) && is_array($post['images'])) {
+    foreach ($post['images'] as $img) {
+        $url = $img['image_url'] ?? '';
+        if (!empty($url)) {
+            $editImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+        }
+    }
+}
+if (empty($editImages) && !empty($post['image_url'])) {
+    $url = $post['image_url'];
+    $editImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+}
 ?>
 <div class="app-container" style="max-width: 800px;">
     <div class="mb-4">
@@ -56,22 +68,30 @@ $currentImage = !empty($post['image_url'])
                     <?php endif; ?>
                 </div>
 
-                <!-- Location -->
+                <!-- Location with Map Picker -->
                 <div class="col-md-6">
                     <label for="location" class="nature-label">Địa điểm</label>
-                    <input class="nature-input" 
-                           id="location" 
-                           name="location" 
-                           type="text" 
-                           placeholder="Ví dụ: Tà Xùa, Sơn La"
-                           value="<?= htmlspecialchars($old['location'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="loc-input-wrap">
+                        <input class="nature-input loc-input"
+                               id="location" 
+                               name="location" 
+                               type="text" 
+                               placeholder="Ví dụ: Tà Xùa, Sơn La"
+                               value="<?= htmlspecialchars($old['location'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="button"
+                                class="loc-map-btn"
+                                onclick="MapPicker.open()"
+                                title="Chọn vị trí trên bản đồ">
+                            <i class="bi bi-map-fill"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div class="row g-3 mb-3">
                 <!-- Lat & Lng -->
                 <div class="col-md-6">
-                    <label for="lat" class="nature-label">Vĩ độ (Lat) <span class="text-muted small fw-normal">(để xem thời tiết & bản đồ)</span></label>
+                    <label for="lat" class="nature-label">Vĩ độ (Lat) <span class="text-muted small fw-normal">(để xem thời tiết &amp; bản đồ)</span></label>
                     <input class="nature-input" 
                            id="lat" 
                            name="lat" 
@@ -99,26 +119,148 @@ $currentImage = !empty($post['image_url'])
                 </div>
             </div>
 
-            <!-- Current Image Preview & Upload New -->
-            <div class="mb-3">
-                <label for="image" class="nature-label">Ảnh bìa bài viết</label>
-                <?php if ($currentImage): ?>
-                    <div class="mb-2 d-flex align-items-center gap-3">
-                        <img src="<?= htmlspecialchars($currentImage, ENT_QUOTES, 'UTF-8') ?>" 
-                             alt="Ảnh bìa hiện tại" 
-                             style="width: 90px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
-                        <span class="text-muted small">Ảnh bìa hiện tại. Tải lên ảnh mới nếu muốn thay thế.</span>
+            <!-- Bài viết dạng "Chuyến đi" (Trip Info: Cung đường, thời gian, chi phí, độ khó, vùng miền, đồ cần mang) -->
+            <div class="card border-0 rounded-4 mb-4" style="background: rgba(155, 189, 85, 0.08); border: 1px solid rgba(155, 189, 85, 0.3) !important;">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px; background: var(--color-moss, #9bbd55); color: #1c2219;">
+                            <i class="bi bi-signpost-2-fill"></i>
+                        </span>
+                        <div>
+                            <h3 class="h6 fw-bold mb-0 text-dark">Thông tin hành trình "Chuyến đi" (Trip Details)</h3>
+                            <span class="text-muted small" style="font-size: 11.5px;">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc và chuẩn bị chuyến đi</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Loại hình -->
+                        <div class="col-12 col-md-4">
+                            <label for="activity_type" class="nature-label">Loại hình dã ngoại</label>
+                            <?php $currAct = $old['activity_type'] ?? $post['activity_type'] ?? ''; ?>
+                            <select class="nature-input" id="activity_type" name="activity_type">
+                                <option value="">-- Chọn loại hình --</option>
+                                <option value="camping" <?= ($currAct === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
+                                <option value="trekking" <?= ($currAct === 'trekking') ? 'selected' : '' ?>>🥾 Đi bộ đường dài (Trekking)</option>
+                                <option value="leo_nui" <?= ($currAct === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking / Mountain)</option>
+                                <option value="phuot" <?= ($currAct === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
+                                <option value="da_ngoai" <?= ($currAct === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại ngoài trời</option>
+                            </select>
+                        </div>
+
+                        <!-- Mức độ khó -->
+                        <div class="col-12 col-md-4">
+                            <label for="difficulty" class="nature-label">Mức độ khó</label>
+                            <?php $currDiff = $old['difficulty'] ?? $post['difficulty'] ?? 'medium'; ?>
+                            <select class="nature-input" id="difficulty" name="difficulty">
+                                <option value="easy" <?= ($currDiff === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới, gia đình)</option>
+                                <option value="medium" <?= ($currDiff === 'medium') ? 'selected' : '' ?>>🟡 Trung bình (Cần thể lực cơ bản)</option>
+                                <option value="hard" <?= ($currDiff === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc, dài ngày)</option>
+                                <option value="extreme" <?= ($currDiff === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao (Chuyên nghiệp)</option>
+                            </select>
+                        </div>
+
+                        <!-- Vùng miền -->
+                        <div class="col-12 col-md-4">
+                            <label for="region" class="nature-label">Vùng miền</label>
+                            <?php $currReg = $old['region'] ?? $post['region'] ?? ''; ?>
+                            <select class="nature-input" id="region" name="region">
+                                <option value="">-- Chọn vùng miền --</option>
+                                <option value="Tây Bắc" <?= ($currReg === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                                <option value="Đông Bắc" <?= ($currReg === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                                <option value="Bắc Bộ" <?= ($currReg === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                                <option value="Bắc Trung Bộ" <?= ($currReg === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                                <option value="Nam Trung Bộ" <?= ($currReg === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                                <option value="Tây Nguyên" <?= ($currReg === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                                <option value="Đông Nam Bộ" <?= ($currReg === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                                <option value="Tây Nam Bộ" <?= ($currReg === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Cung đường -->
+                        <div class="col-12 col-md-5">
+                            <label for="route" class="nature-label">Cung đường di chuyển</label>
+                            <input type="text" class="nature-input" id="route" name="route" 
+                                   placeholder="Ví dụ: Hà Nội - Đèo Đá Trắng - Tà Xùa (220km)" 
+                                   value="<?= htmlspecialchars((string)($old['route'] ?? $post['route'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <!-- Thời gian -->
+                        <div class="col-12 col-md-3">
+                            <label for="trip_duration" class="nature-label">Thời gian</label>
+                            <input type="text" class="nature-input" id="trip_duration" name="trip_duration" 
+                                   placeholder="Ví dụ: 2 ngày 1 đêm" 
+                                   value="<?= htmlspecialchars((string)($old['trip_duration'] ?? $post['trip_duration'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <!-- Chi phí dự tính -->
+                        <div class="col-12 col-md-4">
+                            <label for="estimated_cost" class="nature-label">Chi phí dự tính</label>
+                            <input type="text" class="nature-input" id="estimated_cost" name="estimated_cost" 
+                                   placeholder="Ví dụ: 1.200.000 đ/người" 
+                                   value="<?= htmlspecialchars((string)($old['estimated_cost'] ?? $post['estimated_cost'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                    </div>
+
+                    <!-- Đồ cần mang -->
+                    <div>
+                        <label for="gear_needed" class="nature-label">Đồ cần mang (Checklist trang bị mang theo)</label>
+                        <textarea class="nature-textarea" id="gear_needed" name="gear_needed" rows="2" 
+                                  placeholder="Ví dụ: Lều 2 lớp chống mưa, túi ngủ nhiệt, giày trekking bám tốt, áo gió, đèn pin đội đầu, bình nước 2L, bộ sơ cứu y tế..."><?= htmlspecialchars((string)($old['gear_needed'] ?? $post['gear_needed'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Images Section ──────────────────────────────────────── -->
+            <div class="mb-4">
+                <label class="nature-label">Ảnh bài viết</label>
+
+                <?php if (!empty($editImages)): ?>
+                    <!-- Current images thumbnails -->
+                    <div class="mb-3">
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-images me-1"></i>
+                            Ảnh hiện tại (<?= count($editImages) ?> ảnh) — tải lên ảnh mới sẽ <strong>thêm vào</strong> bên cạnh:
+                        </p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <?php foreach ($editImages as $imgSrc): ?>
+                                <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
+                                     alt="Ảnh bài viết"
+                                     style="width: 90px; height: 64px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(255,255,255,0.15); cursor: zoom-in;"
+                                     onclick="window.open(this.src,'_blank')">
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
-                <input class="nature-input" 
-                       id="image" 
-                       name="image" 
-                       type="file" 
-                       accept="image/png, image/jpeg, image/webp" 
-                       style="padding-top: 0.55rem;">
-                <?php if (!empty($errors['image'])): ?>
-                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['image'], ENT_QUOTES, 'UTF-8') ?></div>
+
+                <!-- Multi-image dropzone -->
+                <div id="editDropzone"
+                     style="border: 2px dashed rgba(255,255,255,0.25); border-radius: 16px; padding: 1.5rem 1rem;
+                            text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;"
+                     onclick="document.getElementById('editImagesInput').click()"
+                     ondragover="event.preventDefault(); this.style.borderColor='var(--color-moss)'; this.style.background='rgba(107,142,35,0.08)';"
+                     ondragleave="this.style.borderColor='rgba(255,255,255,0.25)'; this.style.background='';"
+                     ondrop="handleEditDrop(event)">
+                    <i class="bi bi-cloud-arrow-up fs-3 d-block mb-2" style="color: rgba(255,255,255,0.45);"></i>
+                    <span class="text-muted small">Kéo &amp; thả ảnh vào đây hoặc <strong>bấm để chọn</strong></span><br>
+                    <span class="text-muted" style="font-size: 0.72rem;">JPG, PNG, WEBP — tối đa 2 MB mỗi ảnh</span>
+                </div>
+
+                <input type="file"
+                       id="editImagesInput"
+                       name="images[]"
+                       multiple
+                       accept="image/jpeg, image/png, image/webp"
+                       style="display:none;"
+                       onchange="previewEditImages(this.files)">
+
+                <?php if (!empty($errors['images'])): ?>
+                    <div class="text-danger small mt-1"><?= htmlspecialchars($errors['images'], ENT_QUOTES, 'UTF-8') ?></div>
                 <?php endif; ?>
+
+                <!-- New image previews -->
+                <div id="editPreviewGrid" class="d-flex flex-wrap gap-2 mt-3"></div>
             </div>
 
             <!-- Post Content -->
@@ -135,6 +277,209 @@ $currentImage = !empty($post['image_url'])
                 <?php endif; ?>
             </div>
 
+            <!-- Tools & Gear Selector (Dụng cụ & Trang thiết bị chuyến đi) -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <div>
+                        <label class="nature-label mb-0">
+                            <i class="bi bi-tools me-1 text-success"></i>Dụng cụ &amp; Thiết bị sử dụng trong chuyến đi (Tools &amp; Gear)
+                        </label>
+                        <div class="text-muted" style="font-size: 12px;">
+                            Chia sẻ những công cụ hữu dụng bạn đã sử dụng kèm link mua (Shopee, Lazada, Tiki, web shop...) và giá để người xem tham khảo &amp; mua sắm.
+                        </div>
+                    </div>
+                    <span class="badge rounded-pill text-bg-light border px-3 py-1 text-muted" style="font-size: 11.5px;">
+                        Tổng cộng: <strong id="selectedToolsCount" class="text-success"><?= count($selectedProductIds ?? []) ?></strong> dụng cụ
+                    </span>
+                </div>
+
+                <!-- KHỐI 1: TỰ CHIA SẺ & CHỈNH SỬA CÔNG CỤ BẠN DÙNG (KÈM LINK MUA, GIÁ & ẢNH) -->
+                <div class="rounded-4 p-3 mb-3 border bg-white shadow-sm" style="border-color: rgba(46, 125, 50, 0.25) !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1.5" style="font-size: 13px; font-weight: 600;">
+                                <i class="bi bi-bag-check-fill me-1.5"></i>Dụng cụ bạn sử dụng
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5 shadow-sm" onclick="addCustomToolRow()" style="font-size: 12.5px; font-weight: 500;">
+                            <i class="bi bi-plus-circle-fill"></i> Thêm công cụ bạn dùng
+                        </button>
+                    </div>
+
+                    <!-- Dynamic container cho các dòng công cụ tự nhập hoặc đang có -->
+                    <div id="customToolsContainer" class="d-flex flex-column gap-3 mt-3">
+                        <?php if (!empty($tools)): ?>
+                            <?php foreach ($tools as $t): 
+                                $tId = (int)$t['id'];
+                                $rawTImg = trim((string)($t['image_url'] ?? ''));
+                                if ($rawTImg === '' || str_starts_with($rawTImg, 'bi-')) {
+                                    $tImg = $baseUrl . '/assets/img/tent-forest.png';
+                                } elseif (str_starts_with($rawTImg, 'http://') || str_starts_with($rawTImg, 'https://')) {
+                                    $tImg = $rawTImg;
+                                } else {
+                                    $tImg = $baseUrl . '/' . ltrim($rawTImg, '/');
+                                }
+                            ?>
+                                <div class="custom-tool-card p-3 rounded-4 border position-relative" style="background: #fafbfa; border-color: rgba(0,0,0,0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                                    <input type="hidden" name="existing_tool_id[]" value="<?= $tId ?>">
+                                    <input type="hidden" name="product_ids[]" value="<?= $tId ?>">
+                                    <button type="button" class="btn btn-sm text-danger position-absolute top-0 end-0 m-2 p-1 remove-tool-btn" title="Xóa công cụ này khỏi bài viết" onclick="removeCustomToolRow(this)" style="font-size: 15px; line-height: 1;">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-7">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>
+                                            <input type="text" name="existing_tool_name[]" value="<?= htmlspecialchars($t['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3" required>
+                                        </div>
+                                        <div class="col-12 col-md-5">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="existing_tool_price[]" value="<?= (int)($t['price'] ?? 0) ?>" class="form-control form-control-sm rounded-start-3" min="0" step="1000">
+                                                <span class="input-group-text bg-light text-muted rounded-end-3">đ</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-semibold text-dark mb-1">
+                                                <i class="bi bi-link-45deg text-success me-1"></i>Link nơi mua <span class="text-muted fw-normal">(Shopee, Lazada, Tiki, TikTok Shop, website shop...)</span>
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-white border-end-0 text-success rounded-start-3"><i class="bi bi-bag-check"></i></span>
+                                                <input type="url" name="existing_tool_link[]" value="<?= htmlspecialchars($t['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link shop">
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Đổi ảnh mới (từ máy)</label>
+                                            <input type="file" name="existing_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Hoặc giữ URL ảnh</label>
+                                            <input type="url" name="existing_tool_image_url[]" value="<?= htmlspecialchars($t['image_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
+                                            <input type="text" name="existing_tool_desc[]" value="<?= htmlspecialchars($t['description'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3">
+                                        </div>
+                                        <div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.06) !important;">
+                                            <div class="form-check d-flex align-items-center gap-2 m-0">
+                                                <input class="form-check-input mt-0" 
+                                                       type="checkbox" 
+                                                       <?= (!isset($t['is_shared']) || (int)$t['is_shared'] === 1) ? 'checked' : '' ?> 
+                                                       style="cursor: pointer; width: 1.15em; height: 1.15em;"
+                                                       onchange="this.nextElementSibling.value = this.checked ? '1' : '0'">
+                                                <input type="hidden" name="existing_tool_is_shared[]" value="<?= (!isset($t['is_shared']) || (int)$t['is_shared'] === 1) ? '1' : '0' ?>">
+                                                <label class="form-check-label small text-dark fw-medium" style="cursor: pointer; user-select: none;">
+                                                    <i class="bi bi-share text-success me-1"></i>Chia sẻ dụng cụ này vào kho dụng cụ cộng đồng 
+                                                    <span class="text-muted fw-normal" style="font-size: 11.5px;">(để những người đăng sau có thể chọn nhanh)</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Thông báo khi chưa có công cụ nào được thêm -->
+                    <div id="emptyToolsNotice" class="text-center py-3 px-2 text-muted small mt-2" style="<?= !empty($tools) ? 'display:none;' : '' ?> background: rgba(0,0,0,0.015); border-radius: 12px; border: 1px dashed rgba(0,0,0,0.12);">
+                        <i class="bi bi-bag-heart text-success fs-3 d-block mb-1"></i>
+                        <span>Bạn chưa thêm công cụ cá nhân nào. Hãy bấm <strong>"Thêm công cụ bạn dùng"</strong> ở trên để chia sẻ bếp, lều, balo, đèn pin... kèm link mua Shopee, Lazada!</span>
+                    </div>
+                </div>
+
+                <!-- KHỐI 2: HOẶC CHỌN THÊM TỪ KHO DỤNG CỤ CÓ SẴN CỦA HỆ THỐNG (COLLAPSIBLE) -->
+                <?php if (!empty($products)): ?>
+                    <style>
+                        .tool-card-label { overflow: hidden; max-width: 100%; }
+                        .tool-title-marquee { position: relative; width: 100%; max-width: 100%; overflow: hidden; white-space: nowrap; line-height: 1.35; }
+                        .tool-title-marquee.has-overflow {
+                            mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                            -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 16px), transparent 100%);
+                        }
+                        .tool-title-inner { display: inline-block; white-space: nowrap; }
+                        .tool-title-marquee.has-overflow .tool-title-inner {
+                            will-change: transform;
+                            animation: toolTextMarquee var(--marquee-duration, 8s) ease-in-out infinite;
+                        }
+                        .tool-item label:hover .tool-title-inner,
+                        .tool-item label:focus-within .tool-title-inner {
+                            animation-play-state: paused;
+                        }
+                        @keyframes toolTextMarquee {
+                            0%, 20% { transform: translateX(0); }
+                            68%, 82% { transform: translateX(var(--marquee-distance, -80px)); }
+                            94%, 100% { transform: translateX(0); }
+                        }
+                    </style>
+                    <div class="accordion border-0" id="accordionExistingTools">
+                        <div class="accordion-item rounded-4 border overflow-hidden" style="border-color: rgba(0,0,0,0.1) !important;">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2.5 px-3 bg-light text-dark fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExistingTools" aria-expanded="false" style="font-size: 13px;">
+                                    <i class="bi bi-collection me-2 text-muted"></i> Hoặc chọn thêm từ kho dụng cụ cộng đồng sẵn có (<?= count($products) ?> sản phẩm)
+                                </button>
+                            </h2>
+                            <div id="collapseExistingTools" class="accordion-collapse collapse" data-bs-parent="#accordionExistingTools">
+                                <div class="accordion-body p-3" style="background: rgba(0,0,0,0.015);">
+                                    <!-- Filter search box -->
+                                    <div class="mb-3">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" 
+                                                   id="toolSearchInput" 
+                                                   class="form-control form-control-sm border-start-0 rounded-end-pill" 
+                                                   placeholder="Tìm nhanh dụng cụ (ví dụ: lều, balo, bếp, gậy leo núi, đèn pin...)" 
+                                                   oninput="filterToolsList(this.value)">
+                                        </div>
+                                    </div>
+
+                                    <!-- Checkbox grid -->
+                                    <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 260px; overflow-y: auto; padding-right: 4px;">
+                                        <?php foreach ($products as $prod):
+                                            $pId = (int)$prod['id'];
+                                            $isChecked = in_array($pId, $selectedProductIds ?? [], true);
+                                            $rawToolImg = trim((string)($prod['image_url'] ?? ''));
+                                            if ($rawToolImg === '' || str_starts_with($rawToolImg, 'bi-')) {
+                                                $toolImg = $baseUrl . '/assets/img/tent-forest.png';
+                                            } elseif (str_starts_with($rawToolImg, 'http://') || str_starts_with($rawToolImg, 'https://')) {
+                                                $toolImg = $rawToolImg;
+                                            } else {
+                                                $toolImg = $baseUrl . '/' . ltrim($rawToolImg, '/');
+                                            }
+                                        ?>
+                                            <div class="col tool-item" data-name="<?= htmlspecialchars(mb_strtolower($prod['name']), ENT_QUOTES, 'UTF-8') ?>">
+                                                <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative tool-card-label" 
+                                                       style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important; overflow: hidden;">
+                                                    <input type="checkbox" 
+                                                           name="product_ids[]" 
+                                                           value="<?= $pId ?>" 
+                                                           class="form-check-input mt-0 tool-checkbox flex-shrink-0" 
+                                                           style="cursor: pointer;"
+                                                           <?= $isChecked ? 'checked' : '' ?>
+                                                           onchange="updateSelectedToolsCounter()">
+                                                    <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
+                                                         alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>" 
+                                                         class="rounded-2 object-fit-cover flex-shrink-0" 
+                                                         style="width: 44px; height: 44px; border: 1px solid rgba(0,0,0,0.06);">
+                                                    <div class="min-w-0 flex-grow-1 overflow-hidden" style="font-size: 13px;">
+                                                        <div class="tool-title-marquee fw-semibold text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                                            <span class="tool-title-inner"><?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 11px;">
+                                                            <span><?= htmlspecialchars($prod['category_name'] ?? 'Dụng cụ', ENT_QUOTES, 'UTF-8') ?></span>
+                                                            <span class="text-success fw-bold"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+
             <!-- Submit buttons -->
             <div class="d-flex align-items-center gap-3">
                 <button type="submit" class="nature-btn-primary py-3 flex-grow-1">
@@ -147,3 +492,425 @@ $currentImage = !empty($post['image_url'])
         </form>
     </div>
 </div>
+
+<script>
+function previewEditImages(files) {
+    const grid = document.getElementById('editPreviewGrid');
+    grid.innerHTML = '';
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach(function(file, i) {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:relative; display:inline-block;';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:90px;height:64px;object-fit:cover;border-radius:10px;border:2px solid var(--color-moss);';
+            const badge = document.createElement('span');
+            badge.textContent = (i + 1);
+            badge.style.cssText = 'position:absolute;top:3px;right:3px;background:var(--color-moss);color:#fff;font-size:0.62rem;padding:1px 5px;border-radius:6px;';
+            wrap.appendChild(img);
+            wrap.appendChild(badge);
+            grid.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Update dropzone text
+    const dz = document.getElementById('editDropzone');
+    if (dz) {
+        const span = dz.querySelector('span');
+        if (span) span.textContent = files.length + ' ảnh đã chọn — bấm để thay đổi';
+    }
+}
+
+function handleEditDrop(e) {
+    e.preventDefault();
+    const dz = document.getElementById('editDropzone');
+    if (dz) { dz.style.borderColor = 'rgba(255,255,255,0.25)'; dz.style.background = ''; }
+
+    const input = document.getElementById('editImagesInput');
+    if (!input || !e.dataTransfer?.files?.length) return;
+
+    // Assign dropped files to input
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(function(f) {
+        dt.items.add(f);
+    });
+    input.files = dt.files;
+    previewEditImages(input.files);
+}
+</script>
+
+<!-- ════════════════════════════════════════════════
+     MAP PICKER MODAL (OpenStreetMap + Nominatim)
+════════════════════════════════════════════════ -->
+<div id="mapPickerModal" style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+    <div style="background:#1a1a1a; border-radius:24px; width:min(640px,96vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+        <div style="padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+            <i class="bi bi-map-fill" style="color:var(--color-moss, #7aab3a); font-size:1.1rem;"></i>
+            <strong style="color:#fff; flex:1;">Chọn địa điểm</strong>
+            <button onclick="MapPicker.close()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.2rem;cursor:pointer;padding:0;line-height:1;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div style="padding:0.85rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; gap:8px;">
+            <input type="text" id="mapSearchInput"
+                   placeholder="Nhập tên địa điểm, ví dụ: Đỉnh Fansipan..."
+                   style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:10px;
+                          color:#fff; padding:0.5rem 0.85rem; font-size:0.92rem; outline:none;"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();MapPicker.search();}">
+            <button onclick="MapPicker.search()"
+                    style="background:var(--color-moss,#7aab3a); border:none; border-radius:10px; color:#fff;
+                           padding:0.5rem 1.1rem; cursor:pointer; font-size:0.88rem; white-space:nowrap;">
+                <i class="bi bi-search me-1"></i> Tìm
+            </button>
+        </div>
+        <div id="mapSearchResults" style="max-height:220px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.07);"></div>
+        <div id="mapSelectedInfo" style="padding:0.65rem 1.25rem; background:rgba(122,171,58,0.08); display:none; align-items:center; gap:8px;">
+            <i class="bi bi-geo-alt-fill" style="color:var(--color-moss,#7aab3a);"></i>
+            <span id="mapSelectedText" style="color:#ccc; font-size:0.86rem; flex:1;"></span>
+        </div>
+        <div style="padding:0.85rem 1.25rem; display:flex; justify-content:flex-end; gap:8px;">
+            <button onclick="MapPicker.close()"
+                    style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:10px;
+                           color:#ccc; padding:0.5rem 1.1rem; cursor:pointer;">
+                Hủy
+            </button>
+            <button id="mapConfirmBtn" onclick="MapPicker.confirm()" disabled
+                    style="background:var(--color-moss,#7aab3a); border:none; border-radius:10px; color:#fff;
+                           padding:0.5rem 1.25rem; cursor:pointer; opacity:0.5;">
+                <i class="bi bi-check-lg me-1"></i> Xác nhận
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Location input with inline map icon ── */
+.loc-input-wrap {
+    position: relative;
+    display: block;
+}
+.loc-input-wrap .loc-input {
+    padding-right: 44px !important;
+}
+.loc-map-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-moss, #7aab3a);
+    font-size: 1.05rem;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 8px;
+    line-height: 1;
+    transition: color 0.18s, background 0.18s, transform 0.15s;
+    z-index: 5;
+}
+.loc-map-btn:hover {
+    color: #4d7a1f;
+    background: rgba(122,171,58,0.12);
+    transform: translateY(-50%) scale(1.15);
+}
+
+/* ── Map result items ── */
+.map-result-item {
+    padding: 0.65rem 1.25rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.15s;
+    color: #ccc;
+    font-size: 0.86rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.map-result-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.map-result-item.selected { background: rgba(122,171,58,0.15); }
+.map-result-item i { color: var(--color-moss,#7aab3a); margin-top:2px; flex-shrink:0; }
+.map-result-item strong { display:block; font-size:0.9rem; color:#fff; }
+.map-result-item span { font-size: 0.78rem; color: #999; }
+.map-spinner { padding:1rem; text-align:center; color:rgba(255,255,255,0.45); font-size:0.85rem; }
+</style>
+
+<script>
+const MapPicker = (function() {
+    let selected = null;
+    function modal() { return document.getElementById('mapPickerModal'); }
+    function searchInput() { return document.getElementById('mapSearchInput'); }
+    function resultsBox() { return document.getElementById('mapSearchResults'); }
+    function selectedInfo() { return document.getElementById('mapSelectedInfo'); }
+    function selectedText() { return document.getElementById('mapSelectedText'); }
+    function confirmBtn() { return document.getElementById('mapConfirmBtn'); }
+
+    function open() {
+        selected = null;
+        if (resultsBox()) resultsBox().innerHTML = '';
+        if (selectedInfo()) selectedInfo().style.display = 'none';
+        if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
+        if (searchInput()) searchInput().value = document.getElementById('location')?.value || '';
+        modal().style.display = 'flex';
+        setTimeout(function() {
+            if (searchInput()) searchInput().focus();
+        }, 80);
+    }
+
+    function close() { modal().style.display = 'none'; }
+
+    async function search() {
+        const q = searchInput()?.value?.trim();
+        if (!q) return;
+        resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-hourglass-split me-1"></i>Đang tìm kiếm...</div>';
+        if (selectedInfo()) selectedInfo().style.display = 'none';
+        if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
+        selected = null;
+        try {
+            const url = new URL('https://nominatim.openstreetmap.org/search');
+            url.searchParams.set('format', 'json');
+            url.searchParams.set('q', q);
+            url.searchParams.set('limit', '8');
+            url.searchParams.set('addressdetails', '1');
+            url.searchParams.set('accept-language', 'vi,en');
+
+            const res = await fetch(url.toString(), {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                signal: AbortSignal.timeout(8000)
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (!data || data.length === 0) {
+                resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-search me-1"></i>Không tìm thấy địa điểm. Thử từ khóa khác hoặc thêm tên quốc gia.</div>';
+                return;
+            }
+            resultsBox().innerHTML = '';
+            data.forEach(function(item) {
+                const div = document.createElement('div');
+                div.className = 'map-result-item';
+                const shortName = item.display_name.split(',')[0].trim();
+                div.innerHTML = `<i class="bi bi-geo-alt-fill"></i><div><strong>${shortName}</strong><span>${item.display_name}</span></div>`;
+                div.addEventListener('click', function() {
+                    selectResult(item, div);
+                });
+                resultsBox().appendChild(div);
+            });
+        } catch (err) {
+            console.error('Nominatim error:', err);
+            if (err.name === 'TimeoutError') {
+                resultsBox().innerHTML = '<div class="map-spinner" style="color:#f99;">Yêu cầu quá thời gian. Kiểm tra kết nối mạng và thử lại.</div>';
+            } else {
+                resultsBox().innerHTML = `<div class="map-spinner" style="color:#f99;">
+                    <i class="bi bi-wifi-off me-1"></i>Không thể kết nối đến dịch vụ bản đồ.<br>
+                    <small class="d-block mt-1 opacity-75">Bạn có thể nhập tọa độ thủ công vào ô Vĩ độ / Kinh độ bên dưới.</small>
+                </div>`;
+            }
+        }
+    }
+
+    function selectResult(item, el) {
+        selected = {
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+            short_name: item.display_name.split(',').slice(0, 2).join(',').trim()
+        };
+        document.querySelectorAll('.map-result-item').forEach(function(e) {
+            e.classList.remove('selected');
+        });
+        if (el) el.classList.add('selected');
+        if (selectedInfo()) selectedInfo().style.display = 'flex';
+        if (selectedText()) selectedText().textContent = `${selected.short_name}  ·  ${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`;
+        if (confirmBtn()) { confirmBtn().disabled = false; confirmBtn().style.opacity = '1'; }
+    }
+
+    function confirm() {
+        if (!selected) return;
+        const locInput = document.getElementById('location');
+        const latInput = document.getElementById('lat');
+        const lngInput = document.getElementById('lng');
+        if (locInput) locInput.value = selected.short_name;
+        if (latInput) latInput.value = selected.lat.toFixed(7);
+        if (lngInput) lngInput.value = selected.lng.toFixed(7);
+        close();
+    }
+
+    document.getElementById('mapPickerModal')?.addEventListener('click', function(e) {
+        if (e.target === this) close();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal()?.style.display === 'flex') close();
+    });
+
+    return { open, close, search, confirm };
+})();
+
+// Xử lý bộ chọn Dụng cụ (Tools Selection) & Chạy chữ Marquee
+function updateSelectedToolsCounter() {
+    var checkedBoxes = document.querySelectorAll('.tool-checkbox:checked');
+    var customCards = document.querySelectorAll('#customToolsContainer .custom-tool-card');
+    var badge = document.getElementById('selectedToolsCount');
+    if (badge) {
+        badge.textContent = checkedBoxes.length + customCards.length;
+    }
+}
+
+// Thêm dòng công cụ tự nhập mới (kèm link mua Shopee, Lazada, giá, ảnh)
+function addCustomToolRow(initialData) {
+    var data = initialData || {};
+    var container = document.getElementById('customToolsContainer');
+    var emptyNotice = document.getElementById('emptyToolsNotice');
+    if (!container) return;
+
+    if (emptyNotice) {
+        emptyNotice.style.display = 'none';
+    }
+
+    var card = document.createElement('div');
+    card.className = 'custom-tool-card p-3 rounded-4 border position-relative';
+    card.style.background = '#fafbfa';
+    card.style.borderColor = 'rgba(0,0,0,0.1)';
+    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';
+
+    var nameVal = data.name ? escapeHtml(data.name) : '';
+    var priceVal = (data.price !== undefined && data.price !== null) ? escapeHtml(data.price) : '';
+    var linkVal = data.link ? escapeHtml(data.link) : '';
+    var descVal = data.description ? escapeHtml(data.description) : '';
+    var imgVal = data.image_url ? escapeHtml(data.image_url) : '';
+
+    var html = '' +
+        '<button type="button" class="btn btn-sm text-danger position-absolute top-0 end-0 m-2 p-1 remove-tool-btn" title="Xóa công cụ này" onclick="removeCustomToolRow(this)" style="font-size: 15px; line-height: 1;">' +
+            '<i class="bi bi-trash3-fill"></i>' +
+        '</button>' +
+        '<div class="row g-2">' +
+            '<div class="col-12 col-md-7">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
+                '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple FMS-105" required>' +
+            '</div>' +
+            '<div class="col-12 col-md-5">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>' +
+                '<div class="input-group input-group-sm">' +
+                    '<input type="number" name="custom_tool_price[]" value="' + priceVal + '" class="form-control form-control-sm rounded-start-3" placeholder="VD: 350000" min="0" step="1000">' +
+                    '<span class="input-group-text bg-light text-muted rounded-end-3">đ</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="col-12">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">' +
+                    '<i class="bi bi-link-45deg text-success me-1"></i>Link nơi mua <span class="text-muted fw-normal">(Shopee, Lazada, Tiki, TikTok Shop, website shop...)</span>' +
+                '</label>' +
+                '<div class="input-group input-group-sm">' +
+                    '<span class="input-group-text bg-white border-end-0 text-success rounded-start-3"><i class="bi bi-bag-check"></i></span>' +
+                    '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link web shop">' +
+                '</div>' +
+            '</div>' +
+            '<div class="col-12 col-md-6">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Tải ảnh lên (từ máy)</label>' +
+                '<input type="file" name="custom_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">' +
+            '</div>' +
+            '<div class="col-12 col-md-6">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Hoặc dán URL ảnh</label>' +
+                '<input type="url" name="custom_tool_image_url[]" value="' + imgVal + '" class="form-control form-control-sm rounded-3" placeholder="https://domain.com/anh-dung-cu.jpg">' +
+            '</div>' +
+            '<div class="col-12">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>' +
+                '<input type="text" name="custom_tool_desc[]" value="' + descVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Lửa rất mạnh, cản gió tốt, đun sôi 1L nước trong 3 phút, gập gọn trong lòng bàn tay.">' +
+            '</div>' +
+            '<div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.06) !important;">' +
+                '<div class="form-check d-flex align-items-center gap-2 m-0">' +
+                    '<input class="form-check-input mt-0" type="checkbox" ' + (data.is_shared === 0 ? '' : 'checked') + ' style="cursor: pointer; width: 1.15em; height: 1.15em;" onchange="this.nextElementSibling.value = this.checked ? \'1\' : \'0\'">' +
+                    '<input type="hidden" name="custom_tool_is_shared[]" value="' + (data.is_shared === 0 ? '0' : '1') + '">' +
+                    '<label class="form-check-label small text-dark fw-medium" style="cursor: pointer; user-select: none;">' +
+                        '<i class="bi bi-share text-success me-1"></i>Chia sẻ dụng cụ này vào kho dụng cụ cộng đồng ' +
+                        '<span class="text-muted fw-normal" style="font-size: 11.5px;">(để những người đăng sau có thể chọn nhanh)</span>' +
+                    '</label>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    card.innerHTML = html;
+    container.appendChild(card);
+    updateSelectedToolsCounter();
+}
+
+function removeCustomToolRow(btn) {
+    var card = btn.closest('.custom-tool-card');
+    if (card) {
+        card.remove();
+    }
+    var container = document.getElementById('customToolsContainer');
+    var emptyNotice = document.getElementById('emptyToolsNotice');
+    if (container && emptyNotice) {
+        var remaining = container.querySelectorAll('.custom-tool-card');
+        if (remaining.length === 0) {
+            emptyNotice.style.display = '';
+        }
+    }
+    updateSelectedToolsCounter();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function initToolMarquees() {
+    var marquees = document.querySelectorAll('.tool-title-marquee');
+    if (!marquees.length) return;
+
+    marquees.forEach(function(marquee) {
+        var inner = marquee.querySelector('.tool-title-inner');
+        if (!inner) return;
+
+        marquee.classList.remove('has-overflow');
+        var overflow = inner.scrollWidth - marquee.clientWidth;
+        if (overflow > 2) {
+            marquee.classList.add('has-overflow');
+            var distance = overflow + 10;
+            var duration = Math.min(14, Math.max(6, Math.round(distance / 22) + 3));
+            inner.style.setProperty('--marquee-distance', '-' + distance + 'px');
+            inner.style.setProperty('--marquee-duration', duration + 's');
+        } else {
+            marquee.classList.remove('has-overflow');
+            inner.style.removeProperty('--marquee-distance');
+            inner.style.removeProperty('--marquee-duration');
+        }
+    });
+}
+
+function filterToolsList(keyword) {
+    var query = (keyword || '').toLowerCase().trim();
+    var items = document.querySelectorAll('#toolsCheckboxGrid .tool-item');
+    items.forEach(function(item) {
+        var name = item.getAttribute('data-name') || '';
+        if (query === '' || name.indexOf(query) !== -1) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    setTimeout(initToolMarquees, 50);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedToolsCounter();
+    initToolMarquees();
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(initToolMarquees);
+    }
+});
+
+window.addEventListener('load', initToolMarquees);
+window.addEventListener('resize', function() {
+    clearTimeout(window._marqueeResizeTimer);
+    window._marqueeResizeTimer = setTimeout(initToolMarquees, 150);
+});
+</script>
+

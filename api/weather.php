@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../app/bootstrap.php';
 
 $lat = filter_input(INPUT_GET, 'lat', FILTER_VALIDATE_FLOAT);
 $lng = filter_input(INPUT_GET, 'lng', FILTER_VALIDATE_FLOAT);
@@ -39,6 +40,9 @@ if ($forecastDate !== '') {
     ];
 } else {
     $query['current_weather'] = 'true';
+    $query['daily'] = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max';
+    $query['timezone'] = 'auto';
+    $query['forecast_days'] = 4;
 }
 $url = 'https://api.open-meteo.com/v1/forecast?' . http_build_query($query);
 
@@ -96,6 +100,30 @@ $condition = match (true) {
     default => 'Thời tiết thay đổi'
 };
 
+$dailyForecast = [];
+if ($forecastDate === '' && isset($data['daily']['time']) && is_array($data['daily']['time'])) {
+    foreach (array_slice($data['daily']['time'], 0, 4) as $index => $day) {
+        $dayCode = (int) ($data['daily']['weather_code'][$index] ?? 0);
+        $dailyForecast[] = [
+            'date' => date('d/m', strtotime((string) $day)),
+            'day_label' => $index === 0 ? 'Hôm nay' : date('D', strtotime((string) $day)),
+            'temp_max' => (int) round((float) ($data['daily']['temperature_2m_max'][$index] ?? $temperature)),
+            'temp_min' => (int) round((float) ($data['daily']['temperature_2m_min'][$index] ?? $temperature)),
+            'rain_prob' => (int) ($data['daily']['precipitation_probability_max'][$index] ?? 0),
+            'condition' => match (true) {
+                $dayCode === 0 => 'Nắng đẹp',
+                $dayCode >= 1 && $dayCode <= 3 => 'Có mây',
+                $dayCode >= 45 && $dayCode <= 48 => 'Có sương mù',
+                $dayCode >= 51 && $dayCode <= 67 => 'Có mưa',
+                $dayCode >= 80 && $dayCode <= 82 => 'Mưa rào',
+                $dayCode >= 95 && $dayCode <= 99 => 'Dông',
+                default => 'Thời tiết thay đổi',
+            },
+            'icon' => 'bi-cloud-sun',
+        ];
+    }
+}
+
 if (in_array($weatherCode, [65, 67, 82, 95, 96, 99], true)
     || ($forecastDate !== '' && $precipitation >= 50)) {
     $alerts[] = 'Mưa lớn hoặc dông; tránh trekking, khu vực sông suối và nơi có nguy cơ lũ quét.';
@@ -115,6 +143,7 @@ echo json_encode([
         'condition' => $condition,
         'alerts' => $alerts,
         'date' => $forecastDate !== '' ? $forecastDate : null,
+        'daily' => $dailyForecast,
     ]
 ], JSON_UNESCAPED_UNICODE);
 exit;

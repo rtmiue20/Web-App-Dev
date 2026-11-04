@@ -1,4 +1,4 @@
--- Migration 004: checklist, chuyến đi nhóm và đánh giá địa điểm.
+-- Migration 006: checklist, chuyến đi nhóm và đánh giá địa điểm.
 
 CREATE TABLE IF NOT EXISTS trip_checklists (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

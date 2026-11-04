@@ -15,16 +15,13 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
 ?>
 <header class="dock-header">
     <nav class="dock-nav" aria-label="Điều hướng chính">
-        <!-- Brand / Tree Pine Logo -->
+        <!-- Brand / Celtic Knot Logo -->
         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" 
            class="dock-logo" 
-           aria-label="Dã Ngoại — về trang chủ">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m8 19 4-4 4 4"/>
-                <path d="M12 19V9"/>
-                <path d="M12 9 8 5l4-4 4 4-4 4Z"/>
-                <path d="m18 14 3 3-5 5H8l-5-5 3-3"/>
-            </svg>
+           aria-label="Outdoor Forum — về trang chủ">
+            <img src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/img/celtic-logo.png" 
+                 alt="Outdoor Forum Logo" 
+                 style="width: 38px; height: 38px; object-fit: contain; border-radius: 50%;">
         </a>
 
         <!-- Main Nav Links -->
@@ -58,7 +55,44 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             Bản đồ
         </a>
 
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products" 
+           class="dock-pill <?= $isActive('/products') ? 'active' : '' ?>">
+            Dụng cụ
+        </a>
+
         <?php if (is_array($currentUser)): ?>
+            <!-- Notification Bell Icon (Tính năng thông báo thời gian thực) -->
+            <div class="position-relative d-inline-block" style="pointer-events: auto;">
+                <button type="button" 
+                        class="dock-pill position-relative d-inline-flex align-items-center justify-content-center p-0" 
+                        id="btnNotificationToggle" 
+                        onclick="event.stopPropagation(); ForumAjax.toggleNotificationsDropdown(event);"
+                        aria-label="Thông báo" 
+                        style="width: 38px; height: 38px; border-radius: 50%; cursor: pointer; pointer-events: auto;">
+                    <i class="bi bi-bell-fill fs-6" style="color: rgba(241, 241, 236, 0.85); pointer-events: none;"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                          id="navUnreadBadge" 
+                          style="display: none; font-size: 9px; padding: 2px 5px; pointer-events: none;">
+                        0
+                    </span>
+                </button>
+
+                <!-- Notifications Dropdown Popup -->
+                <div id="notificationsDropdownMenu" class="notifications-dropdown-menu shadow-lg" style="display: none; pointer-events: auto;">
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom border-secondary border-opacity-25">
+                        <span class="fw-bold small text-white"><i class="bi bi-bell me-1 text-success"></i>Thông báo của bạn</span>
+                        <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 small" style="color: #9bbd55; font-size: 11.5px;" onclick="ForumAjax.markAllNotificationsRead()">
+                            Đã đọc tất cả
+                        </button>
+                    </div>
+                    <div id="notificationsListContainer" class="notifications-list-scroll" style="max-height: 320px; overflow-y: auto;">
+                        <div class="text-center py-4 text-white-50 small">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang tải thông báo...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- User Profile Link -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
                class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">
@@ -69,10 +103,10 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
                 <span><?= htmlspecialchars($currentUser['username'] ?? 'Cá nhân', ENT_QUOTES, 'UTF-8') ?></span>
             </a>
 
-            <?php if (($currentUser['role_name'] ?? '') === 'admin' || (int)($currentUser['role_id'] ?? 0) === 2): ?>
+            <?php if (class_exists('Auth') && Auth::isModerator($currentUser)): ?>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
                    class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
-                    Quản trị
+                    <?= Auth::isAdmin($currentUser) ? 'Quản trị' : 'Kiểm duyệt' ?>
                 </a>
             <?php endif; ?>
 

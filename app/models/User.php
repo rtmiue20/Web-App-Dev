@@ -6,7 +6,7 @@ require_once __DIR__ . '/../core/Database.php';
  * Model User - Quản lý tài khoản và người dùng (Khang - Tuần 2 đến 4)
  * Gọi các Stored Procedures: sp_user_get_by_email, sp_user_get_by_id, 
  * sp_user_exists, sp_user_register, sp_user_update_profile,
- * sp_user_change_password, sp_user_count, sp_user_list
+ * sp_user_change_password, sp_user_update_role, sp_user_count, sp_user_list
  */
 class User extends Model
 {
@@ -71,6 +71,26 @@ class User extends Model
     }
 
     /**
+     * Tìm người dùng qua username
+     */
+    public function findByUsername(string $username): ?User
+    {
+        try {
+            $sql = 'SELECT u.id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name,
+                           u.bio, u.avatar_path, u.created_at
+                    FROM users u
+                    INNER JOIN roles r ON r.id = u.role_id
+                    WHERE u.username = :username
+                    LIMIT 1';
+            $rows = Database::query($sql, ['username' => $username]);
+            return !empty($rows) ? self::fromRow($rows[0]) : null;
+        } catch (PDOException $ex) {
+            error_log('Error finding user by username: ' . $ex->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Tìm người dùng qua ID (gọi routine sp_user_get_by_id)
      */
     public function findById(int $id): ?User
@@ -112,6 +132,44 @@ class User extends Model
                 return !empty($rows);
             } catch (PDOException $ex) {
                 error_log('Error checking user existence: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra username đã tồn tại chưa (phục vụ AJAX kiểm tra ngay khi đăng ký)
+     */
+    public function existsByUsername(string $username): bool
+    {
+        try {
+            $rows = Database::call('sp_user_exists', ['', trim($username)]);
+            return !empty($rows) && (int)($rows[0]['is_exists'] ?? 0) === 1;
+        } catch (PDOException $e) {
+            try {
+                $sql = 'SELECT 1 FROM users WHERE username = :username LIMIT 1';
+                $rows = Database::query($sql, ['username' => trim($username)]);
+                return !empty($rows);
+            } catch (PDOException $ex) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra email đã tồn tại chưa (phục vụ AJAX kiểm tra ngay khi đăng ký)
+     */
+    public function existsByEmail(string $email): bool
+    {
+        try {
+            $rows = Database::call('sp_user_exists', [trim($email), '']);
+            return !empty($rows) && (int)($rows[0]['is_exists'] ?? 0) === 1;
+        } catch (PDOException $e) {
+            try {
+                $sql = 'SELECT 1 FROM users WHERE email = :email LIMIT 1';
+                $rows = Database::query($sql, ['email' => trim($email)]);
+                return !empty($rows);
+            } catch (PDOException $ex) {
                 return false;
             }
         }
@@ -215,6 +273,74 @@ class User extends Model
 
         Database::call('sp_user_change_password', [$this->id, $passwordHash]);
         $this->passwordHash = $passwordHash;
+    }
+
+    /**
+     * Cấp lại mật khẩu cho thành viên (dành cho Admin khi thành viên quên mật khẩu)
+     */
+    public function resetPassword(int $userId, string $newPasswordHash): bool
+    {
+        try {
+            Database::call('sp_user_change_password', [$userId, $newPasswordHash]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_change_password fallback: ' . $e->getMessage());
+            try {
+                $sql = 'UPDATE users SET password_hash = :hash WHERE id = :id';
+                return Database::execute($sql, [
+                    'hash' => $newPasswordHash,
+                    'id' => $userId
+                ]) >= 0;
+            } catch (PDOException $ex) {
+                error_log('Error resetting password: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Cập nhật vai trò (Phân quyền RBAC: guest / member / moderator / admin) cho người dùng
+     */
+    public function updateRole(int $userId, int $roleId): bool
+    {
+        try {
+            Database::call('sp_user_update_role', [$userId, $roleId]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_update_role fallback: ' . $e->getMessage());
+            try {
+                $sql = 'UPDATE users SET role_id = :role_id WHERE id = :id';
+                return Database::execute($sql, [
+                    'role_id' => $roleId,
+                    'id'      => $userId
+                ]) >= 0;
+            } catch (PDOException $ex) {
+                error_log('Error updating user role: ' . $ex->getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Lấy đầy đủ thông tin chi tiết một người dùng cho khu vực Admin
+     */
+    public function findUserDetail(int $userId): ?array
+    {
+        try {
+            $sql = 'SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.bio, u.avatar_path, u.created_at,
+                           COUNT(p.id) AS total_posts
+                    FROM users u
+                    INNER JOIN roles r ON r.id = u.role_id
+                    LEFT JOIN posts p  ON p.user_id = u.id
+                    WHERE u.id = :id
+                    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.bio, u.avatar_path, u.created_at
+                    LIMIT 1';
+            $rows = Database::query($sql, ['id' => $userId]);
+            return !empty($rows) ? $rows[0] : null;
+        } catch (PDOException $ex) {
+            error_log('Error finding user detail: ' . $ex->getMessage());
+            return null;
+        }
     }
 
     private static function fromRow(array $row): User

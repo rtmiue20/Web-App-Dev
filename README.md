@@ -76,7 +76,7 @@ git clone <URL-repo-GitHub> Web-App-Dev
 1. Mở phpMyAdmin: http://localhost/phpmyadmin
 2. Tạo database mới (ví dụ `forum_dangoai`, bảng mã `utf8mb4_unicode_ci`).
 3. Import `database/schema.sql`, sau đó các file trong `database/routines/` và (tuỳ chọn) `database/seeds/seed.sql`.
-4. Chạy lần lượt các migration trong `database/migrations/` chưa áp dụng; migration `004_add_outdoor_features.sql` tạo bảng checklist, chuyến đi nhóm và đánh giá địa điểm.
+4. Chạy lần lượt các migration trong `database/migrations/` chưa áp dụng; migration `006_add_outdoor_features.sql` tạo bảng checklist, chuyến đi nhóm và đánh giá địa điểm.
 
 ### 4. Cấu hình kết nối
 Mở `config/database.php` và điền thông tin kết nối:
@@ -127,10 +127,10 @@ Một thành viên làm máy host (chạy XAMPP chứa database), các bạn cò
 
 | STT | Họ tên | Vai trò | Phụ trách |
 |---|---|---|---|
-| 1 | _(điền)_ | Nhóm trưởng | _(điền)_ |
-| 2 | _(điền)_ | Thành viên | _(điền)_ |
-| 3 | _(điền)_ | Thành viên | _(điền)_ |
-| 4 | _(điền)_ | Thành viên | _(điền)_ |
+| 1 | Nguyễn Văn Minh Triều | Nhóm trưởng | _(điền)_ |
+| 2 | Ngô Trọng Phúc | Thành viên | _(điền)_ |
+| 3 | Nguyễn Phúc Vương | Thành viên | _(điền)_ |
+| 4 | Triệu Nguyễn Huỳnh Khang | Thành viên | _(điền)_ |
 
 Cơ sở dữ liệu được chia đều: mỗi thành viên thiết kế 2 bảng (tổng 8 bảng).
 

@@ -13,7 +13,12 @@ class App
         $categories = new CategoryController();
         $users = new UserController();
         $outdoor = new OutdoorController();
+        $api = new ApiController();
         $dashboard = new DashboardController();
+        $postAdmin = new PostAdminController();
+        $userAdmin = new UserAdminController();
+        $productAdmin = new ProductAdminController();
+        $moderation = new ModerationController();
 
         // 1. Home
         $router->get('/', [$home, 'index']);
@@ -29,6 +34,9 @@ class App
         $router->get('/profile', [$users, 'profile'], [AuthMiddleware::class]);
         $router->post('/profile', [$users, 'updateProfile'], [AuthMiddleware::class]);
         $router->post('/profile/password', [$users, 'changePassword'], [AuthMiddleware::class]);
+        $router->get('/users/{id}', function ($id) use ($users) {
+            $users->show((int)$id);
+        });
 
         // 4. Posts
         $router->get('/posts', [$posts, 'index']);
@@ -66,6 +74,30 @@ class App
         }, [AuthMiddleware::class]);
         $router->get('/places', [$outdoor, 'map']);
 
+        $router->post('/posts/{id}/vote', function ($id) use ($posts) {
+            $posts->like((int)$id);
+        });
+
+        // 4b. Bookmarks, Follows, Reports & Notifications (Tính năng nâng cao - Phúc)
+        $router->post('/api/posts/{id}/bookmark', function ($id) use ($api) {
+            $_POST['post_id'] = $id;
+            $api->toggleBookmark();
+        });
+        $router->post('/api/bookmarks', [$api, 'toggleBookmark']);
+        $router->post('/api/users/{id}/follow', function ($id) use ($api) {
+            $_POST['user_id'] = $id;
+            $api->toggleUserFollow();
+        });
+        $router->post('/api/follows/user', [$api, 'toggleUserFollow']);
+        $router->post('/api/categories/{id}/follow', function ($id) use ($api) {
+            $_POST['category_id'] = $id;
+            $api->toggleCategoryFollow();
+        });
+        $router->post('/api/follows/category', [$api, 'toggleCategoryFollow']);
+        $router->get('/api/notifications', [$api, 'notifications']);
+        $router->post('/api/notifications/read', [$api, 'readNotification']);
+        $router->post('/api/reports', [$api, 'report']);
+
         // 5. Categories (Public)
         $router->get('/categories', [$categories, 'index']);
 
@@ -75,10 +107,57 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
 
-        // 6. Admin Area (All protected by AdminMiddleware)
-        $router->get('/admin', [$dashboard, 'index'], [AdminMiddleware::class]);
+        // 5b. Products / Tools (Public - FR09)
+        $products = new ProductController();
+        $router->get('/products', [$products, 'index']);
+        $router->get('/products/{id}', function ($id) use ($products) {
+            $products->show((int)$id);
+        });
+
+        // 5c. AJAX & Web Service Endpoints (FR06, FR07, FR08 - JSON API)
+        $router->get('/api/weather', [$api, 'weather']);
+        $router->get('/api/weather.php', [$api, 'weather']);
+        $router->get('/api/provinces', [$api, 'provinces']);
+        $router->get('/api/provinces.php', [$api, 'provinces']);
+        $router->get('/api/comments', [$api, 'listComments']);
+        $router->get('/api/comments.php', [$api, 'listComments']);
+        $router->post('/api/comments', function () use ($api) {
+            $act = $_GET['action'] ?? '';
+            if ($act === 'delete') {
+                $api->deleteComment();
+            } elseif ($act === 'like') {
+                $api->likeComment();
+            } else {
+                $api->createComment();
+            }
+        });
+        $router->post('/api/comments.php', function () use ($api) {
+            $act = $_GET['action'] ?? '';
+            if ($act === 'delete') {
+                $api->deleteComment();
+            } elseif ($act === 'like') {
+                $api->likeComment();
+            } else {
+                $api->createComment();
+            }
+        });
+        $router->post('/api/comments/delete', [$api, 'deleteComment']);
+        $router->post('/api/comments/like', [$api, 'likeComment']);
+        $router->get('/api/check-user', [$api, 'checkUserAvailability']);
+        $router->get('/api/check-user.php', [$api, 'checkUserAvailability']);
+        $router->get('/api/check-email', [$api, 'checkUserAvailability']);
+        $router->post('/api/likes', [$api, 'votePost']);
+        $router->post('/api/likes.php', [$api, 'votePost']);
+        $router->post('/api/votes', [$api, 'votePost']);
+        $router->get('/api/posts', [$api, 'posts']);
+        $router->get('/api/posts.php', [$api, 'posts']);
+        $router->get('/api/search/suggest', [$api, 'posts']);
+        $router->get('/api/posts.php', [$api, 'posts']);
+
+        // 6. Admin & Moderator Area (RBAC: moderator & admin)
+        $router->get('/admin', [$dashboard, 'index'], [ModeratorMiddleware::class]);
         
-        // FR11: Admin Category Management
+        // FR11: Admin Category Management (Chỉ Admin)
         $router->get('/admin/categories', [$categories, 'adminIndex'], [AdminMiddleware::class]);
         $router->get('/admin/categories/create', [$categories, 'create'], [AdminMiddleware::class]);
         $router->post('/admin/categories/store', [$categories, 'store'], [AdminMiddleware::class]);
@@ -90,6 +169,45 @@ class App
         }, [AdminMiddleware::class]);
         $router->post('/admin/categories/delete/{id}', function ($id) use ($categories) {
             $categories->delete((int)$id);
+        }, [AdminMiddleware::class]);
+
+        // FR12: Admin Product / Gear Management (Chỉ Admin)
+        $router->get('/admin/products', [$productAdmin, 'index'], [AdminMiddleware::class]);
+        $router->get('/admin/products/create', [$productAdmin, 'create'], [AdminMiddleware::class]);
+        $router->post('/admin/products/store', [$productAdmin, 'store'], [AdminMiddleware::class]);
+        $router->get('/admin/products/edit/{id}', function ($id) use ($productAdmin) {
+            $productAdmin->edit((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/products/update/{id}', function ($id) use ($productAdmin) {
+            $productAdmin->update((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/products/delete/{id}', function ($id) use ($productAdmin) {
+            $productAdmin->delete((int)$id);
+        }, [AdminMiddleware::class]);
+
+        // FR13: Post Moderation (Cho phép cả Moderator & Admin kiểm duyệt bài viết)
+        $router->get('/admin/posts', [$postAdmin, 'index'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/status', [$postAdmin, 'changeStatus'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/approve', [$postAdmin, 'approve'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/hide', [$postAdmin, 'hide'], [ModeratorMiddleware::class]);
+        $router->post('/admin/posts/{id}/delete', [$postAdmin, 'delete'], [ModeratorMiddleware::class]);
+
+        // Hàng chờ kiểm duyệt & Xử lý báo cáo vi phạm (Moderator & Admin)
+        $router->get('/admin/moderation', [$moderation, 'index'], [ModeratorMiddleware::class]);
+        $router->post('/admin/moderation/{id}/resolve', function ($id) use ($moderation) {
+            $moderation->resolve((int)$id);
+        }, [ModeratorMiddleware::class]);
+
+        // FR14: Admin User Management, Password Reset & RBAC Role Assignment (Chỉ Admin)
+        $router->get('/admin/users', [$userAdmin, 'index'], [AdminMiddleware::class]);
+        $router->get('/admin/users/{id}', function ($id) use ($userAdmin) {
+            $userAdmin->show((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/users/{id}/reset-password', function ($id) use ($userAdmin) {
+            $userAdmin->resetPassword((int)$id);
+        }, [AdminMiddleware::class]);
+        $router->post('/admin/users/{id}/role', function ($id) use ($userAdmin) {
+            $userAdmin->changeRole((int)$id);
         }, [AdminMiddleware::class]);
 
         // URL parsing

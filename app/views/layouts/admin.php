@@ -21,12 +21,15 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= htmlspecialchars($title ?? 'Bảng điều khiển Quản trị', ENT_QUOTES, 'UTF-8') ?> — Quản trị Forum Dã Ngoại</title>
     <link rel="icon" type="image/svg+xml" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon-dark-32x32.png">
+    <link rel="shortcut icon" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/favicon.ico">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon-dark-32x32.png">
     
     <!-- Fonts & CSS -->
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/style.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?: time() ?>" rel="stylesheet">
 
     <style>
         .admin-nav-bar {
@@ -108,32 +111,43 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <!-- Admin Navigation Dock -->
     <header class="admin-nav-bar d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" class="dock-logo d-flex align-items-center gap-2 text-decoration-none" title="Trang quản trị">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m8 19 4-4 4 4"/>
-                    <path d="M12 19V9"/>
-                    <path d="M12 9 8 5l4-4 4 4-4 4Z"/>
-                    <path d="m18 14 3 3-5 5H8l-5-5 3-3"/>
-                </svg>
-                <span class="badge" style="background: var(--color-moss, #9bbd55); color: #22281f; font-weight: 600; font-size: 11px; letter-spacing: 0.05em;">ADMIN</span>
+            <?php $isFullAdmin = class_exists('Auth') ? Auth::isAdmin($currentUser) : (($currentUser['role_name'] ?? '') === 'admin'); ?>
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" class="text-decoration-none d-inline-flex align-items-center" title="Trang quản trị / kiểm duyệt" style="margin-right: 4px;">
+                <span class="admin-logo-wrap">
+                    <img src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/img/celtic-logo.png" 
+                         alt="Outdoor Forum Logo">
+                    <span class="admin-role-badge"><?= $isFullAdmin ? 'ADMIN' : 'MOD' ?></span>
+                </span>
             </a>
 
             <div class="vr mx-2 bg-secondary opacity-25 d-none d-md-block" style="height: 24px;"></div>
 
-            <!-- Admin Menus -->
+            <!-- Admin / Moderator Menus -->
             <nav class="d-flex align-items-center gap-1">
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
                    class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
                     <i class="bi bi-speedometer2 me-1"></i> Dashboard
                 </a>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" 
-                   class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
-                    <i class="bi bi-tags me-1"></i> Chuyên mục
-                </a>
-                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" 
-                   class="dock-pill" title="Xem danh sách bài viết">
+                <?php if ($isFullAdmin): ?>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" 
+                       class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
+                        <i class="bi bi-tags me-1"></i> Chuyên mục
+                    </a>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products" 
+                       class="dock-pill <?= $isActive('/admin/products') ? 'active' : '' ?>" title="Quản lý dụng cụ & thiết bị">
+                        <i class="bi bi-tools me-1"></i> Dụng cụ
+                    </a>
+                <?php endif; ?>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" 
+                   class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Kiểm duyệt & Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
                 </a>
+                <?php if ($isFullAdmin): ?>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" 
+                       class="dock-pill <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên, Phân quyền RBAC & Cấp lại mật khẩu">
+                        <i class="bi bi-people me-1"></i> Thành viên
+                    </a>
+                <?php endif; ?>
             </nav>
         </div>
 
@@ -160,19 +174,43 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         </div>
     </header>
 
-    <!-- Flash Alerts -->
+    <!-- Flash Toast Messages Container (Apple Liquid Glass ở góc phải) -->
     <?php if ($successMessage || $errorMessage): ?>
-        <div style="position: fixed; top: 5.5rem; left: 50%; transform: translateX(-50%); z-index: 1050; width: min(90vw, 560px);">
+        <div id="flash-toast-container">
             <?php if ($successMessage): ?>
-                <div class="nature-alert nature-alert-success shadow-lg rise-in mb-2" role="alert">
-                    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-                    <div><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="app-toast app-toast-success shadow-lg" role="alert" id="toast-success">
+                    <div class="toast-body-row d-flex align-items-center gap-2">
+                        <div class="toast-icon-badge toast-icon-success flex-shrink-0">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="toast-title">Thành công!</div>
+                            <div class="toast-desc"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        </div>
+                        <button type="button" 
+                                class="toast-glass-close flex-shrink-0" 
+                                onclick="window.dismissToast(this.closest('.app-toast'))" 
+                                aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="toast-progress-track"><div class="toast-progress-fill toast-progress-success"></div></div>
                 </div>
             <?php endif; ?>
             <?php if ($errorMessage): ?>
-                <div class="nature-alert nature-alert-error shadow-lg rise-in mb-2" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                    <div><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="app-toast app-toast-error shadow-lg" role="alert" id="toast-error">
+                    <div class="toast-body-row d-flex align-items-center gap-2">
+                        <div class="toast-icon-badge toast-icon-error flex-shrink-0">
+                            <i class="bi bi-exclamation-lg"></i>
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="toast-title">Thông báo</div>
+                            <div class="toast-desc"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        </div>
+                        <button type="button" 
+                                class="toast-glass-close flex-shrink-0" 
+                                onclick="window.dismissToast(this.closest('.app-toast'))" 
+                                aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="toast-progress-track"><div class="toast-progress-fill toast-progress-error"></div></div>
                 </div>
             <?php endif; ?>
         </div>
@@ -192,6 +230,6 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
 
     <!-- Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/main.js"></script>
+    <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/main.js?v=<?= @filemtime(__DIR__ . '/../../../public/assets/js/main.js') ?: time() ?>"></script>
 </body>
 </html>
