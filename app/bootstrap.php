@@ -22,6 +22,7 @@ spl_autoload_register(function ($class) {
         __DIR__ . '/models/',
         __DIR__ . '/controllers/',
         __DIR__ . '/controllers/admin/',
+        __DIR__ . '/controllers/api/',
         __DIR__ . '/middleware/',
     ];
 
@@ -71,10 +72,12 @@ require_once __DIR__ . '/repositories/CategoryRepository.php';
 require_once __DIR__ . '/repositories/PostRepository.php';
 require_once __DIR__ . '/repositories/CommentRepository.php';
 require_once __DIR__ . '/repositories/ProductRepository.php';
+require_once __DIR__ . '/repositories/StatsRepository.php';
 
 // Pre-load Services (Service Layer)
 require_once __DIR__ . '/services/WeatherService.php';
 require_once __DIR__ . '/services/VietnamAddressService.php';
+require_once __DIR__ . '/services/RssService.php';
 require_once __DIR__ . '/services/AuthService.php';
 require_once __DIR__ . '/services/CategoryService.php';
 require_once __DIR__ . '/services/PostService.php';
