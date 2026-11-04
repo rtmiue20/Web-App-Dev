@@ -17,7 +17,7 @@ class PostRepository extends BaseRepository
     public function __construct(?PDO $db = null)
     {
         parent::__construct($db);
-        $this->postModel = new Post();
+        $this->postModel = new Post($this->db);
     }
 
     /**
@@ -82,24 +82,44 @@ class PostRepository extends BaseRepository
     }
 
     /**
-     * Lấy danh sách thẻ (tags) phổ biến nhất kèm số lượng bài viết.
+     * Lấy danh sách thẻ (tags) phổ biến nhất kèm số lượng bài viết (truy vấn từ SQL View `vw_popular_tags`).
      */
     public function findPopularTags(int $limit = 12): array
     {
+        $limit = max(1, $limit);
         try {
-            $stmt = $this->db->prepare(
-                'SELECT t.id, t.name, COUNT(pt.post_id) AS post_count
-                 FROM tags t
-                 JOIN post_tags pt ON pt.tag_id = t.id
-                 GROUP BY t.id, t.name
-                 ORDER BY post_count DESC
-                 LIMIT :limit'
-            );
-            $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+            $stmt = $this->db->prepare('SELECT id, name, post_count FROM vw_popular_tags LIMIT :limit');
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll();
+        } catch (PDOException $viewEx) {
+            try {
+                $stmt = $this->db->prepare(
+                    'SELECT t.id, t.name, COUNT(pt.post_id) AS post_count
+                     FROM tags t
+                     JOIN post_tags pt ON pt.tag_id = t.id
+                     GROUP BY t.id, t.name
+                     ORDER BY post_count DESC
+                     LIMIT :limit'
+                );
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll();
+            } catch (PDOException $e) {
+                return [];
+            }
+        }
+    }
+
+    /**
+     * Thống kê Top bài viết nổi bật nhất qua Stored Procedure `sp_stats_top_posts`.
+     */
+    public function findTopPosts(int $limit = 5): array
+    {
+        try {
+            return $this->callProcedure('sp_stats_top_posts', [max(1, $limit)]);
         } catch (PDOException $e) {
-            return [];
+            return array_slice($this->findAll(null, 'hot'), 0, max(1, $limit));
         }
     }
 

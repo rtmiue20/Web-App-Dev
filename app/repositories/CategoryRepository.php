@@ -11,7 +11,7 @@ class CategoryRepository extends BaseRepository
     protected string $table = 'categories';
 
     /**
-     * Lấy danh sách chuyên mục kèm số lượng bài viết (sp_category_list).
+     * Lấy danh sách chuyên mục kèm số lượng bài viết (sp_category_list / View vw_category_summary).
      */
     public function findAll(): array
     {
@@ -19,15 +19,35 @@ class CategoryRepository extends BaseRepository
             return $this->callProcedure('sp_category_list');
         } catch (PDOException $e) {
             try {
-                return $this->query(
-                    'SELECT c.id, c.name, c.description, COUNT(p.id) AS post_count
-                     FROM categories c
-                     LEFT JOIN posts p ON p.category_id = c.id
-                     GROUP BY c.id, c.name, c.description
-                     ORDER BY c.id ASC'
-                );
+                return $this->query('SELECT * FROM vw_category_summary ORDER BY id ASC');
+            } catch (PDOException $viewEx) {
+                try {
+                    return $this->query(
+                        'SELECT c.id, c.name, c.description, COUNT(p.id) AS post_count
+                         FROM categories c
+                         LEFT JOIN posts p ON p.category_id = c.id
+                         GROUP BY c.id, c.name, c.description
+                         ORDER BY c.id ASC'
+                    );
+                } catch (PDOException $ex) {
+                    return [];
+                }
+            }
+        }
+    }
+
+    /**
+     * Thống kê số bài viết theo từng chuyên mục qua Stored Procedure `sp_stats_posts_by_category` (hoặc `lk_posts_incategory`).
+     */
+    public function getStatsByCategory(): array
+    {
+        try {
+            return $this->callProcedure('sp_stats_posts_by_category');
+        } catch (PDOException $e) {
+            try {
+                return $this->callProcedure('lk_posts_incategory');
             } catch (PDOException $ex) {
-                return [];
+                return $this->findAll();
             }
         }
     }

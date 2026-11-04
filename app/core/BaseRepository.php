@@ -22,7 +22,21 @@ abstract class BaseRepository implements RepositoryInterface
      */
     protected function callProcedure(string $procedure, array $params = []): array
     {
-        return Database::call($procedure, $params);
+        if (!preg_match('/\A[a-zA-Z0-9_]+\z/', $procedure)) {
+            throw new InvalidArgumentException('Tên Stored Procedure không hợp lệ.');
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($params), '?'));
+        $stmt = $this->db->prepare("CALL {$procedure}({$placeholders})");
+        $stmt->execute(array_values($params));
+        $rows = $stmt->fetchAll();
+
+        while ($stmt->nextRowset()) {
+            // Đọc hết các tập kết quả phụ nếu có
+        }
+        $stmt->closeCursor();
+
+        return $rows;
     }
 
     /**
@@ -30,7 +44,9 @@ abstract class BaseRepository implements RepositoryInterface
      */
     protected function query(string $sql, array $params = []): array
     {
-        return Database::query($sql, $params);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
     }
 
     /**
@@ -38,7 +54,10 @@ abstract class BaseRepository implements RepositoryInterface
      */
     protected function queryOne(string $sql, array $params = []): ?array
     {
-        return Database::queryOne($sql, $params);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        return $row === false ? null : $row;
     }
 
     /**
@@ -46,7 +65,9 @@ abstract class BaseRepository implements RepositoryInterface
      */
     protected function execute(string $sql, array $params = []): int
     {
-        return Database::execute($sql, $params);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount();
     }
 
     /**

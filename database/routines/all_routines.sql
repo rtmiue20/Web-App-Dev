@@ -475,7 +475,7 @@ END$$
 
 
 -- ==============================================================================
--- 7. THỐNG KÊ & DASHBOARD (STATISTICS & REPORTS)
+-- 7. THỐNG KÊ & DASHBOARD (STATISTICS & REPORTS - STORED PROCEDURES)
 -- ==============================================================================
 
 DROP PROCEDURE IF EXISTS sp_dashboard_stats$$
@@ -484,28 +484,74 @@ BEGIN
     SELECT 
         (SELECT COUNT(*) FROM users) AS total_users,
         (SELECT COUNT(*) FROM posts) AS total_posts,
+        (SELECT COUNT(*) FROM posts WHERE status = 'published') AS published_posts,
+        (SELECT COUNT(*) FROM posts WHERE status = 'pending') AS pending_posts,
         (SELECT COUNT(*) FROM categories) AS total_categories,
-        (SELECT COUNT(*) FROM comments) AS total_comments;
+        (SELECT COUNT(*) FROM comments) AS total_comments,
+        (SELECT COUNT(*) FROM products WHERE is_shared = 1) AS total_products;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_stats_top_posts$$
+CREATE PROCEDURE sp_stats_top_posts(IN p_limit INT)
+BEGIN
+    DECLARE v_limit INT DEFAULT 5;
+    SET v_limit = IF(p_limit IS NULL OR p_limit <= 0, 5, p_limit);
+
+    SELECT
+        id, user_id, category_id, title, location, status, created_at,
+        username, category_name, image_url, vote_score, upvotes, downvotes, likes, comments_count, hot_score
+    FROM vw_post_details
+    WHERE status = 'published'
+    ORDER BY hot_score DESC, vote_score DESC, comments_count DESC, created_at DESC
+    LIMIT v_limit;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_stats_posts_by_category$$
+CREATE PROCEDURE sp_stats_posts_by_category()
+BEGIN
+    SELECT
+        id, name, name AS category, description,
+        post_count AS total_posts, post_count, published_count, pending_count, latest_post_at
+    FROM vw_category_summary
+    ORDER BY post_count DESC, id ASC;
 END$$
 
 DROP PROCEDURE IF EXISTS lk_posts_incategory$$
 CREATE PROCEDURE lk_posts_incategory()
 BEGIN
-    SELECT c.id, c.name AS category, COUNT(p.id) AS total_posts
-    FROM categories c
-    LEFT JOIN posts p ON p.category_id = c.id
-    GROUP BY c.id, c.name
-    ORDER BY total_posts DESC;
+    CALL sp_stats_posts_by_category();
+END$$
+
+DROP PROCEDURE IF EXISTS sp_stats_top_users$$
+CREATE PROCEDURE sp_stats_top_users(IN p_limit INT)
+BEGIN
+    DECLARE v_limit INT DEFAULT 5;
+    SET v_limit = IF(p_limit IS NULL OR p_limit <= 0, 5, p_limit);
+
+    SELECT
+        id, username, email, role_name, avatar_path, created_at,
+        total_posts, published_posts, total_comments, total_karma
+    FROM vw_user_summary
+    ORDER BY total_posts DESC, total_karma DESC, total_comments DESC, id ASC
+    LIMIT v_limit;
 END$$
 
 DROP PROCEDURE IF EXISTS lk_posts_byuser$$
 CREATE PROCEDURE lk_posts_byuser()
 BEGIN
-    SELECT u.id, u.username, COUNT(p.id) AS total_posts
-    FROM users u
-    LEFT JOIN posts p ON p.user_id = u.id
-    GROUP BY u.id, u.username
-    ORDER BY total_posts DESC;
+    CALL sp_stats_top_users(10);
+END$$
+
+DROP PROCEDURE IF EXISTS sp_stats_posts_by_status$$
+CREATE PROCEDURE sp_stats_posts_by_status()
+BEGIN
+    SELECT
+        COUNT(*) AS total_all,
+        SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) AS total_published,
+        SUM(CASE WHEN status = 'pending'   THEN 1 ELSE 0 END) AS total_pending,
+        SUM(CASE WHEN status = 'rejected'  THEN 1 ELSE 0 END) AS total_rejected,
+        SUM(CASE WHEN status = 'hidden'    THEN 1 ELSE 0 END) AS total_hidden
+    FROM posts;
 END$$
 
 -- ==============================================================================

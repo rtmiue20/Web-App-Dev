@@ -3,11 +3,12 @@ require_once __DIR__ . '/../core/BaseService.php';
 require_once __DIR__ . '/../repositories/PostRepository.php';
 require_once __DIR__ . '/../repositories/CategoryRepository.php';
 require_once __DIR__ . '/../repositories/UserRepository.php';
+require_once __DIR__ . '/../repositories/StatsRepository.php';
 require_once __DIR__ . '/../models/Post.php';
 
 /**
  * PostService - Tầng nghiệp vụ Bài viết, Tìm kiếm, Phân trang & Kiểm duyệt (Service Layer).
- * Điều phối giữa PostRepository, CategoryRepository và UserRepository.
+ * Điều phối giữa PostRepository, CategoryRepository, UserRepository và StatsRepository.
  */
 class PostService extends BaseService
 {
@@ -16,25 +17,29 @@ class PostService extends BaseService
     private PostRepository $postRepository;
     private CategoryRepository $categoryRepository;
     private UserRepository $userRepository;
+    private StatsRepository $statsRepository;
 
     public function __construct(
         ?PostRepository $postRepository = null,
         ?CategoryRepository $categoryRepository = null,
-        ?UserRepository $userRepository = null
+        ?UserRepository $userRepository = null,
+        ?StatsRepository $statsRepository = null
     ) {
         $this->postRepository = $postRepository ?? new PostRepository();
         $this->categoryRepository = $categoryRepository ?? new CategoryRepository();
-        $this->userRepository = $userRepository ?? new UserRepository();
+        $this->userRepository = $this->userRepository ?? new UserRepository();
+        $this->statsRepository = $statsRepository ?? new StatsRepository();
     }
 
     /**
-     * Lấy dữ liệu tổng hợp cho Trang chủ (Thống kê + Bài viết nổi bật/mới/top).
+     * Lấy dữ liệu tổng hợp cho Trang chủ (Thống kê qua sp_dashboard_stats + Bài viết nổi bật/mới/top từ View vw_post_details).
      */
     public function getHomeOverview(string $sort = 'hot', int $limit = 4): array
     {
         $normalizedSort = Post::normalizeSort($sort);
-        $postCount = $this->postRepository->count();
-        $userCount = $this->userRepository->count();
+        $summary = $this->statsRepository->getDashboardStats();
+        $postCount = (int)($summary['total_posts'] ?? 0) ?: $this->postRepository->count();
+        $userCount = (int)($summary['total_users'] ?? 0) ?: $this->userRepository->count();
 
         $stats = [
             [
@@ -54,7 +59,14 @@ class PostService extends BaseService
             ['label' => 'Bài mới nhất',   'title' => 'Sau cơn mưa trên đỉnh Tà Xùa', 'tag' => 'trek'],
         ];
 
-        $recentPosts = array_slice($this->postRepository->findAll(null, $normalizedSort), 0, max(1, $limit));
+        if ($normalizedSort === 'hot') {
+            $recentPosts = $this->statsRepository->getTopPosts(max(1, $limit));
+            if (empty($recentPosts)) {
+                $recentPosts = array_slice($this->postRepository->findAll(null, $normalizedSort), 0, max(1, $limit));
+            }
+        } else {
+            $recentPosts = array_slice($this->postRepository->findAll(null, $normalizedSort), 0, max(1, $limit));
+        }
 
         return [
             'stats'        => $stats,
@@ -203,10 +215,15 @@ class PostService extends BaseService
     }
 
     /**
-     * Đếm số bài viết theo từng trạng thái kiểm duyệt.
+     * Đếm số bài viết theo từng trạng thái kiểm duyệt (ưu tiên gọi Stored Procedure `sp_stats_posts_by_status`).
      */
     public function getStatusCounts(): array
     {
+        $statusStats = $this->statsRepository->getPostsByStatus();
+        if (($statusStats['all'] ?? 0) > 0) {
+            return $statusStats;
+        }
+
         return [
             'all'       => $this->postRepository->count(),
             'published' => $this->postRepository->countFiltered(null, 'published'),
