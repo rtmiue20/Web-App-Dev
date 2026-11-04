@@ -22,6 +22,14 @@ Website diễn đàn chia sẻ kiến thức và kinh nghiệm dành cho những
 | Quản lý mã nguồn | Git + GitHub (làm việc theo branch) |
 | Mạng chung cho nhóm | Tailscale (LAN ảo để truy cập DB của máy host) |
 
+## Tính năng dã ngoại
+
+- Tạo checklist đồ dùng theo loại chuyến đi và chia sẻ công khai hoặc giữ riêng tư.
+- Đăng chuyến đi nhóm, giới hạn số người và đăng ký tham gia.
+- Đánh giá địa điểm ngay trên bài viết; bản đồ hiển thị các bài có tọa độ.
+- Cảnh báo mưa, dông và gió dựa trên Open-Meteo. Dự báo chuyến đi chỉ có trong 16 ngày tới; cần kiểm tra cảnh báo lũ và tình trạng đường từ cơ quan địa phương.
+- Bản đồ dùng Leaflet và OpenStreetMap; cần kết nối Internet để tải bản đồ.
+
 ## Cấu trúc thư mục
 
 ```
@@ -68,6 +76,7 @@ git clone <URL-repo-GitHub> Web-App-Dev
 1. Mở phpMyAdmin: http://localhost/phpmyadmin
 2. Tạo database mới (ví dụ `forum_dangoai`, bảng mã `utf8mb4_unicode_ci`).
 3. Import `database/schema.sql`, sau đó các file trong `database/routines/` và (tuỳ chọn) `database/seeds/seed.sql`.
+4. Chạy lần lượt các migration trong `database/migrations/` chưa áp dụng; migration `006_add_outdoor_features.sql` tạo bảng checklist, chuyến đi nhóm và đánh giá địa điểm.
 
 ### 4. Cấu hình kết nối
 Mở `config/database.php` và điền thông tin kết nối:

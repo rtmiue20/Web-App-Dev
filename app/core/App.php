@@ -12,6 +12,7 @@ class App
         $posts = new PostController();
         $categories = new CategoryController();
         $users = new UserController();
+        $outdoor = new OutdoorController();
         $api = new ApiController();
         $dashboard = new DashboardController();
         $postAdmin = new PostAdminController();
@@ -56,6 +57,23 @@ class App
         $router->post('/posts/{id}/like', function ($id) use ($posts) {
             $posts->like((int)$id);
         });
+        $router->post('/posts/{id}/reviews', function ($id) use ($outdoor) {
+            $outdoor->storeReview((int)$id);
+        }, [AuthMiddleware::class]);
+
+        // Outdoor features
+        $router->get('/checklists', [$outdoor, 'checklists']);
+        $router->post('/checklists', [$outdoor, 'storeChecklist'], [AuthMiddleware::class]);
+        $router->get('/trips', [$outdoor, 'trips']);
+        $router->post('/trips', [$outdoor, 'storeTrip'], [AuthMiddleware::class]);
+        $router->get('/trips/{id}', function ($id) use ($outdoor) {
+            $outdoor->showTrip((int) $id);
+        });
+        $router->post('/trips/{id}/join', function ($id) use ($outdoor) {
+            $outdoor->joinTrip((int) $id);
+        }, [AuthMiddleware::class]);
+        $router->get('/places', [$outdoor, 'map']);
+
         $router->post('/posts/{id}/vote', function ($id) use ($posts) {
             $posts->like((int)$id);
         });

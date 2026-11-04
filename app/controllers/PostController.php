@@ -3,6 +3,7 @@ require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Comment.php';
+require_once __DIR__ . '/../models/PlaceReview.php';
 require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
@@ -316,7 +317,6 @@ class PostController extends Controller {
         $currentUserId = Auth::check() ? (int)Auth::id() : 0;
         $commentsTree = $this->comments->getTreeByPostId($id, $currentUserId);
         $totalComments = $this->comments->countByPost($id);
-        $canManage = $this->canManagePost($post);
         $tools = $this->products->getByPostId($id);
         $userVote = Auth::check() ? $this->posts->getUserVote($id, Auth::id()) : 0;
 
@@ -328,10 +328,13 @@ class PostController extends Controller {
         $isFollowingAuthor = $followModel->isFollowingUser($currentUserId, $authorId);
         $authorFollowersCount = $followModel->getFollowersCount($authorId);
         $authorGamification = Gamification::calculate($authorId);
+        $placeReviews = new PlaceReview();
 
         $this->render('posts/show', [
             'title'                => $post['title'],
             'post'                 => $post,
+            'placeReviews' => $placeReviews->getByPost($id),
+            'placeRating' => $placeReviews->getSummary($id),
             'tools'                => $tools,
             'comments'             => $commentsTree,
             'totalComments'        => $totalComments,

@@ -140,9 +140,9 @@ $galleryCount = count($galleryImages);
                 <?= htmlspecialchars($post['category_name'] ?? 'Dã ngoại', ENT_QUOTES, 'UTF-8') ?>
             </span>
             
-            <?php if (!empty($post['location'])): ?>
+            <?php if (!empty($post['location']) || (!empty($post['lat']) && !empty($post['lng']))): ?>
                 <span class="badge text-bg-secondary" id="weather-badge">
-                    <i class="bi bi-geo-alt-fill me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
+                    <i class="bi bi-geo-alt-fill me-1"></i><?= htmlspecialchars($post['location'] ?: 'Địa điểm bài viết', ENT_QUOTES, 'UTF-8') ?>
                     <span id="weather-info" class="ms-2"></span>
                 </span>
             <?php endif; ?>
@@ -334,6 +334,7 @@ $galleryCount = count($galleryImages);
         <!-- ══════════════════════════════════════════════════════════
              DỰ BÁO THỜI TIẾT DÃ NGOẠI & 4 NGÀY TỚI (Web Service FR06)
         ══════════════════════════════════════════════════════════ -->
+        <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
         <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border" style="background: rgba(255, 255, 255, 0.035); border-color: rgba(255, 255, 255, 0.1) !important;">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
@@ -345,6 +346,11 @@ $galleryCount = count($galleryImages);
                         <span class="text-white-50" style="font-size: 11.5px;">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
                     </div>
                 </div>
+                <?php elseif (!empty($post['location'])): ?>
+                    <div class="alert alert-warning mt-4" role="status">
+                        Chưa có tọa độ địa điểm; không thể tải cảnh báo thời tiết. Hãy kiểm tra dự báo địa phương trước chuyến đi.
+                    </div>
+                <?php endif; ?>
                 <?php if (!empty($post['location'])): ?>
                     <span class="badge rounded-pill text-bg-light border text-secondary px-3 py-1.5" style="font-size: 11px;">
                         <i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
@@ -584,6 +590,64 @@ $galleryCount = count($galleryImages);
         <?php endif; ?>
     </article>
 
+    <?php if (!empty($post['location'])): ?>
+        <section class="nature-card p-4 mt-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h2 class="h4 mb-0">Đánh giá địa điểm</h2>
+                <span class="fw-semibold">
+                    <?php if ((int) $placeRating['review_count'] > 0): ?>
+                        ★ <?= number_format((float) $placeRating['average_rating'], 1) ?>/5
+                        <span class="text-muted small">(<?= (int) $placeRating['review_count'] ?> đánh giá)</span>
+                    <?php else: ?>
+                        <span class="text-muted">Chưa có đánh giá</span>
+                    <?php endif; ?>
+                </span>
+            </div>
+            <?php if ($isLoggedIn): ?>
+                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int) $post['id'] ?>/reviews" class="row g-3 mt-2">
+                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="col-md-3">
+                        <label class="form-label" for="place-rating">Số sao</label>
+                        <select class="form-select" id="place-rating" name="rating" required>
+                            <option value="">Chọn sao</option>
+                            <option value="5">5 - Rất tốt</option>
+                            <option value="4">4 - Tốt</option>
+                            <option value="3">3 - Bình thường</option>
+                            <option value="2">2 - Chưa tốt</option>
+                            <option value="1">1 - Không tốt</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="place-review">Nhận xét</label>
+                        <textarea class="form-control" id="place-review" name="review" rows="3" minlength="5" maxlength="1000" required
+                                  placeholder="Chia sẻ đường đi, cảnh quan hoặc lưu ý tại địa điểm..."></textarea>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="nature-btn-primary" type="submit">Gửi đánh giá</button>
+                    </div>
+                </form>
+            <?php else: ?>
+                <p class="mt-3 mb-0"><a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login">Đăng nhập</a> để đánh giá địa điểm.</p>
+            <?php endif; ?>
+
+            <div class="mt-4">
+                <?php foreach ($placeReviews as $review): ?>
+                    <article class="border-top py-3">
+                        <div class="d-flex justify-content-between gap-2">
+                            <strong><?= htmlspecialchars($review['username'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            <span>★ <?= (int) $review['rating'] ?>/5</span>
+                        </div>
+                        <p class="mb-1"><?= nl2br(htmlspecialchars($review['review'], ENT_QUOTES, 'UTF-8')) ?></p>
+                        <small class="text-muted"><?= date('d/m/Y H:i', strtotime($review['created_at'])) ?></small>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
+        <div id="post-weather-warning" class="d-none mt-3" role="status"></div>
+    <?php endif; ?>
 
     <!-- Comments Section (Hỗ trợ Bình luận lồng nhau nhiều cấp - Multi-level Nested Replies) -->
     <?php $canComment = class_exists('Auth') ? Auth::isMember() : $isLoggedIn; ?>
@@ -1244,10 +1308,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const weatherPanel = document.getElementById('weather-forecast-panel');
     if (weatherElem || weatherPanel) {
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
-            ForumAjax.fetchWeather('<?= htmlspecialchars((string)$post['lat'], ENT_QUOTES, 'UTF-8') ?>', '<?= htmlspecialchars((string)$post['lng'], ENT_QUOTES, 'UTF-8') ?>', weatherElem, weatherPanel);
-        <?php else: ?>
-            // Default: Northern Vietnam mountains (Ta Xua)
-            ForumAjax.fetchWeather('21.28', '104.31', weatherElem, weatherPanel);
+            ForumAjax.fetchWeather(
+                <?= json_encode((string) $post['lat']) ?>,
+                <?= json_encode((string) $post['lng']) ?>,
+                weatherElem,
+                weatherPanel,
+                document.getElementById('post-weather-warning')
+            );
         <?php endif; ?>
     }
 });

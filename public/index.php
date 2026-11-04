@@ -26,6 +26,7 @@ require_once __DIR__ . '/../app/controllers/PostController.php';
 require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/ProductController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
+require_once __DIR__ . '/../app/controllers/OutdoorController.php';
 require_once __DIR__ . '/../app/controllers/ModerationController.php';
 require_once __DIR__ . '/../app/controllers/ApiController.php';
 require_once __DIR__ . '/../app/controllers/admin/DashboardController.php';
