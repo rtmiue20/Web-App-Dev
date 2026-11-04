@@ -48,6 +48,9 @@ class DashboardController extends Controller
         $topPosts = $this->statsRepository->getTopPosts(5);
         $topUsers = $this->statsRepository->getTopUsers(5);
 
+        // Dữ liệu ban đầu cho biểu đồ Chart.js (7 ngày gần nhất) qua sp_stats_daily_activity
+        $dailyActivity = $this->statsRepository->getDailyActivity(7);
+
         $this->render('admin/dashboard', [
             'title'            => 'Bảng điều khiển Quản trị',
             'user'             => Session::get('user'),
@@ -61,6 +64,7 @@ class DashboardController extends Controller
             'categoryStats'    => $categoryStats,
             'topPosts'         => $topPosts,
             'topUsers'         => $topUsers,
+            'dailyActivity'    => $dailyActivity,
         ], 'admin');
     }
 }

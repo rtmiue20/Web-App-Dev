@@ -15,6 +15,12 @@ class Database
     {
         if (self::$connection === null) {
             $cfg = require __DIR__ . '/../../config/database.php';
+            if (file_exists(__DIR__ . '/../../config.local.php')) {
+                $localCfg = require __DIR__ . '/../../config.local.php';
+                if (is_array($localCfg)) {
+                    $cfg = array_merge($cfg, $localCfg);
+                }
+            }
 
             $dsn = sprintf(
                 'mysql:host=%s;port=%d;dbname=%s;charset=%s',

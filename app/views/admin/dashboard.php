@@ -123,6 +123,185 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
         </div>
     </div>
 
+    <!-- BIỂU ĐỒ CHART.JS: NGƯỜI DÙNG MỚI & BÀI VIẾT MỚI THEO NGÀY (sp_stats_daily_activity qua AJAX JSON) -->
+    <?php
+        $chartInitial = [
+            'days'         => count($dailyActivity ?? []),
+            'labels'       => array_column($dailyActivity ?? [], 'date_label'),
+            'new_users'    => array_column($dailyActivity ?? [], 'new_users'),
+            'new_posts'    => array_column($dailyActivity ?? [], 'new_posts'),
+            'new_comments' => array_column($dailyActivity ?? [], 'new_comments'),
+        ];
+        $jsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
+    ?>
+    <div class="nature-card mb-4" style="border-radius: 32px; padding: 2rem;">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    <h2 class="h5 fw-normal mb-0" style="color: var(--color-ink);">
+                        <i class="bi bi-graph-up-arrow text-success me-1"></i>Hoạt động theo ngày
+                    </h2>
+                    <span class="badge rounded-pill text-bg-light border text-muted" style="font-size: 11px;">
+                        <code>CALL sp_stats_daily_activity(<span id="chartDaysLabel"><?= (int)$chartInitial['days'] ?></span>)</code>
+                    </span>
+                </div>
+                <p class="small text-muted mb-0">Số người dùng đăng ký mới và bài viết mới mỗi ngày — Chart.js, dữ liệu JSON từ <code>/api/stats/daily</code> (AJAX).</p>
+            </div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Khoảng thời gian thống kê" id="chartRangeGroup">
+                <button type="button" class="btn btn-outline-success active" data-days="7">7 ngày</button>
+                <button type="button" class="btn btn-outline-success" data-days="14">14 ngày</button>
+                <button type="button" class="btn btn-outline-success" data-days="30">30 ngày</button>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="badge text-bg-primary-subtle text-primary-emphasis border border-primary-subtle px-3 py-2">
+                <i class="bi bi-person-plus-fill me-1"></i>Người dùng mới: <strong id="chartTotalUsers">0</strong>
+            </span>
+            <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-2">
+                <i class="bi bi-file-earmark-plus-fill me-1"></i>Bài viết mới: <strong id="chartTotalPosts">0</strong>
+            </span>
+            <span class="badge text-bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2">
+                <i class="bi bi-chat-dots-fill me-1"></i>Bình luận mới: <strong id="chartTotalComments">0</strong>
+            </span>
+        </div>
+
+        <div class="position-relative" style="height: 320px;">
+            <canvas id="dailyActivityChart" role="img" aria-label="Biểu đồ người dùng mới và bài viết mới theo ngày"></canvas>
+            <div id="chartMessage" class="position-absolute top-50 start-50 translate-middle text-muted small text-center" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+    (function () {
+        var BASE_URL = <?= json_encode($baseUrl, $jsonFlags | JSON_UNESCAPED_SLASHES) ?>;
+        var initialData = <?= json_encode($chartInitial, $jsonFlags) ?>;
+        var canvas = document.getElementById('dailyActivityChart');
+        var messageEl = document.getElementById('chartMessage');
+        var rangeGroup = document.getElementById('chartRangeGroup');
+        var chart = null;
+
+        function showMessage(text) {
+            if (!messageEl) return;
+            messageEl.textContent = text || '';
+            messageEl.style.display = text ? 'block' : 'none';
+        }
+
+        function sum(arr) {
+            return (arr || []).reduce(function (a, b) { return a + Number(b || 0); }, 0);
+        }
+
+        function updateSummary(data) {
+            document.getElementById('chartTotalUsers').textContent = sum(data.new_users);
+            document.getElementById('chartTotalPosts').textContent = sum(data.new_posts);
+            document.getElementById('chartTotalComments').textContent = sum(data.new_comments);
+            document.getElementById('chartDaysLabel').textContent = (data.labels || []).length;
+        }
+
+        function buildChart(data) {
+            if (typeof window.Chart === 'undefined' || !canvas) {
+                showMessage('Không tải được thư viện Chart.js (kiểm tra kết nối Internet).');
+                return;
+            }
+            chart = new window.Chart(canvas.getContext('2d'), {
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Bài viết mới',
+                            data: data.new_posts,
+                            backgroundColor: 'rgba(47, 94, 46, 0.65)',
+                            borderColor: '#2f5e2e',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            order: 2
+                        },
+                        {
+                            type: 'line',
+                            label: 'Người dùng mới',
+                            data: data.new_users,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.15)',
+                            pointBackgroundColor: '#0d6efd',
+                            tension: 0.3,
+                            fill: true,
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Bình luận mới',
+                            data: data.new_comments,
+                            borderColor: '#20c997',
+                            borderDash: [5, 4],
+                            pointBackgroundColor: '#20c997',
+                            tension: 0.3,
+                            hidden: true,
+                            order: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { callbacks: { title: function (items) { return 'Ngày ' + items[0].label; } } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 }, title: { display: true, text: 'Số lượng' } }
+                    }
+                }
+            });
+        }
+
+        function applyData(data) {
+            updateSummary(data);
+            var allZero = sum(data.new_users) + sum(data.new_posts) + sum(data.new_comments) === 0;
+            showMessage(allZero ? 'Chưa có hoạt động nào trong khoảng thời gian này.' : '');
+            if (!chart) {
+                buildChart(data);
+                return;
+            }
+            chart.data.labels = data.labels;
+            chart.data.datasets[0].data = data.new_posts;
+            chart.data.datasets[1].data = data.new_users;
+            chart.data.datasets[2].data = data.new_comments;
+            chart.update();
+        }
+
+        function loadRange(days) {
+            fetch(BASE_URL + '/api/stats/daily?days=' + encodeURIComponent(days), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+                .then(function (res) { return res.json().then(function (json) { return { ok: res.ok, json: json }; }); })
+                .then(function (r) {
+                    if (!r.ok || !r.json || !r.json.success) {
+                        throw new Error((r.json && r.json.message) || 'Không tải được dữ liệu thống kê.');
+                    }
+                    applyData(r.json.data);
+                })
+                .catch(function (err) { showMessage(err.message); });
+        }
+
+        if (rangeGroup) {
+            rangeGroup.addEventListener('click', function (e) {
+                var btn = e.target.closest('button[data-days]');
+                if (!btn) return;
+                rangeGroup.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                loadRange(btn.getAttribute('data-days'));
+            });
+        }
+
+        applyData(initialData);
+    })();
+    </script>
+
     <!-- KHỐI 1: THỐNG KÊ SỐ BÀI VIẾT THEO DANH MỤC (sp_stats_posts_by_category & vw_category_summary) -->
     <div class="nature-card mb-4" style="border-radius: 32px; padding: 2rem;">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

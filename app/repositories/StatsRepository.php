@@ -45,6 +45,11 @@ class StatsRepository extends BaseRepository
                 return;
             }
 
+            // Chỉ tạo khi còn thiếu View / Procedure — tránh chạy DDL (DROP/CREATE) ở mọi request.
+            if ($this->requiredObjectsExist()) {
+                return;
+            }
+
             // 1. Tạo các SQL Views cho truy vấn hay dùng
             $this->db->exec("
                 CREATE OR REPLACE VIEW vw_post_details AS
@@ -210,8 +215,183 @@ class StatsRepository extends BaseRepository
                     FROM posts;
                 END
             ");
+
+            $this->db->exec("DROP PROCEDURE IF EXISTS sp_stats_daily_activity");
+            $this->db->exec("
+                CREATE PROCEDURE sp_stats_daily_activity(IN p_days INT)
+                BEGIN
+                    DECLARE v_days INT DEFAULT 7;
+                    SET v_days = IF(p_days IS NULL OR p_days <= 0, 7, IF(p_days > 30, 30, p_days));
+
+                    SELECT
+                        d.stat_date,
+                        DATE_FORMAT(d.stat_date, '%d/%m') AS date_label,
+                        COALESCE(u.new_users, 0) AS new_users,
+                        COALESCE(p.new_posts, 0) AS new_posts,
+                        COALESCE(c.new_comments, 0) AS new_comments
+                    FROM (
+                        SELECT DATE_SUB(CURDATE(), INTERVAL seq.n DAY) AS stat_date
+                        FROM (
+                            SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+                            UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+                            UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14
+                            UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19
+                            UNION ALL SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24
+                            UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL SELECT 28 UNION ALL SELECT 29
+                        ) AS seq
+                        WHERE seq.n < v_days
+                    ) AS d
+                    LEFT JOIN (
+                        SELECT DATE(created_at) AS reg_date, COUNT(*) AS new_users
+                        FROM users GROUP BY DATE(created_at)
+                    ) AS u ON u.reg_date = d.stat_date
+                    LEFT JOIN (
+                        SELECT DATE(created_at) AS post_date, COUNT(*) AS new_posts
+                        FROM posts GROUP BY DATE(created_at)
+                    ) AS p ON p.post_date = d.stat_date
+                    LEFT JOIN (
+                        SELECT DATE(created_at) AS comment_date, COUNT(*) AS new_comments
+                        FROM comments GROUP BY DATE(created_at)
+                    ) AS c ON c.comment_date = d.stat_date
+                    ORDER BY d.stat_date ASC;
+                END
+            ");
         } catch (PDOException $e) {
             error_log('Notice: ensureDatabaseViewsAndProcedures skipped: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Gọi Stored Procedure `sp_stats_daily_activity(p_days)` để thống kê số người dùng mới,
+     * bài viết mới và bình luận mới theo từng ngày (dữ liệu cho biểu đồ Chart.js trên Admin Dashboard).
+     *
+     * Luôn trả về đủ `$days` ngày liên tiếp (ngày không phát sinh dữ liệu có giá trị 0).
+     * Mỗi phần tử: stat_date (Y-m-d), date_label (d/m), new_users, new_posts, new_comments.
+     */
+    public function getDailyActivity(int $days = 7): array
+    {
+        $days = max(1, min(30, $days));
+
+        try {
+            $rows = $this->callProcedure('sp_stats_daily_activity', [$days]);
+            if (count($rows) === $days) {
+                return $this->normalizeDailyRows($rows);
+            }
+        } catch (PDOException $e) {
+            error_log('Notice: sp_stats_daily_activity fallback: ' . $e->getMessage());
+        }
+
+        return $this->buildDailyActivityFallback($days);
+    }
+
+    /**
+     * Chuẩn hóa kiểu dữ liệu số nguyên cho từng dòng thống kê theo ngày.
+     */
+    private function normalizeDailyRows(array $rows): array
+    {
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'stat_date'    => (string)($row['stat_date'] ?? ''),
+                'date_label'   => (string)($row['date_label'] ?? ''),
+                'new_users'    => (int)($row['new_users'] ?? 0),
+                'new_posts'    => (int)($row['new_posts'] ?? 0),
+                'new_comments' => (int)($row['new_comments'] ?? 0),
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Phương án dự phòng (khi chưa tạo được Stored Procedure): gom nhóm bằng Prepared Statement
+     * rồi điền đủ các ngày trống bằng PHP.
+     */
+    private function buildDailyActivityFallback(int $days): array
+    {
+        $start = date('Y-m-d', strtotime('-' . ($days - 1) . ' days')) . ' 00:00:00';
+        $counts = [
+            'new_users'    => $this->countPerDay('users', $start),
+            'new_posts'    => $this->countPerDay('posts', $start),
+            'new_comments' => $this->countPerDay('comments', $start),
+        ];
+
+        $result = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $ts = strtotime('-' . $i . ' days');
+            $date = date('Y-m-d', $ts);
+            $result[] = [
+                'stat_date'    => $date,
+                'date_label'   => date('d/m', $ts),
+                'new_users'    => $counts['new_users'][$date] ?? 0,
+                'new_posts'    => $counts['new_posts'][$date] ?? 0,
+                'new_comments' => $counts['new_comments'][$date] ?? 0,
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Đếm số bản ghi mới theo từng ngày của một bảng (tên bảng nằm trong whitelist cố định).
+     *
+     * @return array<string,int> Map 'Y-m-d' => số lượng
+     */
+    private function countPerDay(string $table, string $start): array
+    {
+        if (!in_array($table, ['users', 'posts', 'comments'], true)) {
+            return [];
+        }
+
+        try {
+            $rows = $this->query(
+                "SELECT DATE(created_at) AS day_key, COUNT(*) AS total
+                 FROM {$table}
+                 WHERE created_at >= :start
+                 GROUP BY DATE(created_at)",
+                ['start' => $start]
+            );
+        } catch (PDOException $e) {
+            return [];
+        }
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(string)$row['day_key']] = (int)$row['total'];
+        }
+        return $map;
+    }
+
+    /**
+     * Kiểm tra 4 SQL Views và 6 Stored Procedures thống kê đã tồn tại trong CSDL hiện hành chưa.
+     * Trả về false khi thiếu hoặc không đọc được information_schema (khi đó sẽ thử tạo).
+     */
+    private function requiredObjectsExist(): bool
+    {
+        $views = ['vw_post_details', 'vw_category_summary', 'vw_user_summary', 'vw_popular_tags'];
+        $procedures = [
+            'sp_dashboard_stats', 'sp_stats_top_posts', 'sp_stats_posts_by_category',
+            'sp_stats_top_users', 'sp_stats_posts_by_status', 'sp_stats_daily_activity',
+        ];
+
+        try {
+            $viewMarks = implode(',', array_fill(0, count($views), '?'));
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) FROM information_schema.VIEWS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ({$viewMarks})"
+            );
+            $stmt->execute($views);
+            $viewCount = (int)$stmt->fetchColumn();
+
+            $procMarks = implode(',', array_fill(0, count($procedures), '?'));
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) FROM information_schema.ROUTINES
+                 WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_TYPE = 'PROCEDURE' AND ROUTINE_NAME IN ({$procMarks})"
+            );
+            $stmt->execute($procedures);
+            $procCount = (int)$stmt->fetchColumn();
+
+            return $viewCount === count($views) && $procCount === count($procedures);
+        } catch (PDOException $e) {
+            return false;
         }
     }
 

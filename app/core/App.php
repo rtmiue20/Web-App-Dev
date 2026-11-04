@@ -115,6 +115,22 @@ class App
             $apiRouter->get('/posts', [$api, 'posts']);
             $apiRouter->get('/posts.php', [$api, 'posts']);
             $apiRouter->get('/search/suggest', [$api, 'posts']);
+
+            // --- RESTful API nội bộ trả JSON cho AJAX (resource-oriented) ---
+            // Bài viết
+            $apiRouter->get('/posts/{id}', [SearchApi::class, 'show']);
+            $apiRouter->post('/posts/{id}/like', [LikeApi::class, 'togglePostLike']);
+            $apiRouter->post('/posts/{id}/vote', [LikeApi::class, 'togglePostLike']);
+            // Bình luận
+            $apiRouter->get('/posts/{id}/comments', [CommentApi::class, 'index']);
+            $apiRouter->post('/posts/{id}/comments', [CommentApi::class, 'store']);
+            $apiRouter->delete('/comments/{id}', [CommentApi::class, 'destroy']);
+            $apiRouter->post('/comments/{id}/like', [LikeApi::class, 'toggleCommentLike']);
+            // Tin tức RSS (XML -> JSON)
+            $apiRouter->get('/news', [RssApi::class, 'index']);
+            // Thống kê quản trị cho Dashboard (chỉ Moderator/Admin, kiểm tra quyền trong controller trả JSON 401/403)
+            $apiRouter->get('/stats', [$api, 'stats']);
+            $apiRouter->get('/stats/daily', [$api, 'dailyStats']);
         });
 
         // 7. Nhóm Route Quản trị & Kiểm duyệt (/admin/* - Bảo vệ theo RBAC Middleware)

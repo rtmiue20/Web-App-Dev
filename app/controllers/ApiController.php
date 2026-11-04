@@ -830,21 +830,73 @@ class ApiController extends Controller
     }
 
     /**
-     * GET /api/stats
+     * Kiểm tra quyền truy cập các endpoint thống kê (chỉ Moderator / Admin).
+     * Trả JSON 401 (chưa đăng nhập) hoặc 403 (không đủ quyền) thay vì redirect HTML như middleware.
+     */
+    private function requireModeratorJson(): void
+    {
+        if (!Auth::check()) {
+            Response::fail('Vui lòng đăng nhập để xem dữ liệu thống kê.', 401);
+        }
+        if (!Auth::isModerator()) {
+            Response::fail('Bạn không có quyền xem dữ liệu thống kê quản trị.', 403);
+        }
+    }
+
+    /**
+     * GET /api/stats  (chỉ Moderator / Admin)
      * Thống kê tổng hợp hệ thống dạng JSON (gọi các Stored Procedures thống kê & SQL Views)
      */
     public function stats(): void
     {
+        $this->requireModeratorJson();
+
         $statsRepo = new StatsRepository();
         $limit = isset($_GET['limit']) ? max(1, min(20, (int)$_GET['limit'])) : 5;
+
+        // Không trả email thành viên qua API thống kê (bảo vệ dữ liệu cá nhân)
+        $topUsers = array_map(static function (array $row): array {
+            unset($row['email']);
+            return $row;
+        }, $statsRepo->getTopUsers($limit));
 
         Response::ok([
             'summary'           => $statsRepo->getDashboardStats(),
             'posts_by_category' => $statsRepo->getPostsByCategory(),
             'top_posts'         => $statsRepo->getTopPosts($limit),
-            'top_users'         => $statsRepo->getTopUsers($limit),
+            'top_users'         => $topUsers,
             'posts_by_status'   => $statsRepo->getPostsByStatus(),
         ], 'Tải dữ liệu thống kê thành công.');
     }
-}
 
+    /**
+     * GET /api/stats/daily?days=7|14|30  (chỉ Moderator / Admin)
+     * Số người dùng mới, bài viết mới, bình luận mới theo từng ngày — nguồn dữ liệu cho biểu đồ Chart.js
+     * ở Admin Dashboard (gọi Stored Procedure `sp_stats_daily_activity`).
+     */
+    public function dailyStats(): void
+    {
+        $this->requireModeratorJson();
+
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 7;
+        if (!in_array($days, [7, 14, 30], true)) {
+            $days = 7;
+        }
+
+        $rows = (new StatsRepository())->getDailyActivity($days);
+
+        Response::ok([
+            'days'         => $days,
+            'labels'       => array_column($rows, 'date_label'),
+            'dates'        => array_column($rows, 'stat_date'),
+            'new_users'    => array_column($rows, 'new_users'),
+            'new_posts'    => array_column($rows, 'new_posts'),
+            'new_comments' => array_column($rows, 'new_comments'),
+            'totals'       => [
+                'new_users'    => array_sum(array_column($rows, 'new_users')),
+                'new_posts'    => array_sum(array_column($rows, 'new_posts')),
+                'new_comments' => array_sum(array_column($rows, 'new_comments')),
+            ],
+        ], 'Tải thống kê hoạt động theo ngày thành công.');
+    }
+}

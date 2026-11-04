@@ -61,6 +61,7 @@ $procedures = [
     'sp_stats_posts_by_category' => 'database/routines/sp_stats_posts_by_category.sql',
     'sp_stats_top_users'         => 'database/routines/sp_stats_top_users.sql',
     'sp_stats_posts_by_status'   => 'database/routines/sp_stats_posts_by_status.sql',
+    'sp_stats_daily_activity'    => 'database/routines/sp_stats_daily_activity.sql',
 ];
 
 foreach ($procedures as $procName => $routineFile) {
@@ -197,6 +198,89 @@ $popularTags = $postRepo->findPopularTags(5);
 assertDbFeature(
     count($popularTags) === 2 && $popularTags[0]['name'] === 'taxua' && (int)$popularTags[0]['post_count'] === 2,
     'PostRepository::findPopularTags() truy vấn SQL View vw_popular_tags trả về thẻ phổ biến nhất (#taxua: 2 bài)'
+);
+
+// -------------------------------------------------------------------------
+// 4. Biểu đồ Chart.js: thống kê người dùng mới / bài viết mới theo ngày
+// -------------------------------------------------------------------------
+echo "\n4. Kiểm thử thống kê theo ngày cho biểu đồ Chart.js (sp_stats_daily_activity):\n";
+
+$chartPdo = new PDO('sqlite::memory:', null, null, [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+]);
+$chartPdo->exec("
+    CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, created_at TEXT);
+    CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT, created_at TEXT);
+    CREATE TABLE comments (id INTEGER PRIMARY KEY, post_id INTEGER, user_id INTEGER, created_at TEXT);
+");
+
+$dayAgo = static fn(int $n, string $time = '10:30:00'): string => date('Y-m-d', strtotime("-{$n} days")) . ' ' . $time;
+$insUser    = $chartPdo->prepare('INSERT INTO users (username, created_at) VALUES (?, ?)');
+$insPost    = $chartPdo->prepare('INSERT INTO posts (user_id, title, created_at) VALUES (1, ?, ?)');
+$insComment = $chartPdo->prepare('INSERT INTO comments (post_id, user_id, created_at) VALUES (1, 1, ?)');
+
+// Hôm nay: 2 user, 1 bài | Hôm qua: 1 user | 3 ngày trước: 2 bài, 1 bình luận | 40 ngày trước: nằm ngoài mọi khoảng thống kê
+$insUser->execute(['u_today_1', $dayAgo(0, '08:00:00')]);
+$insUser->execute(['u_today_2', $dayAgo(0, '23:59:59')]);
+$insUser->execute(['u_yesterday', $dayAgo(1)]);
+$insUser->execute(['u_old', $dayAgo(40)]);
+$insPost->execute(['P today', $dayAgo(0)]);
+$insPost->execute(['P d3 a', $dayAgo(3, '09:00:00')]);
+$insPost->execute(['P d3 b', $dayAgo(3, '18:00:00')]);
+$insPost->execute(['P old', $dayAgo(40)]);
+$insComment->execute([$dayAgo(3)]);
+
+$chartRepo = new StatsRepository($chartPdo);
+$daily = $chartRepo->getDailyActivity(7);
+
+assertDbFeature(
+    count($daily) === 7
+        && $daily[0]['stat_date'] === date('Y-m-d', strtotime('-6 days'))
+        && $daily[6]['stat_date'] === date('Y-m-d'),
+    'getDailyActivity(7) trả đủ 7 ngày liên tiếp, sắp xếp từ cũ đến mới (ngày cuối là hôm nay)'
+);
+assertDbFeature(
+    $daily[6]['new_users'] === 2 && $daily[5]['new_users'] === 1 && $daily[6]['new_posts'] === 1,
+    'Đếm đúng người dùng mới (hôm nay: 2, hôm qua: 1) và bài viết mới hôm nay (1)'
+);
+assertDbFeature(
+    $daily[3]['new_posts'] === 2 && $daily[3]['new_comments'] === 1 && $daily[2]['new_users'] === 0,
+    'Ngày có 2 bài/1 bình luận được đếm đúng; ngày không phát sinh dữ liệu trả về 0 (biểu đồ liên tục)'
+);
+assertDbFeature(
+    array_sum(array_column($daily, 'new_users')) === 3 && array_sum(array_column($daily, 'new_posts')) === 3,
+    'Dữ liệu cũ hơn khoảng thống kê (40 ngày trước) bị loại khỏi kết quả 7 ngày'
+);
+assertDbFeature(
+    count($chartRepo->getDailyActivity(30)) === 30 && count($chartRepo->getDailyActivity(500)) === 30 && count($chartRepo->getDailyActivity(14)) === 14,
+    'getDailyActivity() giới hạn tối đa 30 ngày và hỗ trợ 14 / 30 ngày'
+);
+assertDbFeature(
+    is_int($daily[0]['new_users']) && is_string($daily[0]['date_label']) && preg_match('/^\d{2}\/\d{2}$/', $daily[0]['date_label']) === 1,
+    'Mỗi dòng có kiểu dữ liệu chuẩn JSON: số nguyên cho số lượng, nhãn ngày dạng dd/mm'
+);
+
+// Kiểm tra đồng bộ định nghĩa SQL, route API & giao diện Dashboard
+$appSource       = (string)file_get_contents(__DIR__ . '/../app/core/App.php');
+$apiSource       = (string)file_get_contents(__DIR__ . '/../app/controllers/ApiController.php');
+$dashboardView   = (string)file_get_contents(__DIR__ . '/../app/views/admin/dashboard.php');
+$allRoutinesSql  = (string)file_get_contents(__DIR__ . '/../database/routines/all_routines.sql');
+
+assertDbFeature(
+    str_contains($migrationSql, 'sp_stats_daily_activity') && str_contains($allRoutinesSql, 'sp_stats_daily_activity'),
+    'sp_stats_daily_activity có trong migration 007, all_routines.sql và schema.sql'
+);
+assertDbFeature(
+    str_contains($appSource, "'/stats/daily'") && str_contains($apiSource, 'function dailyStats')
+        && str_contains($apiSource, 'requireModeratorJson'),
+    'Endpoint GET /api/stats/daily được đăng ký route và chỉ Moderator/Admin truy cập (JSON 401/403)'
+);
+assertDbFeature(
+    str_contains($dashboardView, 'chart.umd.min.js') && str_contains($dashboardView, 'id="dailyActivityChart"')
+        && str_contains($dashboardView, '/api/stats/daily'),
+    'Dashboard nhúng Chart.js, canvas biểu đồ và tải dữ liệu AJAX từ /api/stats/daily'
 );
 
 echo "\n=========================================================================\n";
