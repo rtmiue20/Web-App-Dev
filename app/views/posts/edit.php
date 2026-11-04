@@ -282,17 +282,111 @@ if (empty($editImages) && !empty($post['image_url'])) {
                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                     <div>
                         <label class="nature-label mb-0">
-                            <i class="bi bi-tools me-1 text-success"></i>Dụng cụ &amp; Thiết bị sử dụng trong chuyến đi (Tools)
+                            <i class="bi bi-tools me-1 text-success"></i>Dụng cụ &amp; Thiết bị sử dụng trong chuyến đi (Tools &amp; Gear)
                         </label>
                         <div class="text-muted" style="font-size: 12px;">
-                            Chọn những dụng cụ hoặc thiết bị bạn đã mang theo để chia sẻ kinh nghiệm cùng cộng đồng.
+                            Chia sẻ những công cụ hữu dụng bạn đã sử dụng kèm link mua (Shopee, Lazada, Tiki, web shop...) và giá để người xem tham khảo &amp; mua sắm.
                         </div>
                     </div>
                     <span class="badge rounded-pill text-bg-light border px-3 py-1 text-muted" style="font-size: 11.5px;">
-                        Đã chọn: <strong id="selectedToolsCount" class="text-success"><?= count($selectedProductIds ?? []) ?></strong> dụng cụ
+                        Tổng cộng: <strong id="selectedToolsCount" class="text-success"><?= count($selectedProductIds ?? []) ?></strong> dụng cụ
                     </span>
                 </div>
 
+                <!-- KHỐI 1: TỰ CHIA SẺ & CHỈNH SỬA CÔNG CỤ BẠN DÙNG (KÈM LINK MUA, GIÁ & ẢNH) -->
+                <div class="rounded-4 p-3 mb-3 border bg-white shadow-sm" style="border-color: rgba(46, 125, 50, 0.25) !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1.5" style="font-size: 13px; font-weight: 600;">
+                                <i class="bi bi-bag-check-fill me-1.5"></i>Dụng cụ bạn sử dụng
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5 shadow-sm" onclick="addCustomToolRow()" style="font-size: 12.5px; font-weight: 500;">
+                            <i class="bi bi-plus-circle-fill"></i> Thêm công cụ bạn dùng
+                        </button>
+                    </div>
+
+                    <!-- Dynamic container cho các dòng công cụ tự nhập hoặc đang có -->
+                    <div id="customToolsContainer" class="d-flex flex-column gap-3 mt-3">
+                        <?php if (!empty($tools)): ?>
+                            <?php foreach ($tools as $t): 
+                                $tId = (int)$t['id'];
+                                $rawTImg = trim((string)($t['image_url'] ?? ''));
+                                if ($rawTImg === '' || str_starts_with($rawTImg, 'bi-')) {
+                                    $tImg = $baseUrl . '/assets/img/tent-forest.png';
+                                } elseif (str_starts_with($rawTImg, 'http://') || str_starts_with($rawTImg, 'https://')) {
+                                    $tImg = $rawTImg;
+                                } else {
+                                    $tImg = $baseUrl . '/' . ltrim($rawTImg, '/');
+                                }
+                            ?>
+                                <div class="custom-tool-card p-3 rounded-4 border position-relative" style="background: #fafbfa; border-color: rgba(0,0,0,0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                                    <input type="hidden" name="existing_tool_id[]" value="<?= $tId ?>">
+                                    <input type="hidden" name="product_ids[]" value="<?= $tId ?>">
+                                    <button type="button" class="btn btn-sm text-danger position-absolute top-0 end-0 m-2 p-1 remove-tool-btn" title="Xóa công cụ này khỏi bài viết" onclick="removeCustomToolRow(this)" style="font-size: 15px; line-height: 1;">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-7">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>
+                                            <input type="text" name="existing_tool_name[]" value="<?= htmlspecialchars($t['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3" required>
+                                        </div>
+                                        <div class="col-12 col-md-5">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="existing_tool_price[]" value="<?= (int)($t['price'] ?? 0) ?>" class="form-control form-control-sm rounded-start-3" min="0" step="1000">
+                                                <span class="input-group-text bg-light text-muted rounded-end-3">đ</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-semibold text-dark mb-1">
+                                                <i class="bi bi-link-45deg text-success me-1"></i>Link nơi mua <span class="text-muted fw-normal">(Shopee, Lazada, Tiki, TikTok Shop, website shop...)</span>
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-white border-end-0 text-success rounded-start-3"><i class="bi bi-bag-check"></i></span>
+                                                <input type="url" name="existing_tool_link[]" value="<?= htmlspecialchars($t['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link shop">
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Đổi ảnh mới (từ máy)</label>
+                                            <input type="file" name="existing_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Hoặc giữ URL ảnh</label>
+                                            <input type="url" name="existing_tool_image_url[]" value="<?= htmlspecialchars($t['image_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small fw-semibold text-dark mb-1">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
+                                            <input type="text" name="existing_tool_desc[]" value="<?= htmlspecialchars($t['description'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3">
+                                        </div>
+                                        <div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.06) !important;">
+                                            <div class="form-check d-flex align-items-center gap-2 m-0">
+                                                <input class="form-check-input mt-0" 
+                                                       type="checkbox" 
+                                                       <?= (!isset($t['is_shared']) || (int)$t['is_shared'] === 1) ? 'checked' : '' ?> 
+                                                       style="cursor: pointer; width: 1.15em; height: 1.15em;"
+                                                       onchange="this.nextElementSibling.value = this.checked ? '1' : '0'">
+                                                <input type="hidden" name="existing_tool_is_shared[]" value="<?= (!isset($t['is_shared']) || (int)$t['is_shared'] === 1) ? '1' : '0' ?>">
+                                                <label class="form-check-label small text-dark fw-medium" style="cursor: pointer; user-select: none;">
+                                                    <i class="bi bi-share text-success me-1"></i>Chia sẻ dụng cụ này vào kho dụng cụ cộng đồng 
+                                                    <span class="text-muted fw-normal" style="font-size: 11.5px;">(để những người đăng sau có thể chọn nhanh)</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Thông báo khi chưa có công cụ nào được thêm -->
+                    <div id="emptyToolsNotice" class="text-center py-3 px-2 text-muted small mt-2" style="<?= !empty($tools) ? 'display:none;' : '' ?> background: rgba(0,0,0,0.015); border-radius: 12px; border: 1px dashed rgba(0,0,0,0.12);">
+                        <i class="bi bi-bag-heart text-success fs-3 d-block mb-1"></i>
+                        <span>Bạn chưa thêm công cụ cá nhân nào. Hãy bấm <strong>"Thêm công cụ bạn dùng"</strong> ở trên để chia sẻ bếp, lều, balo, đèn pin... kèm link mua Shopee, Lazada!</span>
+                    </div>
+                </div>
+
+                <!-- KHỐI 2: HOẶC CHỌN THÊM TỪ KHO DỤNG CỤ CÓ SẴN CỦA HỆ THỐNG (COLLAPSIBLE) -->
                 <?php if (!empty($products)): ?>
                     <style>
                         .tool-card-label { overflow: hidden; max-width: 100%; }
@@ -316,59 +410,70 @@ if (empty($editImages) && !empty($post['image_url'])) {
                             94%, 100% { transform: translateX(0); }
                         }
                     </style>
-                    <div class="rounded-4 p-3 border" style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12) !important;">
-                        <!-- Filter search box -->
-                        <div class="mb-3">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
-                                <input type="text" 
-                                       id="toolSearchInput" 
-                                       class="form-control form-control-sm border-start-0 rounded-end-pill" 
-                                       placeholder="Tìm nhanh dụng cụ (ví dụ: lều, balo, bếp, gậy leo núi, đèn pin...)" 
-                                       oninput="filterToolsList(this.value)">
-                            </div>
-                        </div>
-
-                        <!-- Checkbox grid -->
-                        <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 280px; overflow-y: auto; padding-right: 4px;">
-                            <?php foreach ($products as $prod):
-                                $pId = (int)$prod['id'];
-                                $isChecked = in_array($pId, $selectedProductIds ?? [], true);
-                                $rawToolImg = trim((string)($prod['image_url'] ?? ''));
-                                if ($rawToolImg === '' || str_starts_with($rawToolImg, 'bi-')) {
-                                    $toolImg = $baseUrl . '/assets/img/tent-forest.png';
-                                } elseif (str_starts_with($rawToolImg, 'http://') || str_starts_with($rawToolImg, 'https://')) {
-                                    $toolImg = $rawToolImg;
-                                } else {
-                                    $toolImg = $baseUrl . '/' . ltrim($rawToolImg, '/');
-                                }
-                            ?>
-                                <div class="col tool-item" data-name="<?= htmlspecialchars(mb_strtolower($prod['name']), ENT_QUOTES, 'UTF-8') ?>">
-                                    <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative tool-card-label" 
-                                           style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important; overflow: hidden;">
-                                        <input type="checkbox" 
-                                               name="product_ids[]" 
-                                               value="<?= $pId ?>" 
-                                               class="form-check-input mt-0 tool-checkbox flex-shrink-0" 
-                                               style="cursor: pointer;"
-                                               <?= $isChecked ? 'checked' : '' ?>
-                                               onchange="updateSelectedToolsCounter()">
-                                        <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
-                                             alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>" 
-                                             class="rounded-2 object-fit-cover flex-shrink-0" 
-                                             style="width: 44px; height: 44px; border: 1px solid rgba(0,0,0,0.06);">
-                                        <div class="min-w-0 flex-grow-1 overflow-hidden" style="font-size: 13px;">
-                                            <div class="tool-title-marquee fw-semibold text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                                <span class="tool-title-inner"><?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?></span>
-                                            </div>
-                                            <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 11px;">
-                                                <span><?= htmlspecialchars($prod['category_name'] ?? 'Dụng cụ', ENT_QUOTES, 'UTF-8') ?></span>
-                                                <span class="text-success fw-bold"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</span>
-                                            </div>
+                    <div class="accordion border-0" id="accordionExistingTools">
+                        <div class="accordion-item rounded-4 border overflow-hidden" style="border-color: rgba(0,0,0,0.1) !important;">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2.5 px-3 bg-light text-dark fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExistingTools" aria-expanded="false" style="font-size: 13px;">
+                                    <i class="bi bi-collection me-2 text-muted"></i> Hoặc chọn thêm từ kho dụng cụ cộng đồng sẵn có (<?= count($products) ?> sản phẩm)
+                                </button>
+                            </h2>
+                            <div id="collapseExistingTools" class="accordion-collapse collapse" data-bs-parent="#accordionExistingTools">
+                                <div class="accordion-body p-3" style="background: rgba(0,0,0,0.015);">
+                                    <!-- Filter search box -->
+                                    <div class="mb-3">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" 
+                                                   id="toolSearchInput" 
+                                                   class="form-control form-control-sm border-start-0 rounded-end-pill" 
+                                                   placeholder="Tìm nhanh dụng cụ (ví dụ: lều, balo, bếp, gậy leo núi, đèn pin...)" 
+                                                   oninput="filterToolsList(this.value)">
                                         </div>
-                                    </label>
+                                    </div>
+
+                                    <!-- Checkbox grid -->
+                                    <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 260px; overflow-y: auto; padding-right: 4px;">
+                                        <?php foreach ($products as $prod):
+                                            $pId = (int)$prod['id'];
+                                            $isChecked = in_array($pId, $selectedProductIds ?? [], true);
+                                            $rawToolImg = trim((string)($prod['image_url'] ?? ''));
+                                            if ($rawToolImg === '' || str_starts_with($rawToolImg, 'bi-')) {
+                                                $toolImg = $baseUrl . '/assets/img/tent-forest.png';
+                                            } elseif (str_starts_with($rawToolImg, 'http://') || str_starts_with($rawToolImg, 'https://')) {
+                                                $toolImg = $rawToolImg;
+                                            } else {
+                                                $toolImg = $baseUrl . '/' . ltrim($rawToolImg, '/');
+                                            }
+                                        ?>
+                                            <div class="col tool-item" data-name="<?= htmlspecialchars(mb_strtolower($prod['name']), ENT_QUOTES, 'UTF-8') ?>">
+                                                <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative tool-card-label" 
+                                                       style="cursor: pointer; transition: all 0.2s ease; border-color: rgba(0,0,0,0.08) !important; overflow: hidden;">
+                                                    <input type="checkbox" 
+                                                           name="product_ids[]" 
+                                                           value="<?= $pId ?>" 
+                                                           class="form-check-input mt-0 tool-checkbox flex-shrink-0" 
+                                                           style="cursor: pointer;"
+                                                           <?= $isChecked ? 'checked' : '' ?>
+                                                           onchange="updateSelectedToolsCounter()">
+                                                    <img src="<?= htmlspecialchars($toolImg, ENT_QUOTES, 'UTF-8') ?>" 
+                                                         alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>" 
+                                                         class="rounded-2 object-fit-cover flex-shrink-0" 
+                                                         style="width: 44px; height: 44px; border: 1px solid rgba(0,0,0,0.06);">
+                                                    <div class="min-w-0 flex-grow-1 overflow-hidden" style="font-size: 13px;">
+                                                        <div class="tool-title-marquee fw-semibold text-dark" title="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                                            <span class="tool-title-inner"><?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 11px;">
+                                                            <span><?= htmlspecialchars($prod['category_name'] ?? 'Dụng cụ', ENT_QUOTES, 'UTF-8') ?></span>
+                                                            <span class="text-success fw-bold"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
-                            <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -646,10 +751,114 @@ const MapPicker = (function() {
 // Xử lý bộ chọn Dụng cụ (Tools Selection) & Chạy chữ Marquee
 function updateSelectedToolsCounter() {
     var checkedBoxes = document.querySelectorAll('.tool-checkbox:checked');
+    var customCards = document.querySelectorAll('#customToolsContainer .custom-tool-card');
     var badge = document.getElementById('selectedToolsCount');
     if (badge) {
-        badge.textContent = checkedBoxes.length;
+        badge.textContent = checkedBoxes.length + customCards.length;
     }
+}
+
+// Thêm dòng công cụ tự nhập mới (kèm link mua Shopee, Lazada, giá, ảnh)
+function addCustomToolRow(initialData) {
+    var data = initialData || {};
+    var container = document.getElementById('customToolsContainer');
+    var emptyNotice = document.getElementById('emptyToolsNotice');
+    if (!container) return;
+
+    if (emptyNotice) {
+        emptyNotice.style.display = 'none';
+    }
+
+    var card = document.createElement('div');
+    card.className = 'custom-tool-card p-3 rounded-4 border position-relative';
+    card.style.background = '#fafbfa';
+    card.style.borderColor = 'rgba(0,0,0,0.1)';
+    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';
+
+    var nameVal = data.name ? escapeHtml(data.name) : '';
+    var priceVal = (data.price !== undefined && data.price !== null) ? escapeHtml(data.price) : '';
+    var linkVal = data.link ? escapeHtml(data.link) : '';
+    var descVal = data.description ? escapeHtml(data.description) : '';
+    var imgVal = data.image_url ? escapeHtml(data.image_url) : '';
+
+    var html = '' +
+        '<button type="button" class="btn btn-sm text-danger position-absolute top-0 end-0 m-2 p-1 remove-tool-btn" title="Xóa công cụ này" onclick="removeCustomToolRow(this)" style="font-size: 15px; line-height: 1;">' +
+            '<i class="bi bi-trash3-fill"></i>' +
+        '</button>' +
+        '<div class="row g-2">' +
+            '<div class="col-12 col-md-7">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
+                '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple FMS-105" required>' +
+            '</div>' +
+            '<div class="col-12 col-md-5">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>' +
+                '<div class="input-group input-group-sm">' +
+                    '<input type="number" name="custom_tool_price[]" value="' + priceVal + '" class="form-control form-control-sm rounded-start-3" placeholder="VD: 350000" min="0" step="1000">' +
+                    '<span class="input-group-text bg-light text-muted rounded-end-3">đ</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="col-12">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">' +
+                    '<i class="bi bi-link-45deg text-success me-1"></i>Link nơi mua <span class="text-muted fw-normal">(Shopee, Lazada, Tiki, TikTok Shop, website shop...)</span>' +
+                '</label>' +
+                '<div class="input-group input-group-sm">' +
+                    '<span class="input-group-text bg-white border-end-0 text-success rounded-start-3"><i class="bi bi-bag-check"></i></span>' +
+                    '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link web shop">' +
+                '</div>' +
+            '</div>' +
+            '<div class="col-12 col-md-6">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Tải ảnh lên (từ máy)</label>' +
+                '<input type="file" name="custom_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">' +
+            '</div>' +
+            '<div class="col-12 col-md-6">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Hoặc dán URL ảnh</label>' +
+                '<input type="url" name="custom_tool_image_url[]" value="' + imgVal + '" class="form-control form-control-sm rounded-3" placeholder="https://domain.com/anh-dung-cu.jpg">' +
+            '</div>' +
+            '<div class="col-12">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>' +
+                '<input type="text" name="custom_tool_desc[]" value="' + descVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Lửa rất mạnh, cản gió tốt, đun sôi 1L nước trong 3 phút, gập gọn trong lòng bàn tay.">' +
+            '</div>' +
+            '<div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.06) !important;">' +
+                '<div class="form-check d-flex align-items-center gap-2 m-0">' +
+                    '<input class="form-check-input mt-0" type="checkbox" ' + (data.is_shared === 0 ? '' : 'checked') + ' style="cursor: pointer; width: 1.15em; height: 1.15em;" onchange="this.nextElementSibling.value = this.checked ? \'1\' : \'0\'">' +
+                    '<input type="hidden" name="custom_tool_is_shared[]" value="' + (data.is_shared === 0 ? '0' : '1') + '">' +
+                    '<label class="form-check-label small text-dark fw-medium" style="cursor: pointer; user-select: none;">' +
+                        '<i class="bi bi-share text-success me-1"></i>Chia sẻ dụng cụ này vào kho dụng cụ cộng đồng ' +
+                        '<span class="text-muted fw-normal" style="font-size: 11.5px;">(để những người đăng sau có thể chọn nhanh)</span>' +
+                    '</label>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    card.innerHTML = html;
+    container.appendChild(card);
+    updateSelectedToolsCounter();
+}
+
+function removeCustomToolRow(btn) {
+    var card = btn.closest('.custom-tool-card');
+    if (card) {
+        card.remove();
+    }
+    var container = document.getElementById('customToolsContainer');
+    var emptyNotice = document.getElementById('emptyToolsNotice');
+    if (container && emptyNotice) {
+        var remaining = container.querySelectorAll('.custom-tool-card');
+        if (remaining.length === 0) {
+            emptyNotice.style.display = '';
+        }
+    }
+    updateSelectedToolsCounter();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function initToolMarquees() {
