@@ -3,6 +3,7 @@ require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/Category.php';
 require_once __DIR__ . '/../models/Comment.php';
+require_once __DIR__ . '/../models/PlaceReview.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
 
@@ -163,12 +164,15 @@ class PostController extends Controller {
         }
 
         $commentsList = $this->comments->getByPostId($id);
+        $placeReviews = new PlaceReview();
         $canManage = $this->canManagePost($post);
 
         $this->render('posts/show', [
             'title' => $post['title'],
             'post' => $post,
             'comments' => $commentsList,
+            'placeReviews' => $placeReviews->getByPost($id),
+            'placeRating' => $placeReviews->getSummary($id),
             'canManage' => $canManage
         ]);
     }

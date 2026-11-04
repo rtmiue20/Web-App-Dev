@@ -43,6 +43,21 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             Bài viết
         </a>
 
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists"
+           class="dock-pill <?= $isActive('/checklists') ? 'active' : '' ?>">
+            Checklist
+        </a>
+
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/trips"
+           class="dock-pill <?= $isActive('/trips') ? 'active' : '' ?>">
+            Đi chung
+        </a>
+
+        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/places"
+           class="dock-pill <?= $isActive('/places') ? 'active' : '' ?>">
+            Bản đồ
+        </a>
+
         <?php if (is_array($currentUser)): ?>
             <!-- User Profile Link -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 

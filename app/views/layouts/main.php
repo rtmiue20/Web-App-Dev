@@ -2,6 +2,7 @@
 $successMessage = $success ?? Session::flash('success');
 $errorMessage = $message ?? Session::flash('error');
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+$apiBaseUrl = preg_replace('~/public$~', '', $baseUrl) . '/api';
 ?>
 <!doctype html>
 <html lang="vi">
@@ -20,6 +21,7 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     
     <script>
         window.BASE_URL = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
+        window.API_BASE_URL = <?= json_encode($apiBaseUrl, JSON_UNESCAPED_SLASHES) ?>;
     </script>
 </head>
 <body>

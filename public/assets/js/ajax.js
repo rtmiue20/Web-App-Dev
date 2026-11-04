@@ -43,10 +43,10 @@ const ForumAjax = {
 
     const csrfInput = document.querySelector('input[name="_csrf"]');
     const csrfToken = csrfInput ? csrfInput.value : '';
-    const baseUrl = window.BASE_URL || '';
+    const apiBaseUrl = window.API_BASE_URL || `${window.BASE_URL || ''}/api`;
 
     try {
-      const response = await fetch(`${baseUrl}/api/comments.php`, {
+      const response = await fetch(`${apiBaseUrl}/comments.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,22 +85,36 @@ const ForumAjax = {
   },
 
   // 3. Fetch weather from Open-Meteo
-  fetchWeather: async function (lat, lng, targetElement) {
+  fetchWeather: async function (lat, lng, targetElement, warningElement = null, date = null) {
     if (!targetElement) return;
 
     try {
-      const baseUrl = window.BASE_URL || '';
-      const response = await fetch(`${baseUrl}/api/weather.php?lat=${lat}&lng=${lng}`);
+      const apiBaseUrl = window.API_BASE_URL || `${window.BASE_URL || ''}/api`;
+      const params = new URLSearchParams({ lat, lng });
+      if (date) params.set('date', date);
+      const response = await fetch(`${apiBaseUrl}/weather.php?${params.toString()}`);
       const data = await response.json();
 
-      if (data && data.success && data.data) {
-        targetElement.innerHTML = `
-          <i class="bi bi-cloud-sun me-1"></i>
-          <span>${data.data.temp}°C - ${data.data.condition}</span>
-        `;
+      if (!response.ok || !data || !data.success || !data.data) {
+        throw new Error(data && data.message ? data.message : 'Không thể tải dữ liệu thời tiết.');
       }
-    } catch (e) {
-      targetElement.style.display = 'none';
+
+      const forecastDate = data.data.date ? ` ngày ${data.data.date}` : '';
+      targetElement.textContent = `${data.data.temp}°C - ${data.data.condition}${forecastDate}`;
+      if (warningElement) {
+        const alerts = Array.isArray(data.data.alerts) ? data.data.alerts : [];
+        warningElement.className = alerts.length ? 'alert alert-warning mt-2' : 'alert alert-success mt-2';
+        warningElement.textContent = alerts.length
+          ? `Cảnh báo: ${alerts.join(' ')}`
+          : 'Chưa ghi nhận cảnh báo thời tiết nguy hiểm trong dữ liệu hiện có; điều này không đảm bảo đường đi an toàn.';
+      }
+    } catch (error) {
+      targetElement.textContent = 'Không tải được dữ liệu thời tiết.';
+      if (warningElement) {
+        warningElement.className = 'alert alert-warning mt-2';
+        warningElement.textContent = 'Không thể xác minh cảnh báo thời tiết. Hãy kiểm tra dự báo chính thức trước khi đi.';
+      }
+      console.error('Lỗi tải thời tiết:', error);
     }
   },
 };
