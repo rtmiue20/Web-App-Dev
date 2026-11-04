@@ -9,6 +9,6 @@ return [
     'port'    => 3306,
     'name'    => 'outdoor_forum',
     'user'    => 'root',        // XAMPP mặc định là root
-    'pass'    => '',      // Mật khẩu root MariaDB
+    'pass'    => '049206',      // Mật khẩu root MariaDB
     'charset' => 'utf8mb4',
 ];

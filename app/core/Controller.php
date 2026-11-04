@@ -1,18 +1,52 @@
 <?php
+
+/**
+ * Lớp cơ sở Controller (BaseController) trong kiến trúc MVC.
+ * Cung cấp các phương thức khởi tạo Model, Repository, Service, Render View và kiểm tra Bảo mật (CSRF, Auth, AJAX).
+ */
 class Controller
 {
-    public function model($model) {
-        require_once __DIR__ . '/../models/' . $model . '.php';
+    public function model(string $model): object
+    {
+        $file = __DIR__ . '/../models/' . $model . '.php';
+        if (is_file($file)) {
+            require_once $file;
+        }
         return new $model();
     }
 
-    public function view($view, $data = []) {
+    /**
+     * Khởi tạo một lớp Repository / DAO trong tầng dữ liệu (app/repositories/).
+     */
+    protected function repository(string $repository): object
+    {
+        $file = __DIR__ . '/../repositories/' . $repository . '.php';
+        if (is_file($file)) {
+            require_once $file;
+        }
+        return new $repository();
+    }
+
+    /**
+     * Khởi tạo một lớp Service trong tầng nghiệp vụ (app/services/).
+     */
+    protected function service(string $service): object
+    {
+        $file = __DIR__ . '/../services/' . $service . '.php';
+        if (is_file($file)) {
+            require_once $file;
+        }
+        return new $service();
+    }
+
+    public function view(string $view, array $data = []): void
+    {
         $viewFile = __DIR__ . '/../views/' . $view . '.php';
         if (file_exists($viewFile)) {
-            extract($data);
+            extract($data, EXTR_SKIP);
             require_once $viewFile;
         } else {
-            die("Lỗi: File view '" . $view . ".php' không tồn tại!");
+            die("Lỗi: File view '" . htmlspecialchars($view, ENT_QUOTES, 'UTF-8') . ".php' không tồn tại!");
         }
     }
 
@@ -27,7 +61,7 @@ class Controller
         ob_start();
         require $viewPath;
         $content = ob_get_clean();
-        
+
         $layoutPath = __DIR__ . '/../views/layouts/' . $layout . '.php';
         if (is_file($layoutPath)) {
             require $layoutPath;
@@ -50,8 +84,25 @@ class Controller
         exit;
     }
 
+    /**
+     * Kiểm tra CSRF Token từ cả Form POST (_csrf) và Header AJAX (X-CSRF-Token).
+     */
     protected function verifyCsrfToken(): bool
     {
-        return Csrf::verify($_POST['_csrf'] ?? null);
+        return Csrf::verify();
     }
+
+    /**
+     * Kiểm tra request hiện tại có phải là AJAX / JSON request hay không.
+     */
+    protected function isAjaxRequest(): bool
+    {
+        return (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string)$_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains((string)$_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || isset($_POST['ajax']);
+    }
+}
+
+if (!class_exists('BaseController', false)) {
+    class_alias(Controller::class, 'BaseController');
 }
