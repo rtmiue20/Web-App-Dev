@@ -58,7 +58,7 @@ class Product extends Model
                 $sql = 'SELECT p.*, c.name AS category_name
                         FROM products p
                         LEFT JOIN categories c ON c.id = p.category_id
-                        WHERE 1=1';
+                        WHERE p.is_shared = 1';
                 $params = [];
 
                 if ($categoryId !== null && $categoryId > 0) {
@@ -182,7 +182,8 @@ class Product extends Model
         float $price,
         ?string $imageUrl,
         ?string $description,
-        ?string $link = null
+        ?string $link = null,
+        int $isShared = 1
     ): int {
         try {
             $rows = Database::call('sp_product_create', [
@@ -191,7 +192,8 @@ class Product extends Model
                 $price,
                 $imageUrl,
                 $description,
-                $link
+                $link,
+                $isShared
             ]);
             $productId = (int)($rows[0]['product_id'] ?? 0);
             if ($productId > 0) {
@@ -203,15 +205,16 @@ class Product extends Model
 
             try {
                 Database::execute(
-                    'INSERT INTO products (category_id, name, price, image_url, description, link)
-                     VALUES (:category_id, :name, :price, :image_url, :description, :link)',
+                    'INSERT INTO products (category_id, name, price, image_url, description, link, is_shared)
+                     VALUES (:category_id, :name, :price, :image_url, :description, :link, :is_shared)',
                     [
                         'category_id' => $categoryId,
                         'name' => $name,
                         'price' => $price,
                         'image_url' => $imageUrl,
                         'description' => $description,
-                        'link' => $link
+                        'link' => $link,
+                        'is_shared' => $isShared
                     ]
                 );
                 $productId = (int)$this->db->lastInsertId();
@@ -234,7 +237,8 @@ class Product extends Model
         float $price,
         ?string $imageUrl,
         ?string $description,
-        ?string $link = null
+        ?string $link = null,
+        int $isShared = 1
     ): bool {
         try {
             Database::call('sp_product_update', [
@@ -244,7 +248,8 @@ class Product extends Model
                 $price,
                 $imageUrl,
                 $description,
-                $link
+                $link,
+                $isShared
             ]);
             return true;
         } catch (PDOException $e) {
@@ -258,7 +263,8 @@ class Product extends Model
                          price = :price,
                          image_url = COALESCE(:image_url, image_url),
                          description = :description,
-                         link = :link
+                         link = :link,
+                         is_shared = :is_shared
                      WHERE id = :id',
                     [
                         'category_id' => $categoryId,
@@ -267,6 +273,7 @@ class Product extends Model
                         'image_url' => $imageUrl,
                         'description' => $description,
                         'link' => $link,
+                        'is_shared' => $isShared,
                         'id' => $id
                     ]
                 );

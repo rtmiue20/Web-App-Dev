@@ -254,6 +254,15 @@ class PostController extends Controller {
         );
 
         if ($postId > 0) {
+            // Xử lý các dụng cụ tự nhập (custom tools) kèm link mua (Shopee, Lazada, ...), giá, ảnh
+            $customToolIds = $this->processCustomTools($categoryId > 0 ? $categoryId : null);
+            if (!empty($customToolIds)) {
+                foreach ($customToolIds as $cId) {
+                    $selectedProductIds[] = $cId;
+                }
+            }
+            $selectedProductIds = array_values(array_unique($selectedProductIds));
+
             // Lưu liên kết dụng cụ của chuyến đi vào bảng post_products
             if (!empty($selectedProductIds)) {
                 $this->products->syncPostProducts($postId, $selectedProductIds);
@@ -374,6 +383,7 @@ class PostController extends Controller {
             'categories' => $categoriesList,
             'products' => $allProducts,
             'selectedProductIds' => $selectedProductIds,
+            'tools' => $tools,
             'errors' => [],
             'old' => $post
         ]);
@@ -511,6 +521,18 @@ class PostController extends Controller {
         );
 
         if ($updated) {
+            // Cập nhật thông tin các dụng cụ hiện có (nếu tác giả sửa đổi trực tiếp)
+            $this->processUpdateExistingTools();
+
+            // Xử lý các dụng cụ tự nhập mới (custom tools) kèm link mua, giá, ảnh
+            $customToolIds = $this->processCustomTools($categoryId > 0 ? $categoryId : null);
+            if (!empty($customToolIds)) {
+                foreach ($customToolIds as $cId) {
+                    $selectedProductIds[] = $cId;
+                }
+            }
+            $selectedProductIds = array_values(array_unique($selectedProductIds));
+
             // Cập nhật danh sách dụng cụ của bài viết trong post_products
             $this->products->syncPostProducts($id, $selectedProductIds);
 
@@ -598,6 +620,161 @@ class PostController extends Controller {
             'success' => true,
             'data'    => $voteData
         ]);
+    }
+
+    /**
+     * Xử lý các dụng cụ tự nhập (custom tools) từ form đăng bài / sửa bài
+     * Lưu vào CSDL bảng products với link mua (Shopee, Lazada...), giá, hình ảnh và mô tả
+     * @param int|null $categoryId Chuyên mục của bài viết
+     * @return array Danh sách ID các sản phẩm vừa tạo
+     */
+    private function processCustomTools(?int $categoryId): array
+    {
+        $createdIds = [];
+        $names = $_POST['custom_tool_name'] ?? [];
+        if (!is_array($names)) {
+            return $createdIds;
+        }
+
+        $prices = $_POST['custom_tool_price'] ?? [];
+        $links = $_POST['custom_tool_link'] ?? [];
+        $descs = $_POST['custom_tool_desc'] ?? [];
+        $imageUrls = $_POST['custom_tool_image_url'] ?? [];
+        $sharedList = $_POST['custom_tool_is_shared'] ?? [];
+
+        $count = count($names);
+        for ($i = 0; $i < $count; $i++) {
+            $name = trim((string)($names[$i] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $priceRaw = (string)($prices[$i] ?? '0');
+            $price = (float)preg_replace('/[^\d.]/', '', $priceRaw);
+
+            $link = trim((string)($links[$i] ?? ''));
+            if ($link !== '' && !preg_match('#^https?://#i', $link)) {
+                $link = 'https://' . $link;
+            }
+
+            $desc = trim((string)($descs[$i] ?? ''));
+            $imgUrl = trim((string)($imageUrls[$i] ?? ''));
+            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+
+            // Kiểm tra upload file ảnh từ máy
+            if (!empty($_FILES['custom_tool_file']['name'][$i]) && ($_FILES['custom_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
+                $singleFile = [
+                    'name'     => $_FILES['custom_tool_file']['name'][$i],
+                    'type'     => $_FILES['custom_tool_file']['type'][$i] ?? '',
+                    'tmp_name' => $_FILES['custom_tool_file']['tmp_name'][$i],
+                    'error'    => $_FILES['custom_tool_file']['error'][$i],
+                    'size'     => $_FILES['custom_tool_file']['size'][$i] ?? 0,
+                ];
+                try {
+                    $savedPath = Upload::image($singleFile, 'products');
+                    if (!empty($savedPath)) {
+                        $imgUrl = $savedPath;
+                    }
+                } catch (Exception $e) {
+                    error_log('Upload custom tool image failed: ' . $e->getMessage());
+                }
+            }
+
+            if ($imgUrl === '') {
+                $imgUrl = 'assets/img/tent-forest.png';
+            }
+
+            $newId = $this->products->create(
+                $categoryId > 0 ? $categoryId : null,
+                $name,
+                $price,
+                $imgUrl,
+                $desc ?: 'Dụng cụ được chia sẻ bởi người đăng bài',
+                $link !== '' ? $link : null,
+                $isShared
+            );
+
+            if ($newId > 0) {
+                $createdIds[] = $newId;
+            }
+        }
+
+        return $createdIds;
+    }
+
+    /**
+     * Cập nhật thông tin các dụng cụ đã gắn với bài viết nếu tác giả sửa đổi trực tiếp
+     */
+    private function processUpdateExistingTools(): void
+    {
+        $ids = $_POST['existing_tool_id'] ?? [];
+        if (!is_array($ids)) {
+            return;
+        }
+
+        $names = $_POST['existing_tool_name'] ?? [];
+        $prices = $_POST['existing_tool_price'] ?? [];
+        $links = $_POST['existing_tool_link'] ?? [];
+        $descs = $_POST['existing_tool_desc'] ?? [];
+        $imageUrls = $_POST['existing_tool_image_url'] ?? [];
+        $sharedList = $_POST['existing_tool_is_shared'] ?? [];
+
+        $count = count($ids);
+        for ($i = 0; $i < $count; $i++) {
+            $pId = (int)($ids[$i] ?? 0);
+            if ($pId <= 0) {
+                continue;
+            }
+
+            $name = trim((string)($names[$i] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $priceRaw = (string)($prices[$i] ?? '0');
+            $price = (float)preg_replace('/[^\d.]/', '', $priceRaw);
+
+            $link = trim((string)($links[$i] ?? ''));
+            if ($link !== '' && !preg_match('#^https?://#i', $link)) {
+                $link = 'https://' . $link;
+            }
+
+            $desc = trim((string)($descs[$i] ?? ''));
+            $imgUrl = trim((string)($imageUrls[$i] ?? ''));
+            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+
+            if (!empty($_FILES['existing_tool_file']['name'][$i]) && ($_FILES['existing_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
+                $singleFile = [
+                    'name'     => $_FILES['existing_tool_file']['name'][$i],
+                    'type'     => $_FILES['existing_tool_file']['type'][$i] ?? '',
+                    'tmp_name' => $_FILES['existing_tool_file']['tmp_name'][$i],
+                    'error'    => $_FILES['existing_tool_file']['error'][$i],
+                    'size'     => $_FILES['existing_tool_file']['size'][$i] ?? 0,
+                ];
+                try {
+                    $savedPath = Upload::image($singleFile, 'products');
+                    if (!empty($savedPath)) {
+                        $imgUrl = $savedPath;
+                    }
+                } catch (Exception $e) {
+                    error_log('Upload existing tool image failed: ' . $e->getMessage());
+                }
+            }
+
+            $current = $this->products->findById($pId);
+            $catId = $current['category_id'] ?? null;
+
+            $this->products->update(
+                $pId,
+                $catId,
+                $name,
+                $price,
+                $imgUrl !== '' ? $imgUrl : null,
+                $desc,
+                $link !== '' ? $link : null,
+                $isShared
+            );
+        }
     }
 
     /**
