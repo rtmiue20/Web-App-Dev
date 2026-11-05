@@ -45,7 +45,7 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
             <div id="trip-weather-warning" class="d-none" role="status"></div>
             <p class="small text-muted mb-0">Thời tiết có thể thay đổi; hãy kiểm tra dự báo địa phương trước khi khởi hành.</p>
             <script>
-                document.addEventListener('DOMContentLoaded', () => {
+                document.addEventListener('DOMContentLoaded', function() {
                     ForumAjax.fetchWeather(
                         <?= json_encode((string) $trip['lat']) ?>,
                         <?= json_encode((string) $trip['lng']) ?>,

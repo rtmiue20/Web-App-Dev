@@ -29,26 +29,26 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         </section>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const places = <?= json_encode($places, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-                const map = L.map('places-map').setView([16.2, 106.0], 5);
+            document.addEventListener('DOMContentLoaded', function() {
+                var places = <?= json_encode($places, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+                var map = L.map('places-map').setView([16.2, 106.0], 5);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 18,
                     attribution: '&copy; OpenStreetMap'
                 }).addTo(map);
-                const bounds = [];
-                places.forEach(place => {
-                    const lat = Number(place.lat);
-                    const lng = Number(place.lng);
+                var bounds = [];
+                places.forEach(function(place) {
+                    var lat = Number(place.lat);
+                    var lng = Number(place.lng);
                     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-                    const marker = L.marker([lat, lng]).addTo(map);
-                    const popup = document.createElement('div');
-                    const title = document.createElement('strong');
+                    var marker = L.marker([lat, lng]).addTo(map);
+                    var popup = document.createElement('div');
+                    var title = document.createElement('strong');
                     title.textContent = place.title;
-                    const rating = document.createElement('div');
-                    rating.textContent = `★ ${place.average_rating} (${place.review_count} đánh giá)`;
-                    const link = document.createElement('a');
-                    link.href = `${window.BASE_URL || ''}/posts/${encodeURIComponent(place.id)}`;
+                    var rating = document.createElement('div');
+                    rating.textContent = '★ ' + place.average_rating + ' (' + place.review_count + ' đánh giá)';
+                    var link = document.createElement('a');
+                    link.href = (window.BASE_URL || '') + '/posts/' + encodeURIComponent(place.id);
                     link.textContent = 'Xem địa điểm';
                     popup.append(title, rating, link);
                     marker.bindPopup(popup);
