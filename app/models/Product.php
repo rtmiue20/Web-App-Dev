@@ -10,6 +10,7 @@ class Product extends Model
 {
     private ?int $id = null;
     private ?int $categoryId = null;
+    private ?int $userId = null;
     private ?string $name = null;
     private ?float $price = null;
     private ?string $imageUrl = null;
@@ -29,6 +30,9 @@ class Product extends Model
 
     public function getCategoryId(): ?int { return $this->categoryId; }
     public function setCategoryId(?int $categoryId): void { $this->categoryId = $categoryId; }
+
+    public function getUserId(): ?int { return $this->userId; }
+    public function setUserId(?int $userId): void { $this->userId = $userId; }
 
     public function getName(): ?string { return $this->name; }
     public function setName(?string $name): void { $this->name = $name; }
@@ -75,9 +79,10 @@ class Product extends Model
         ?string $imageUrl,
         ?string $description,
         ?string $link = null,
-        int $isShared = 1
+        int $isShared = 1,
+        ?int $userId = null
     ): int {
-        $productId = $this->repository->createProduct($categoryId, $name, $price, $imageUrl, $description, $link, $isShared);
+        $productId = $this->repository->createProduct($categoryId, $name, $price, $imageUrl, $description, $link, $isShared, $userId);
         if ($productId > 0) {
             $this->id = $productId;
         }

@@ -21,6 +21,7 @@ class Csrf
     {
         if ($token === null) {
             $token = $_POST['_csrf']
+                ?? $_POST['csrf_token']
                 ?? $_SERVER['HTTP_X_CSRF_TOKEN']
                 ?? $_GET['_csrf']
                 ?? null;
@@ -32,6 +33,12 @@ class Csrf
             && is_string($knownToken)
             && $knownToken !== ''
             && hash_equals($knownToken, $token);
+    }
+
+    /** Alias tương thích cho verify(). */
+    public static function validate(mixed $token = null): bool
+    {
+        return self::verify($token);
     }
 
     /** Làm mới CSRF token sau khi đăng nhập / đăng xuất. */

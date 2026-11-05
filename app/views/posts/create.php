@@ -123,11 +123,11 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                             <label for="activity_type" class="nature-label">Loại hình dã ngoại</label>
                             <select class="nature-input" id="activity_type" name="activity_type">
                                 <option value="">-- Chọn loại hình --</option>
-                                <option value="camping" <?= (($old['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
-                                <option value="trekking" <?= (($old['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>🥾 Đi bộ đường dài (Trekking)</option>
-                                <option value="leo_nui" <?= (($old['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking / Mountain)</option>
-                                <option value="phuot" <?= (($old['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
-                                <option value="da_ngoai" <?= (($old['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại ngoài trời</option>
+                                <option value="camping" <?= (($old['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>Cắm trại (Camping)</option>
+                                <option value="trekking" <?= (($old['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>Đi bộ đường dài (Trekking)</option>
+                                <option value="leo_nui" <?= (($old['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>Leo núi (Hiking / Mountain)</option>
+                                <option value="phuot" <?= (($old['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>Phượt đường dài</option>
+                                <option value="da_ngoai" <?= (($old['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>Dã ngoại ngoài trời</option>
                             </select>
                         </div>
 
@@ -135,27 +135,51 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                         <div class="col-12 col-md-4">
                             <label for="difficulty" class="nature-label">Mức độ khó</label>
                             <select class="nature-input" id="difficulty" name="difficulty">
-                                <option value="easy" <?= (($old['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới, gia đình)</option>
-                                <option value="medium" <?= (($old['difficulty'] ?? 'medium') === 'medium') ? 'selected' : '' ?>>🟡 Trung bình (Cần thể lực cơ bản)</option>
-                                <option value="hard" <?= (($old['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc, dài ngày)</option>
-                                <option value="extreme" <?= (($old['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao (Chuyên nghiệp)</option>
+                                <option value="easy" <?= (($old['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>Dễ (Người mới, gia đình)</option>
+                                <option value="medium" <?= (($old['difficulty'] ?? 'medium') === 'medium') ? 'selected' : '' ?>>Trung bình (Cần thể lực cơ bản)</option>
+                                <option value="hard" <?= (($old['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>Khó (Đồi dốc, dài ngày)</option>
+                                <option value="extreme" <?= (($old['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>Thử thách cao (Chuyên nghiệp)</option>
                             </select>
                         </div>
 
-                        <!-- Vùng miền -->
+                        <!-- Vùng miền / Địa điểm -->
                         <div class="col-12 col-md-4">
-                            <label for="region" class="nature-label">Vùng miền</label>
+                            <label for="region" class="nature-label">Khu vực / Địa điểm</label>
+                            <?php
+                            $standardRegions = ['Tây Bắc', 'Đông Bắc', 'Bắc Bộ', 'Bắc Trung Bộ', 'Nam Trung Bộ', 'Tây Nguyên', 'Đông Nam Bộ', 'Tây Nam Bộ', 'Đông Nam Á', 'Châu Á', 'Châu Âu', 'Châu Mỹ', 'Châu Úc & Khác'];
+                            $oldRegion = $old['region'] ?? '';
+                            $isCustomReg = (!empty($oldRegion) && !in_array($oldRegion, $standardRegions, true)) || ($oldRegion === 'Quốc tế khác');
+                            $customRegVal = $isCustomReg ? ($oldRegion === 'Quốc tế khác' ? ($old['custom_region'] ?? '') : $oldRegion) : '';
+                            ?>
                             <select class="nature-input" id="region" name="region">
-                                <option value="">-- Chọn vùng miền --</option>
-                                <option value="Tây Bắc" <?= (($old['region'] ?? '') === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
-                                <option value="Đông Bắc" <?= (($old['region'] ?? '') === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
-                                <option value="Bắc Bộ" <?= (($old['region'] ?? '') === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
-                                <option value="Bắc Trung Bộ" <?= (($old['region'] ?? '') === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
-                                <option value="Nam Trung Bộ" <?= (($old['region'] ?? '') === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
-                                <option value="Tây Nguyên" <?= (($old['region'] ?? '') === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
-                                <option value="Đông Nam Bộ" <?= (($old['region'] ?? '') === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
-                                <option value="Tây Nam Bộ" <?= (($old['region'] ?? '') === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                                <option value="">-- Chọn khu vực --</option>
+                                <optgroup label="Việt Nam">
+                                    <option value="Tây Bắc" <?= ($oldRegion === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                                    <option value="Đông Bắc" <?= ($oldRegion === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                                    <option value="Bắc Bộ" <?= ($oldRegion === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                                    <option value="Bắc Trung Bộ" <?= ($oldRegion === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                                    <option value="Nam Trung Bộ" <?= ($oldRegion === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                                    <option value="Tây Nguyên" <?= ($oldRegion === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                                    <option value="Đông Nam Bộ" <?= ($oldRegion === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                                    <option value="Tây Nam Bộ" <?= ($oldRegion === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                                </optgroup>
+                                <optgroup label="Quốc tế (Nước ngoài)">
+                                    <option value="Đông Nam Á" <?= ($oldRegion === 'Đông Nam Á') ? 'selected' : '' ?>>Đông Nam Á (Lào, Thái, Indo...)</option>
+                                    <option value="Châu Á" <?= ($oldRegion === 'Châu Á') ? 'selected' : '' ?>>Châu Á (Nepal, Nhật, Hàn...)</option>
+                                    <option value="Châu Âu" <?= ($oldRegion === 'Châu Âu') ? 'selected' : '' ?>>Châu Âu (Alps, Na Uy, Iceland...)</option>
+                                    <option value="Châu Mỹ" <?= ($oldRegion === 'Châu Mỹ') ? 'selected' : '' ?>>Châu Mỹ (Patagonia, Rockies...)</option>
+                                    <option value="Châu Úc & Khác" <?= ($oldRegion === 'Châu Úc & Khác') ? 'selected' : '' ?>>Châu Úc / Châu Phi</option>
+                                    <option value="Quốc tế khác" <?= $isCustomReg ? 'selected' : '' ?>>Quốc tế khác (Tự nhập địa điểm)</option>
+                                </optgroup>
                             </select>
+                            <div id="custom_region_wrapper" class="mt-2" style="display: <?= $isCustomReg ? 'block' : 'none' ?>;">
+                                <input type="text" 
+                                       class="nature-input" 
+                                       id="custom_region" 
+                                       name="custom_region" 
+                                       placeholder="Nhập tên quốc gia / địa điểm (VD: Nepal, Nhật Bản, Thụy Sĩ...)" 
+                                       value="<?= htmlspecialchars($customRegVal, ENT_QUOTES, 'UTF-8') ?>">
+                            </div>
                         </div>
                     </div>
 
@@ -850,6 +874,20 @@ document.addEventListener('DOMContentLoaded', function() {
     initToolMarquees();
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(initToolMarquees);
+    }
+
+    var regionSelect = document.getElementById('region');
+    var customRegionWrapper = document.getElementById('custom_region_wrapper');
+    var customRegionInput = document.getElementById('custom_region');
+    if (regionSelect && customRegionWrapper && customRegionInput) {
+        regionSelect.addEventListener('change', function () {
+            if (this.value === 'Quốc tế khác') {
+                customRegionWrapper.style.display = 'block';
+                customRegionInput.focus();
+            } else {
+                customRegionWrapper.style.display = 'none';
+            }
+        });
     }
 });
 

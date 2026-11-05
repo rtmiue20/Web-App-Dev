@@ -181,25 +181,26 @@ class DemoSeeder
             $prodCountRows = Database::query("SELECT COUNT(*) AS total FROM products");
             if ((int)($prodCountRows[0]['total'] ?? 0) === 0) {
                 $sampleProducts = [
-                    [$cat1, 'Lều cắm trại 2 lớp Naturehike Cloud Up 2 chống mưa PU4000mm', 2150000, 'assets/img/tent-forest.png', 'Lều siêu nhẹ khung nhôm 7001, chống mưa lớn và gió mạnh, phù hợp cho 2 người đi săn mây.', 'https://naturehike.vn'],
-                    [$cat2, 'Balo Trekking leo núi 50L khung trợ lực chống thấm nước', 1450000, 'assets/img/ta-xua-trek.png', 'Balo dung tích lớn 50L có đệm lưng thoáng khí, đai hông trợ lực và áo mưa balo đi kèm.', 'https://decathlon.vn'],
-                    [$cat3, 'Đèn pin đội đầu dã ngoại siêu sáng sạc USB chống nước IPX6', 380000, 'assets/img/moss-form.png', 'Đèn đội đầu rảnh tay khi dựng lều ban đêm hoặc đi rừng sớm, thời lượng pin lên đến 12 giờ.', 'https://decathlon.vn'],
-                    [$cat1, 'Túi ngủ lông vũ giữ nhiệt cắm trại vùng cao (5°C - 15°C)', 890000, 'assets/img/tent-forest.png', 'Túi ngủ gấp gọn siêu nhẹ giúp giữ ấm cơ thể khi cắm trại đêm tại Đà Lạt, Tà Xùa, Sa Pa.', 'https://naturehike.vn'],
-                    [$cat2, 'Gậy leo núi Trekking hợp kim Carbon khóa bật nhanh', 450000, 'assets/img/ta-xua-trek.png', 'Hỗ trợ giảm tải lực lên khớp gối khi leo dốc và xuống núi trên các cung đường dài.', 'https://decathlon.vn'],
-                    [$cat3, 'Bếp gas dã ngoại gấp gọn kèm bộ nồi nấu ăn cắm trại', 620000, 'assets/img/moss-form.png', 'Đầu đốt chắn gió công suất cao cùng bộ nồi hợp kim nhôm anod thu gọn trong balo.', 'https://naturehike.vn']
+                    [$cat1, $u1, 'Lều cắm trại 2 lớp Naturehike Cloud Up 2 chống mưa PU4000mm', 2150000, 'assets/img/products/naturehike-cloud-up-2.jpg', 'Lều siêu nhẹ khung nhôm 7001, chống mưa lớn và gió mạnh, phù hợp cho 2 người đi săn mây.', 'https://shopee.vn/search?keyword=leu%20naturehike%20cloud%20up%202'],
+                    [$cat2, $u2, 'Balo Trekking leo núi 50L khung trợ lực chống thấm nước', 1450000, 'assets/img/products/balo-trekking-50l.jpg', 'Balo dung tích lớn 50L có đệm lưng thoáng khí, đai hông trợ lực và áo mưa balo đi kèm.', 'https://shopee.vn/search?keyword=balo%20trekking%2050l%20chong%20nuoc'],
+                    [$cat3, $u1, 'Đèn pin đội đầu dã ngoại siêu sáng sạc USB chống nước IPX6', 380000, 'assets/img/products/den-pin-doi-dau.jpg', 'Đèn đội đầu rảnh tay khi dựng lều ban đêm hoặc đi rừng sớm, thời lượng pin lên đến 12 giờ.', 'https://shopee.vn/search?keyword=den%20pin%20doi%20dau%20da%20ngoai'],
+                    [$cat1, $u2, 'Túi ngủ lông vũ giữ nhiệt cắm trại vùng cao (5°C - 15°C)', 890000, 'assets/img/products/tui-ngu-long-vu.jpg', 'Túi ngủ gấp gọn siêu nhẹ giúp giữ ấm cơ thể khi cắm trại đêm tại Đà Lạt, Tà Xùa, Sa Pa.', 'https://shopee.vn/search?keyword=tui%20ngu%20long%20vu%20cam%20trai'],
+                    [$cat2, $u1, 'Gậy leo núi Trekking hợp kim Carbon khóa bật nhanh', 450000, 'assets/img/products/gay-leo-nui-trekking.jpg', 'Hỗ trợ giảm tải lực lên khớp gối khi leo dốc và xuống núi trên các cung đường dài.', 'https://shopee.vn/search?keyword=gay%20leo%20nui%20trekking%20carbon'],
+                    [$cat3, $u2, 'Bếp gas dã ngoại gấp gọn kèm bộ nồi nấu ăn cắm trại', 620000, 'assets/img/products/bep-gas-da-ngoai.png', 'Đầu đốt chắn gió công suất cao cùng bộ nồi hợp kim nhôm anod thu gọn trong balo.', 'https://shopee.vn/search?keyword=bep%20ga%20da%20ngoai%20fire%20maple']
                 ];
 
                 foreach ($sampleProducts as $sp) {
                     Database::execute(
-                        'INSERT INTO products (category_id, name, price, image_url, description, link)
-                         VALUES (:cat, :name, :price, :img, :desc, :link)',
+                        'INSERT INTO products (category_id, user_id, name, price, image_url, description, link)
+                         VALUES (:cat, :uid, :name, :price, :img, :desc, :link)',
                         [
                             'cat'   => $sp[0],
-                            'name'  => $sp[1],
-                            'price' => $sp[2],
-                            'img'   => $sp[3],
-                            'desc'  => $sp[4],
-                            'link'  => $sp[5]
+                            'uid'   => $sp[1],
+                            'name'  => $sp[2],
+                            'price' => $sp[3],
+                            'img'   => $sp[4],
+                            'desc'  => $sp[5],
+                            'link'  => $sp[6]
                         ]
                     );
                 }

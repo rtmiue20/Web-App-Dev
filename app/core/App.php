@@ -56,6 +56,9 @@ class App
         $router->post('/categories/store', [CategoryController::class, 'store'], [AdminMiddleware::class]);
 
         $router->get('/products', [ProductController::class, 'index']);
+        $router->post('/products/store', [ProductController::class, 'store'], [AuthMiddleware::class]);
+        $router->post('/products/update', [ProductController::class, 'update'], [AuthMiddleware::class]);
+        $router->post('/products/delete', [ProductController::class, 'destroy'], [AuthMiddleware::class]);
         $router->get('/products/{id}', [ProductController::class, 'show']);
 
         // 6. Nhóm Route AJAX & Web Service Endpoints (/api/*)
