@@ -31,7 +31,8 @@ public/uploads/products/*
 # Cache, locks & temporary files
 storage/cache/*
 !storage/cache/.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
 *.lock
 *.log
 temp_fix_test.txt
-

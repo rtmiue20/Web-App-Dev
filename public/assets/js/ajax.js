@@ -9,7 +9,11 @@
 const ForumAjax = {
   getCsrfToken: function () {
     const csrfInput = document.querySelector('input[name="_csrf"]');
-    return csrfInput ? csrfInput.value : '';
+    if (csrfInput && csrfInput.value) {
+      return csrfInput.value;
+    }
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    return csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
   },
 
   getBaseUrl: function () {
@@ -38,6 +42,7 @@ const ForumAjax = {
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({
           post_id: postId,
@@ -429,22 +434,27 @@ const ForumAjax = {
   },
 
   // 4. FR06: Fetch weather & 4-day forecast from Open-Meteo Web Service
-  fetchWeather: async function (lat, lng, badgeElement, panelElement) {
+  fetchWeather: async function (lat, lng, badgeElement, panelElement = null, warningElement = null, date = null) {
     try {
       const baseUrl = this.getBaseUrl();
-      const response = await fetch(
-        `${baseUrl}/api/weather.php?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`
-      );
+      const params = new URLSearchParams({ lat, lng });
+      if (date) params.set('date', date);
+      const response = await fetch(`${baseUrl}/api/weather.php?${params.toString()}`);
       const data = await response.json();
 
-      if (data && data.success && data.data) {
+      if (response.ok && data && data.success && data.data) {
         const w = data.data;
 
         if (badgeElement) {
-          badgeElement.innerHTML = `
-            <i class="bi ${w.icon || 'bi-cloud-sun-fill text-warning'} me-1"></i>
-            <span>${w.temp}°C · ${w.condition}</span>
-          `;
+          badgeElement.textContent = `${w.temp}°C · ${w.condition}${w.date ? ` · ${w.date}` : ''}`;
+        }
+
+        if (warningElement) {
+          const alerts = Array.isArray(w.alerts) ? w.alerts : [];
+          warningElement.className = alerts.length ? 'alert alert-warning mt-2' : 'alert alert-success mt-2';
+          warningElement.textContent = alerts.length
+            ? `Cảnh báo: ${alerts.join(' ')}`
+            : 'Chưa ghi nhận cảnh báo thời tiết nguy hiểm trong dữ liệu hiện có; điều này không đảm bảo đường đi an toàn.';
         }
 
         const targetPanel = panelElement || document.getElementById('weather-forecast-panel');
@@ -510,9 +520,16 @@ const ForumAjax = {
             ${dailyHtml}
           `;
         }
+      } else {
+        throw new Error(data && data.message ? data.message : 'Không thể tải dữ liệu thời tiết.');
       }
     } catch (e) {
-      if (badgeElement) badgeElement.style.display = 'none';
+      if (badgeElement) badgeElement.textContent = 'Không tải được thời tiết.';
+      if (warningElement) {
+        warningElement.className = 'alert alert-warning mt-2';
+        warningElement.textContent = 'Không thể xác minh cảnh báo thời tiết. Hãy kiểm tra dự báo chính thức trước khi đi.';
+      }
+      console.error('Lỗi tải thời tiết:', e);
     }
   },
 

@@ -12,15 +12,17 @@ if (!defined('BASE_URL')) {
     }
 }
 
-// Universal Class Autoloader
+// Universal Class Autoloader (Core, Repositories/DAO, Services, Models, Controllers, Middleware, Helpers)
 spl_autoload_register(function ($class) {
     $directories = [
         __DIR__ . '/core/',
+        __DIR__ . '/repositories/',
+        __DIR__ . '/services/',
         __DIR__ . '/helpers/',
         __DIR__ . '/models/',
-        __DIR__ . '/services/',
         __DIR__ . '/controllers/',
         __DIR__ . '/controllers/admin/',
+        __DIR__ . '/controllers/api/',
         __DIR__ . '/middleware/',
     ];
 
@@ -33,7 +35,7 @@ spl_autoload_register(function ($class) {
     }
 });
 
-// Pre-load essential helpers and core
+// Pre-load essential helpers and core architecture
 require_once __DIR__ . '/helpers/Session.php';
 require_once __DIR__ . '/helpers/Auth.php';
 require_once __DIR__ . '/helpers/Csrf.php';
@@ -45,6 +47,9 @@ require_once __DIR__ . '/helpers/DemoSeeder.php';
 require_once __DIR__ . '/helpers/Gamification.php';
 
 require_once __DIR__ . '/core/Database.php';
+require_once __DIR__ . '/core/RepositoryInterface.php';
+require_once __DIR__ . '/core/BaseRepository.php';
+require_once __DIR__ . '/core/BaseService.php';
 require_once __DIR__ . '/core/Model.php';
 require_once __DIR__ . '/core/Controller.php';
 require_once __DIR__ . '/core/Router.php';
@@ -61,8 +66,21 @@ require_once __DIR__ . '/models/Follow.php';
 require_once __DIR__ . '/models/Notification.php';
 require_once __DIR__ . '/models/Report.php';
 
-// Services
+// Pre-load Repositories (DAO Layer)
+require_once __DIR__ . '/repositories/UserRepository.php';
+require_once __DIR__ . '/repositories/CategoryRepository.php';
+require_once __DIR__ . '/repositories/PostRepository.php';
+require_once __DIR__ . '/repositories/CommentRepository.php';
+require_once __DIR__ . '/repositories/ProductRepository.php';
+require_once __DIR__ . '/repositories/StatsRepository.php';
+
+// Pre-load Services (Service Layer)
 require_once __DIR__ . '/services/WeatherService.php';
 require_once __DIR__ . '/services/VietnamAddressService.php';
+require_once __DIR__ . '/services/RssService.php';
+require_once __DIR__ . '/services/AuthService.php';
+require_once __DIR__ . '/services/CategoryService.php';
+require_once __DIR__ . '/services/PostService.php';
+require_once __DIR__ . '/services/UserService.php';
 
 Session::init();

@@ -73,6 +73,25 @@ class Validator
         return $errors;
     }
 
+    /**
+     * Mã hóa mật khẩu một chiều an toàn bằng thuật toán Bcrypt/Argon2 (`PASSWORD_DEFAULT`).
+     */
+    public static function hashPassword(string $plainPassword): string
+    {
+        return password_hash($plainPassword, PASSWORD_DEFAULT);
+    }
+
+    /**
+     * Kiểm tra mật khẩu người dùng nhập khớp với chuỗi băm trong CSDL.
+     */
+    public static function verifyPassword(string $plainPassword, string $passwordHash): bool
+    {
+        if ($plainPassword === '' || $passwordHash === '') {
+            return false;
+        }
+        return password_verify($plainPassword, $passwordHash);
+    }
+
     private static function stringValue(array $input, string $key): string
     {
         return isset($input[$key]) && is_string($input[$key]) ? $input[$key] : '';

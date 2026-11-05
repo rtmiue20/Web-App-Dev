@@ -1,4 +1,8 @@
 <?php
+/**
+ * Front Controller duy nhất của hệ thống (Single Entry Point).
+ * Mọi HTTP Request đều đi qua public/index.php -> App -> Router -> Middleware -> Controller -> Service -> Repository -> Database.
+ */
 
 if (PHP_SAPI === 'cli-server') {
     $filePath = __DIR__ . parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
@@ -9,7 +13,7 @@ if (PHP_SAPI === 'cli-server') {
 } else {
     $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
     $baseUrl = str_ends_with($scriptName, '/index.php')
-        ? rtrim( substr($scriptName, 0, -strlen('/index.php')), '/' )
+        ? rtrim(substr($scriptName, 0, -strlen('/index.php')), '/')
         : '';
     define('BASE_URL', ($baseUrl === '.' || $baseUrl === '') ? '' : $baseUrl);
 }
@@ -26,6 +30,7 @@ require_once __DIR__ . '/../app/controllers/PostController.php';
 require_once __DIR__ . '/../app/controllers/CategoryController.php';
 require_once __DIR__ . '/../app/controllers/ProductController.php';
 require_once __DIR__ . '/../app/controllers/UserController.php';
+require_once __DIR__ . '/../app/controllers/OutdoorController.php';
 require_once __DIR__ . '/../app/controllers/ModerationController.php';
 require_once __DIR__ . '/../app/controllers/ApiController.php';
 require_once __DIR__ . '/../app/controllers/admin/DashboardController.php';

@@ -1,12 +1,18 @@
 <?php
+require_once __DIR__ . '/../core/Controller.php';
+require_once __DIR__ . '/../services/AuthService.php';
 
+/**
+ * AuthController - Điều khiển luồng Đăng nhập, Đăng ký, Đăng xuất (FR01).
+ * Ủy quyền toàn bộ nghiệp vụ xác thực, chống Brute-force và băm mật khẩu cho AuthService.
+ */
 class AuthController extends Controller
 {
-    private User $users;
+    private AuthService $authService;
 
-    public function __construct()
+    public function __construct(?AuthService $authService = null)
     {
-        $this->users = new User();
+        $this->authService = $authService ?? new AuthService();
     }
 
     public function showLogin(): void
@@ -16,17 +22,15 @@ class AuthController extends Controller
         }
 
         $this->render('auth/login', [
-            'errors' => [],
-            'old' => [],
+            'errors'  => [],
+            'old'     => [],
             'message' => Session::flash('error'),
         ]);
     }
 
     public function login(): void
     {
-        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
-            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-            || isset($_POST['ajax']);
+        $isAjax = $this->isAjaxRequest();
 
         if (!$this->verifyCsrfToken()) {
             if ($isAjax) {
@@ -36,59 +40,38 @@ class AuthController extends Controller
             http_response_code(419);
             $this->render('auth/login', [
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
-                'old' => [],
+                'old'    => [],
             ]);
             return;
         }
 
-        $errors = Validator::login($_POST);
         $email = trim(is_string($_POST['email'] ?? null) ? $_POST['email'] : '');
-        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
-        if ($errors !== []) {
+        $result = $this->authService->attemptLogin($_POST);
+
+        if (!$result['success']) {
+            $status = (int)($result['status'] ?? 401);
             if ($isAjax) {
-                Response::fail((string) reset($errors), 422, ['errors' => $errors]);
+                Response::fail($result['message'], $status, ['errors' => $result['errors']]);
                 return;
             }
-            $this->render('auth/login', ['errors' => $errors, 'old' => ['email' => $email]]);
-            return;
-        }
-
-        // Tìm người dùng qua email hoặc username
-        $user = $this->users->findByEmail($email);
-        if ($user === null) {
-            $user = $this->users->findByUsername($email);
-        }
-
-        if ($user === null || !password_verify($password, (string) $user->getPasswordHash())) {
-            if ($isAjax) {
-                Response::fail('Tài khoản hoặc mật khẩu không chính xác.', 401);
-                return;
-            }
+            http_response_code($status === 422 ? 200 : $status);
             $this->render('auth/login', [
-                'errors' => ['form' => 'Tài khoản hoặc mật khẩu không chính xác.'],
-                'old' => ['email' => $email],
+                'errors' => $result['errors'],
+                'old'    => ['email' => $email],
             ]);
             return;
         }
 
-        Session::regenerate();
-        Session::set('user', [
-            'id' => $user->getId(),
-            'username' => $user->getUsername(),
-            'email' => $user->getEmail(),
-            'role_id' => $user->getRoleId(),
-            'role_name' => $user->getRoleName(),
-        ]);
-
+        $userData = $result['data'];
         if ($isAjax) {
             $baseUrl = defined('BASE_URL') ? BASE_URL : '';
             Response::ok([
                 'user' => [
-                    'username' => $user->getUsername(),
-                    'email' => $user->getEmail(),
+                    'username' => $userData['username'],
+                    'email'    => $userData['email'],
                 ],
                 'redirect' => $baseUrl . '/',
-            ], 'Đăng nhập thành công');
+            ], $result['message']);
             return;
         }
 
@@ -102,8 +85,8 @@ class AuthController extends Controller
         }
 
         $this->render('auth/register', [
-            'errors' => [],
-            'old' => [],
+            'errors'  => [],
+            'old'     => [],
             'message' => Session::flash('error'),
         ]);
     }
@@ -114,48 +97,24 @@ class AuthController extends Controller
             http_response_code(419);
             $this->render('auth/register', [
                 'errors' => ['form' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'],
-                'old' => [],
+                'old'    => [],
             ]);
             return;
         }
 
-        $errors = Validator::registration($_POST);
         $username = trim(is_string($_POST['username'] ?? null) ? $_POST['username'] : '');
         $email = trim(is_string($_POST['email'] ?? null) ? $_POST['email'] : '');
-        if ($errors !== []) {
+
+        $result = $this->authService->registerUser($_POST);
+        if (!$result['success']) {
             $this->render('auth/register', [
-                'errors' => $errors,
-                'old' => ['username' => $username, 'email' => $email],
+                'errors' => $result['errors'],
+                'old'    => ['username' => $username, 'email' => $email],
             ]);
             return;
         }
 
-        if ($this->users->existsByEmailOrUsername($email, $username)) {
-            $this->render('auth/register', [
-                'errors' => ['form' => 'Email hoặc tên người dùng đã được sử dụng.'],
-                'old' => ['username' => $username, 'email' => $email],
-            ]);
-            return;
-        }
-
-        try {
-            $user = new User();
-            $user->setUsername($username);
-            $user->setEmail($email);
-            $user->setPasswordHash(password_hash((string) $_POST['password'], PASSWORD_DEFAULT));
-            $user->create();
-        } catch (PDOException $exception) {
-            if ($exception->getCode() !== '23000') {
-                throw $exception;
-            }
-            $this->render('auth/register', [
-                'errors' => ['form' => 'Email hoặc tên người dùng đã được sử dụng.'],
-                'old' => ['username' => $username, 'email' => $email],
-            ]);
-            return;
-        }
-
-        Session::flash('success', 'Đăng ký thành công. Bạn có thể đăng nhập.');
+        Session::flash('success', $result['message']);
         $this->redirect('/login');
     }
 
@@ -167,7 +126,7 @@ class AuthController extends Controller
             return;
         }
 
-        Session::destroy();
+        $this->authService->logout();
         header('Location: ' . BASE_URL . '/login', true, 303);
     }
 }
