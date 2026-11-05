@@ -316,6 +316,224 @@ class DemoSeeder
                 }
                 @file_put_contents($voteLockFile, date('c'));
             }
+
+            // 9. Đảm bảo 5 bảng tính năng dã ngoại (Checklist, Đi chung, Đánh giá địa điểm) luôn tồn tại
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS trip_checklists (
+                  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  user_id    INT UNSIGNED NOT NULL,
+                  title      VARCHAR(120) NOT NULL,
+                  trip_type  VARCHAR(60) NOT NULL,
+                  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB
+            ");
+
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS checklist_items (
+                  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  checklist_id INT UNSIGNED NOT NULL,
+                  item         VARCHAR(120) NOT NULL,
+                  sort_order   INT UNSIGNED NOT NULL DEFAULT 0,
+                  FOREIGN KEY (checklist_id) REFERENCES trip_checklists(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB
+            ");
+
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS trips (
+                  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  user_id           INT UNSIGNED NOT NULL,
+                  title             VARCHAR(150) NOT NULL,
+                  description       TEXT NOT NULL,
+                  location          VARCHAR(150) NOT NULL,
+                  lat               DECIMAL(10, 7) NULL,
+                  lng               DECIMAL(10, 7) NULL,
+                  starts_at         DATETIME NOT NULL,
+                  max_participants  INT UNSIGNED NOT NULL,
+                  created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB
+            ");
+
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS trip_participants (
+                  trip_id   INT UNSIGNED NOT NULL,
+                  user_id   INT UNSIGNED NOT NULL,
+                  joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (trip_id, user_id),
+                  FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE,
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB
+            ");
+
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS place_reviews (
+                  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  post_id    INT UNSIGNED NOT NULL,
+                  user_id    INT UNSIGNED NOT NULL,
+                  rating     TINYINT UNSIGNED NOT NULL,
+                  review     VARCHAR(1000) NOT NULL,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  UNIQUE KEY uq_place_review_user (post_id, user_id),
+                  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB
+            ");
+
+            // 10. Nạp dữ liệu mẫu cho Checklist nếu bảng trống
+            $chkCount = (int) (Database::query("SELECT COUNT(*) AS total FROM trip_checklists")[0]['total'] ?? 0);
+            if ($chkCount === 0) {
+                Database::execute(
+                    "INSERT INTO trip_checklists (id, user_id, title, trip_type, is_public, created_at)
+                     VALUES (1, :uid, 'Checklist Trekking Tà Năng – Phan Dũng 2 ngày 1 đêm', 'Trekking', 1, NOW())",
+                    ['uid' => $authorId]
+                );
+                $items1 = [
+                    'Balo dã ngoại trợ lực 40L - 50L',
+                    'Giày trekking chuyên dụng cổ lửng bám đá chống trơn',
+                    'Túi ngủ giữ nhiệt mỏng 15°C & lều 2 lớp chịu gió',
+                    'Nước uống bù khoáng (tối thiểu 3.5 lít/người)',
+                    'Bộ đồ sơ cứu y tế cá nhân & thuốc sát trùng, băng gạc',
+                    'Đèn pin đội đầu siêu sáng + 2 bộ pin sạc dự phòng',
+                    'Thực phẩm gọn nhẹ (thanh protein, chocolate, lương khô)',
+                    'Áo khoác gió chống nước Gore-Tex & áo mưa bộ',
+                    'Còi cứu hộ sinh tồn, dao đa năng & bật lửa chống nước'
+                ];
+                foreach ($items1 as $idx => $it) {
+                    Database::execute(
+                        "INSERT INTO checklist_items (checklist_id, item, sort_order) VALUES (1, :item, :order)",
+                        ['item' => $it, 'order' => $idx]
+                    );
+                }
+
+                Database::execute(
+                    "INSERT INTO trip_checklists (id, user_id, title, trip_type, is_public, created_at)
+                     VALUES (2, :uid, 'Checklist Cắm trại gia đình & bạn bè cuối tuần bên hồ', 'Cắm trại', 1, NOW())",
+                    ['uid' => $secondAuthorId]
+                );
+                $items2 = [
+                    'Lều cắm trại 4 người tự bung chống thấm nước',
+                    'Tấm bạt tăng che nắng mưa (Tarp 3x4m)',
+                    'Đệm hơi cách nhiệt & gối hơi tự bơm',
+                    'Bếp nướng BBQ dã ngoại & than không khói',
+                    'Bộ bàn ghế xếp gọn du lịch (4 ghế + 1 bàn)',
+                    'Thùng giữ nhiệt 24L trữ thịt và đồ uống lạnh',
+                    'Đèn bão LED treo lều & dây đèn trang trí ấm cúng',
+                    'Bình xịt chống muỗi & côn trùng dã ngoại',
+                    'Túi rác tự phân hủy (Leave No Trace - Giữ sạch thiên nhiên)'
+                ];
+                foreach ($items2 as $idx => $it) {
+                    Database::execute(
+                        "INSERT INTO checklist_items (checklist_id, item, sort_order) VALUES (2, :item, :order)",
+                        ['item' => $it, 'order' => $idx]
+                    );
+                }
+
+                Database::execute(
+                    "INSERT INTO trip_checklists (id, user_id, title, trip_type, is_public, created_at)
+                     VALUES (3, :uid, 'Checklist Săn mây Đồi Đa Phú – Đà Lạt ấm áp', 'Săn mây', 1, NOW())",
+                    ['uid' => $authorId]
+                );
+                $items3 = [
+                    'Áo phao giữ nhiệt hoặc áo lông vũ siêu nhẹ',
+                    'Bình giữ nhiệt 1L chứa nước sôi pha trà/cà phê',
+                    'Bộ ấm phin pha cà phê dã ngoại',
+                    'Miếng dán giữ nhiệt bàn chân',
+                    'Máy ảnh / Tripod chắc chắn chống rung gió sớm',
+                    'Tấm bạt lót đất chống sương đọng đáy lều'
+                ];
+                foreach ($items3 as $idx => $it) {
+                    Database::execute(
+                        "INSERT INTO checklist_items (checklist_id, item, sort_order) VALUES (3, :item, :order)",
+                        ['item' => $it, 'order' => $idx]
+                    );
+                }
+            }
+
+            // 11. Nạp dữ liệu mẫu cho Chuyến đi nhóm ("Đi chung") nếu bảng trống
+            $tripCount = (int) (Database::query("SELECT COUNT(*) AS total FROM trips")[0]['total'] ?? 0);
+            if ($tripCount === 0) {
+                $t1Starts = date('Y-m-d 06:00:00', strtotime('+3 days'));
+                Database::execute(
+                    "INSERT INTO trips (id, user_id, title, description, location, lat, lng, starts_at, max_participants, created_at)
+                     VALUES (1, :uid, 'Săn mây Sống Lưng Khủng Long Tà Xùa 2 ngày 1 đêm', :desc, 'Xã Tà Xùa, Huyện Bắc Yên, Sơn La', 21.2833000, 104.3167000, :starts, 8, NOW())",
+                    [
+                        'uid' => $authorId,
+                        'desc' => "Nhóm mình hiện đã có 4 người (2 nam 2 nữ), cần tìm thêm 4 bạn nữa ghép xe Limousine từ Hà Nội lên Bắc Yên rồi thuê xe máy lên bản Tà Xùa săn mây.\n\nLịch trình tóm tắt:\n- Sáng thứ 7: Tập trung 6h00 tại bến xe Mỹ Đình, di chuyển lên Tà Xùa.\n- Chiều: Check-in homestay, đón hoàng hôn đỉnh Gió.\n- Sáng CN: 5h00 đón bình minh và săn biển mây tại Sống lưng khủng long Háng Đồng.\n\nChi phí dự kiến: ~1.200.000đ/người (chia đều tiền xe + homestay + ăn uống).",
+                        'starts' => $t1Starts
+                    ]
+                );
+                Database::execute("INSERT IGNORE INTO trip_participants (trip_id, user_id, joined_at) VALUES (1, :u1, NOW())", ['u1' => $authorId]);
+                Database::execute("INSERT IGNORE INTO trip_participants (trip_id, user_id, joined_at) VALUES (1, :u2, NOW())", ['u2' => $secondAuthorId]);
+
+                $t2Starts = date('Y-m-d 14:30:00', strtotime('+5 days'));
+                Database::execute(
+                    "INSERT INTO trips (id, user_id, title, description, location, lat, lng, starts_at, max_participants, created_at)
+                     VALUES (2, :uid, 'Cắm trại ngắm hoàng hôn Hồ Trị An cuối tuần thư giãn', :desc, 'Hồ Trị An, Huyện Vĩnh Cửu, Đồng Nai', 11.0825000, 107.0375000, :starts, 10, NOW())",
+                    [
+                        'uid' => $secondAuthorId,
+                        'desc' => "Rủ rê anh chị em đam mê chill dã ngoại cuối tuần tại bãi cỏ Mã Đà bên hồ Trị An. Tụi mình đã chuẩn bị sẵn lều to, bếp nướng BBQ và loa mini nghe nhạc.\n\nDi chuyển bằng xe máy từ TP.HCM mất khoảng 2 tiếng. Đi chung xe hoặc tự túc đều được, ăn uống nướng thịt buổi tối chia đều.\n\nLưu ý: Tuân thủ nguyên tắc Leave No Trace, dọn sạch rác trước khi về.",
+                        'starts' => $t2Starts
+                    ]
+                );
+                Database::execute("INSERT IGNORE INTO trip_participants (trip_id, user_id, joined_at) VALUES (2, :u, NOW())", ['u' => $secondAuthorId]);
+
+                $t3Starts = date('Y-m-d 05:30:00', strtotime('+7 days'));
+                Database::execute(
+                    "INSERT INTO trips (id, user_id, title, description, location, lat, lng, starts_at, max_participants, created_at)
+                     VALUES (3, :uid, 'Leo núi Bà Đen – Cung đường Cột Điện rèn luyện thể lực', :desc, 'Núi Bà Đen, TP. Tây Ninh', 11.3823834, 106.1702210, :starts, 6, NOW())",
+                    [
+                        'uid' => $authorId,
+                        'desc' => "Chuyến leo núi về trong ngày dành cho các bạn muốn thử sức bền và ngắm mây Tây Ninh. Cung Cột Điện có bóng mát nhưng dốc đứng và nhiều đá tảng.\n\nYêu cầu trang bị: Giày bám tốt, gậy leo núi, tối thiểu 2 lít nước và điện giải. Tập trung lúc 5h30 sáng tại chân núi.",
+                        'starts' => $t3Starts
+                    ]
+                );
+                Database::execute("INSERT IGNORE INTO trip_participants (trip_id, user_id, joined_at) VALUES (3, :u, NOW())", ['u' => $authorId]);
+            }
+
+            // 12. Nạp dữ liệu mẫu cho Đánh giá địa điểm (Place Reviews) để bản đồ có điểm sao và review
+            $revCount = (int) (Database::query("SELECT COUNT(*) AS total FROM place_reviews")[0]['total'] ?? 0);
+            if ($revCount === 0) {
+                $pubPosts = Database::query("SELECT id FROM posts WHERE status = 'published' AND lat IS NOT NULL AND lng IS NOT NULL ORDER BY id ASC");
+                $users = Database::query("SELECT id FROM users ORDER BY id ASC LIMIT 3");
+                if (!empty($pubPosts) && count($users) >= 2) {
+                    $u1 = (int)$users[0]['id'];
+                    $u2 = (int)$users[1]['id'];
+                    $u3 = isset($users[2]['id']) ? (int)$users[2]['id'] : $u1;
+
+                    foreach ($pubPosts as $pIdx => $pRow) {
+                        $pid = (int)$pRow['id'];
+                        if ($pIdx === 0) {
+                            Database::execute(
+                                "INSERT IGNORE INTO place_reviews (post_id, user_id, rating, review, created_at)
+                                 VALUES (:pid, :uid, 5, 'Địa điểm săn mây Đà Lạt tuyệt vời nhất mình từng đến! Không gian thoáng đãng, buổi sớm mây luồn qua thung lũng đẹp như tranh vẽ.', NOW())",
+                                ['pid' => $pid, 'uid' => $u2]
+                            );
+                            if ($u3 !== $u2) {
+                                Database::execute(
+                                    "INSERT IGNORE INTO place_reviews (post_id, user_id, rating, review, created_at)
+                                     VALUES (:pid, :uid, 5, 'Đường lên dốc đất hơi khó đi một chút nếu trời mưa, nhưng bù lại cảnh hoàng hôn và bình minh cực kỳ xứng đáng.', NOW())",
+                                    ['pid' => $pid, 'uid' => $u3]
+                                );
+                            }
+                        } elseif ($pIdx === 1) {
+                            Database::execute(
+                                "INSERT IGNORE INTO place_reviews (post_id, user_id, rating, review, created_at)
+                                 VALUES (:pid, :uid, 5, 'Cung đường trekking huyền thoại. Cảnh sắc đồi cỏ mênh mông bạt ngàn, gió mát lộng. Rất khuyến khích trải nghiệm!', NOW())",
+                                ['pid' => $pid, 'uid' => $u1]
+                            );
+                        } else {
+                            Database::execute(
+                                "INSERT IGNORE INTO place_reviews (post_id, user_id, rating, review, created_at)
+                                 VALUES (:pid, :uid, 4, 'Khung cảnh thiên nhiên đẹp và trong lành, địa điểm cắm trại lý tưởng cho những ai thích sự yên tĩnh.', NOW())",
+                                ['pid' => $pid, 'uid' => $u2]
+                            );
+                        }
+                    }
+                }
+            }
         } catch (Throwable $e) {
             error_log('DemoSeeder error: ' . $e->getMessage());
         }
