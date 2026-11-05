@@ -28,7 +28,7 @@ public/uploads/posts/*
 public/uploads/products/*
 !public/uploads/products/.gitkeep
 
-# Cache, sessions, locks & temporary files
+# Cache, locks & temporary files
 storage/cache/*
 !storage/cache/.gitkeep
 storage/sessions/*
