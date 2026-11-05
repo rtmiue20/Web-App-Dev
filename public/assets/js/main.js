@@ -36,11 +36,16 @@ window.showToast = function(message, type) {
       '</div>' +
       '<div class="flex-grow-1 min-w-0">' +
         '<div class="toast-title">' + (isSuccess ? 'Thành công!' : 'Thông báo') + '</div>' +
-        '<div class="toast-desc">' + message + '</div>' +
+        '<div class="toast-desc"></div>' +
       '</div>' +
       '<button type="button" class="toast-glass-close flex-shrink-0" aria-label="Đóng"><i class="bi bi-x-lg"></i></button>' +
     '</div>' +
     '<div class="toast-progress-track"><div class="toast-progress-fill ' + (isSuccess ? 'toast-progress-success' : 'toast-progress-error') + '"></div></div>';
+
+  var descEl = toast.querySelector('.toast-desc');
+  if (descEl) {
+    descEl.textContent = String(message ?? '');
+  }
 
   var closeBtn = toast.querySelector('.toast-glass-close');
   if (closeBtn) {

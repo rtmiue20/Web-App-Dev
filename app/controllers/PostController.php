@@ -8,6 +8,7 @@ require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
 require_once __DIR__ . '/../helpers/Auth.php';
+require_once __DIR__ . '/../services/PostService.php';
 
 /**
  * Controller PostController - Quản lý chức năng bài viết (Tuần 2 & Tuần 3 - Phúc)
@@ -19,93 +20,24 @@ class PostController extends Controller {
     private Category $categories;
     private Comment $comments;
     private Product $products;
+    private PostService $postService;
 
     public function __construct() {
         $this->posts = new Post();
         $this->categories = new Category();
         $this->comments = new Comment();
         $this->products = new Product();
+        $this->postService = new PostService();
     }
 
     /**
      * Danh sách bài viết theo chuyên mục, tìm kiếm nâng cao (Fulltext & Bộ lọc) và phân trang (Tuần 4 - Phúc)
      */
     public function index(): void {
-        $categoryId = null;
-        if (isset($_GET['category']) && $_GET['category'] !== '') {
-            $categoryId = (int)$_GET['category'];
-            if ($categoryId <= 0) {
-                $categoryId = null;
-            }
-        }
+        $feedData = $this->postService->getPublicFeed($_GET, 6);
+        $feedData['title'] = 'Bài viết dã ngoại';
 
-        $page = 1;
-        if (isset($_GET['page'])) {
-            $page = (int)$_GET['page'];
-            if ($page < 1) {
-                $page = 1;
-            }
-        }
-
-        $limit = 6; // 6 bài viết mỗi trang cho người dùng
-        $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
-
-        // Bộ lọc nâng cao (Tìm kiếm full-text, loại hình, độ khó, vùng miền, tag)
-        $keyword = trim((string)($_GET['q'] ?? $_GET['keyword'] ?? ''));
-        $difficulty = trim((string)($_GET['difficulty'] ?? ''));
-        $region = trim((string)($_GET['region'] ?? ''));
-        $activityType = trim((string)($_GET['activity_type'] ?? ''));
-        $tagName = trim((string)($_GET['tag'] ?? ''));
-
-        $filters = [
-            'keyword'       => $keyword,
-            'category_id'   => $categoryId,
-            'difficulty'    => $difficulty,
-            'region'        => $region,
-            'activity_type' => $activityType,
-            'tag_name'      => $tagName,
-            'sort'          => $selectedSort,
-        ];
-
-        $hasAdvancedFilter = ($keyword !== '' || $difficulty !== '' || $region !== '' || $activityType !== '' || $tagName !== '');
-
-        if ($hasAdvancedFilter) {
-            $totalPosts = $this->posts->countAdvancedSearch($filters);
-            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
-            if ($page > $totalPages) {
-                $page = $totalPages;
-            }
-            $postsList = $this->posts->advancedSearch($filters, $page, $limit);
-        } else {
-            $totalPosts = $this->posts->countFiltered($categoryId, 'published');
-            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
-            if ($page > $totalPages) {
-                $page = $totalPages;
-            }
-            $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
-        }
-
-        $categoriesList = $this->categories->getAll();
-
-        // Lấy danh sách tag phổ biến cho bộ lọc
-        $popularTags = [];
-        try {
-            $popularTags = Database::query("SELECT t.id, t.name, COUNT(pt.post_id) AS post_count FROM tags t JOIN post_tags pt ON pt.tag_id = t.id GROUP BY t.id, t.name ORDER BY post_count DESC LIMIT 12");
-        } catch (Exception $e) {}
-
-        $this->render('posts/index', [
-            'title'              => 'Bài viết dã ngoại',
-            'posts'              => $postsList,
-            'categories'         => $categoriesList,
-            'popularTags'        => $popularTags,
-            'selectedCategoryId' => $categoryId,
-            'selectedSort'       => $selectedSort,
-            'filters'            => $filters,
-            'currentPage'        => $page,
-            'totalPages'         => $totalPages,
-            'totalPosts'         => $totalPosts,
-            'limit'              => $limit
-        ]);
+        $this->render('posts/index', $feedData);
     }
 
     /**
@@ -610,6 +542,12 @@ class PostController extends Controller {
         $json = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
         if (!is_array($json)) {
             $json = [];
+        }
+
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
         }
 
         $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;

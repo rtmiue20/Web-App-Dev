@@ -28,10 +28,11 @@ public/uploads/posts/*
 public/uploads/products/*
 !public/uploads/products/.gitkeep
 
-# Cache, locks & temporary files
+# Cache, sessions, locks & temporary files
 storage/cache/*
 !storage/cache/.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
 *.lock
 *.log
 temp_fix_test.txt
-

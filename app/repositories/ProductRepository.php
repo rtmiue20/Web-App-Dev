@@ -1,0 +1,243 @@
+<?php
+require_once __DIR__ . '/../core/BaseRepository.php';
+
+/**
+ * ProductRepository (DAO) - Tầng truy cập dữ liệu Dụng cụ & Thiết bị dã ngoại.
+ * Thực thi các Stored Procedures: sp_product_list_by_category, sp_product_get,
+ * sp_product_create, sp_product_update, sp_product_delete,
+ * sp_post_products_get, sp_post_product_add, sp_post_products_clear.
+ */
+class ProductRepository extends BaseRepository
+{
+    protected string $table = 'products';
+
+    /**
+     * Lấy danh sách dụng cụ theo danh mục (hoặc toàn bộ nếu $categoryId = null).
+     */
+    public function findByCategory(?int $categoryId = null): array
+    {
+        try {
+            return $this->callProcedure('sp_product_list_by_category', [$categoryId]);
+        } catch (PDOException $e) {
+            try {
+                $sql = 'SELECT p.*, c.name AS category_name
+                        FROM products p
+                        LEFT JOIN categories c ON c.id = p.category_id
+                        WHERE p.is_shared = 1';
+                $params = [];
+
+                if ($categoryId !== null && $categoryId > 0) {
+                    $sql .= ' AND p.category_id = :category_id';
+                    $params['category_id'] = $categoryId;
+                }
+
+                $sql .= ' ORDER BY p.id DESC';
+                return $this->query($sql, $params);
+            } catch (PDOException $ex) {
+                return [];
+            }
+        }
+    }
+
+    public function findAll(): array
+    {
+        return $this->findByCategory(null);
+    }
+
+    /**
+     * Tìm chi tiết dụng cụ theo ID (sp_product_get).
+     */
+    public function findById(int $id): ?array
+    {
+        try {
+            $rows = $this->callProcedure('sp_product_get', [$id]);
+            return !empty($rows) ? $rows[0] : null;
+        } catch (PDOException $e) {
+            try {
+                return $this->queryOne(
+                    'SELECT p.*, c.name AS category_name
+                     FROM products p
+                     LEFT JOIN categories c ON c.id = p.category_id
+                     WHERE p.id = :id
+                     LIMIT 1',
+                    ['id' => $id]
+                );
+            } catch (PDOException $ex) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Lấy danh sách dụng cụ đính kèm trong một bài viết (sp_post_products_get).
+     */
+    public function findByPostId(int $postId): array
+    {
+        try {
+            return $this->callProcedure('sp_post_products_get', [$postId]);
+        } catch (PDOException $e) {
+            try {
+                return $this->query(
+                    'SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link,
+                            c.name AS category_name
+                     FROM post_products pp
+                     JOIN products p ON p.id = pp.product_id
+                     LEFT JOIN categories c ON c.id = p.category_id
+                     WHERE pp.post_id = :post_id
+                     ORDER BY p.name ASC',
+                    ['post_id' => $postId]
+                );
+            } catch (PDOException $ex) {
+                return [];
+            }
+        }
+    }
+
+    /**
+     * Đồng bộ danh sách dụng cụ sử dụng trong bài viết.
+     */
+    public function syncPostProducts(int $postId, array $productIds): void
+    {
+        if ($postId <= 0) {
+            return;
+        }
+
+        try {
+            $this->callProcedure('sp_post_products_clear', [$postId]);
+        } catch (PDOException $e) {
+            $this->execute('DELETE FROM post_products WHERE post_id = :post_id', ['post_id' => $postId]);
+        }
+
+        foreach ($productIds as $pId) {
+            $cleanedId = (int)$pId;
+            if ($cleanedId > 0) {
+                try {
+                    $this->callProcedure('sp_post_product_add', [$postId, $cleanedId]);
+                } catch (PDOException $e) {
+                    $this->execute(
+                        'INSERT IGNORE INTO post_products (post_id, product_id) VALUES (:post_id, :product_id)',
+                        ['post_id' => $postId, 'product_id' => $cleanedId]
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Thêm mới dụng cụ (sp_product_create).
+     */
+    public function createProduct(
+        ?int $categoryId,
+        string $name,
+        float $price,
+        ?string $imageUrl,
+        ?string $description,
+        ?string $link = null,
+        int $isShared = 1
+    ): int {
+        try {
+            $rows = $this->callProcedure('sp_product_create', [
+                $categoryId,
+                $name,
+                $price,
+                $imageUrl,
+                $description,
+                $link,
+                $isShared,
+            ]);
+            return (int)($rows[0]['product_id'] ?? 0);
+        } catch (PDOException $e) {
+            try {
+                $this->execute(
+                    'INSERT INTO products (category_id, name, price, image_url, description, link, is_shared)
+                     VALUES (:category_id, :name, :price, :image_url, :description, :link, :is_shared)',
+                    [
+                        'category_id' => $categoryId,
+                        'name'        => $name,
+                        'price'       => $price,
+                        'image_url'   => $imageUrl,
+                        'description' => $description,
+                        'link'        => $link,
+                        'is_shared'   => $isShared,
+                    ]
+                );
+                return $this->lastInsertId();
+            } catch (PDOException $ex) {
+                return 0;
+            }
+        }
+    }
+
+    /**
+     * Cập nhật dụng cụ (sp_product_update).
+     */
+    public function updateProduct(
+        int $id,
+        ?int $categoryId,
+        string $name,
+        float $price,
+        ?string $imageUrl,
+        ?string $description,
+        ?string $link = null,
+        int $isShared = 1
+    ): bool {
+        try {
+            $this->callProcedure('sp_product_update', [
+                $id,
+                $categoryId,
+                $name,
+                $price,
+                $imageUrl,
+                $description,
+                $link,
+                $isShared,
+            ]);
+            return true;
+        } catch (PDOException $e) {
+            try {
+                $this->execute(
+                    'UPDATE products
+                     SET category_id = :category_id,
+                         name = :name,
+                         price = :price,
+                         image_url = COALESCE(:image_url, image_url),
+                         description = :description,
+                         link = :link,
+                         is_shared = :is_shared
+                     WHERE id = :id',
+                    [
+                        'category_id' => $categoryId,
+                        'name'        => $name,
+                        'price'       => $price,
+                        'image_url'   => $imageUrl,
+                        'description' => $description,
+                        'link'        => $link,
+                        'is_shared'   => $isShared,
+                        'id'          => $id,
+                    ]
+                );
+                return true;
+            } catch (PDOException $ex) {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Xóa dụng cụ (sp_product_delete).
+     */
+    public function delete(int $id): bool
+    {
+        try {
+            $this->callProcedure('sp_product_delete', [$id]);
+            return true;
+        } catch (PDOException $e) {
+            try {
+                return parent::delete($id);
+            } catch (PDOException $ex) {
+                return false;
+            }
+        }
+    }
+}
+

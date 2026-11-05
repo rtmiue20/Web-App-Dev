@@ -9,7 +9,11 @@
 const ForumAjax = {
   getCsrfToken: function () {
     const csrfInput = document.querySelector('input[name="_csrf"]');
-    return csrfInput ? csrfInput.value : '';
+    if (csrfInput && csrfInput.value) {
+      return csrfInput.value;
+    }
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    return csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
   },
 
   getBaseUrl: function () {
@@ -38,6 +42,7 @@ const ForumAjax = {
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({
           post_id: postId,
