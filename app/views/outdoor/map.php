@@ -2,42 +2,137 @@
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 ?>
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<!-- Leaflet CSS (jsdelivr CDN ổn định) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" crossorigin="">
 
 <style>
-/* Tùy chỉnh Popup Bản đồ đẹp theo chuẩn Design System */
+/* ── Container bản đồ ── */
+#places-map {
+    height: 480px;
+    border-radius: 24px;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    background: #1a2217;
+    box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.60);
+}
+
+/* Đảm bảo các pane của Leaflet không bị ảnh hưởng bởi border-radius cha */
+#places-map .leaflet-pane,
+#places-map .leaflet-tile-pane,
+#places-map .leaflet-tile-container {
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ── Popup Bản đồ Liquid Glass & Nature ── */
 .custom-leaflet-popup .leaflet-popup-content-wrapper {
     background: #ffffff;
     color: #23261f;
-    border-radius: 18px;
+    border-radius: 20px;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.20);
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .custom-leaflet-popup .leaflet-popup-content {
     margin: 0;
     line-height: 1.45;
-    min-width: 240px;
-    max-width: 290px;
+    min-width: 250px;
+    max-width: 300px;
+}
+.custom-leaflet-popup .leaflet-popup-tip-container {
+    margin-top: -1px;
 }
 .custom-leaflet-popup .leaflet-popup-tip {
     background: #ffffff;
+    box-shadow: none;
 }
+
+/* ── Custom Moss Pin Marker ── */
+.moss-map-pin {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.45));
+}
+.moss-map-pin:hover {
+    transform: scale(1.18) translateY(-4px);
+}
+.moss-map-pin svg {
+    width: 36px;
+    height: 36px;
+}
+
 .place-popup-thumb {
     width: 100%;
-    height: 120px;
+    height: 125px;
     object-fit: cover;
     display: block;
-}
-.place-popup-body {
-    padding: 12px 14px 14px;
 }
 .place-card-thumb {
     width: 100%;
     height: 160px;
     object-fit: cover;
-    border-radius: 18px 18px 0 0;
+    border-radius: 28px 28px 0 0;
+}
+
+/* ── Leaflet controls styling (Zoom & Layer switcher) ── */
+.leaflet-control-zoom,
+.leaflet-control-layers {
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    background: rgba(22, 32, 16, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.40) !important;
+    color: #ffffff !important;
+}
+.leaflet-control-zoom a {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.90) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    font-weight: 500 !important;
+    transition: background 0.15s ease !important;
+}
+.leaflet-control-zoom a:hover {
+    background: rgba(155, 189, 85, 0.3) !important;
+    color: #ffffff !important;
+}
+.leaflet-control-layers-toggle {
+    filter: invert(1);
+    opacity: 0.85;
+}
+.leaflet-control-layers-expanded {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+}
+.leaflet-control-layers-base label {
+    margin-bottom: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ── Leaflet attribution ── */
+.leaflet-control-attribution {
+    background: rgba(14, 20, 11, 0.75) !important;
+    backdrop-filter: blur(8px) !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    border-radius: 8px 0 0 0 !important;
+    padding: 2px 8px !important;
+    font-size: 10.5px !important;
+}
+.leaflet-control-attribution a {
+    color: rgba(155, 189, 85, 0.90) !important;
+    text-decoration: none;
 }
 </style>
 
@@ -78,7 +173,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
     <?php else: ?>
         <!-- Map Container -->
         <div class="position-relative mb-4">
-            <div id="places-map" style="height: 460px; border-radius: 24px; z-index: 1; border: 1px solid rgba(255, 255, 255, 0.15);" aria-label="Bản đồ địa điểm dã ngoại tương tác"></div>
+            <div id="places-map" aria-label="Bản đồ địa điểm dã ngoại tương tác"></div>
         </div>
 
         <!-- Places List Grid -->
@@ -146,86 +241,183 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             <?php endforeach; ?>
         </div>
 
-        <!-- Leaflet Script -->
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <!-- Leaflet Script (jsdelivr CDN) -->
+        <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
             var mapInstance = null;
-            var markersMap = {};
+            var markersMap  = {};
 
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 var placesData = <?= json_encode($places, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-                var baseUrl = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
+                var baseUrl    = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
 
-                if (!document.getElementById('places-map')) return;
+                var mapEl = document.getElementById('places-map');
+                if (!mapEl) return;
 
+                // Cấu hình CDN fallback cho Leaflet default images nếu cần
+                L.Icon.Default.imagePath = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/';
+
+                /* ── Khởi tạo Leaflet Map ── */
                 mapInstance = L.map('places-map', {
-                    scrollWheelZoom: true
+                    scrollWheelZoom: true,
+                    zoomControl: true
                 }).setView([16.0, 106.5], 6);
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 18,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(mapInstance);
+                /* ── Các lớp bản đồ 100% MIỄN PHÍ, KHÔNG CẦN API KEY, KHÔNG WATERMARK ── */
+                var googleTerrain = L.tileLayer(
+                    'https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+                    {
+                        maxZoom: 20,
+                        subdomains: ['0', '1', '2', '3'],
+                        attribution: '&copy; Google Maps (Địa hình Dã ngoại)'
+                    }
+                );
 
+                var googleRoadmap = L.tileLayer(
+                    'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                    {
+                        maxZoom: 20,
+                        subdomains: ['0', '1', '2', '3'],
+                        attribution: '&copy; Google Maps'
+                    }
+                );
+
+                var googleSatellite = L.tileLayer(
+                    'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                    {
+                        maxZoom: 20,
+                        subdomains: ['0', '1', '2', '3'],
+                        attribution: '&copy; Google Maps (Vệ tinh)'
+                    }
+                );
+
+                var esriTopo = L.tileLayer(
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                    {
+                        maxZoom: 19,
+                        attribution: '&copy; Esri World Topo'
+                    }
+                );
+
+                // Mặc định nạp Bản đồ Địa hình Dã ngoại (Google Terrain - rõ núi rừng, sông suối, tiếng Việt 100%)
+                googleTerrain.addTo(mapInstance);
+
+                // Thêm bộ chọn Layer (Layer Switcher) ở góc phải
+                var baseMaps = {
+                    "⛰️ Địa hình Dã ngoại (Mặc định)": googleTerrain,
+                    "🗺️ Bản đồ Đường phố": googleRoadmap,
+                    "🌲 Vệ tinh Rừng núi": googleSatellite,
+                    "🧭 Bản đồ Topo (Esri)": esriTopo
+                };
+                L.control.layers(baseMaps, null, { position: 'topright' }).addTo(mapInstance);
+
+                /* ── Custom SVG Pin Marker (xanh rêu dã ngoại với biểu tượng lều trại) ── */
+                function createMossMarker(lat, lng) {
+                    var svgIcon = L.divIcon({
+                        className: '',
+                        html: '<div class="moss-map-pin">'
+                            + '<svg viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">'
+                            + '<path d="M18 0C8.058 0 0 8.058 0 18C0 28.5 18 44 18 44C18 44 36 28.5 36 18C36 8.058 27.942 0 18 0Z" fill="url(#mossGrad)"/>'
+                            + '<circle cx="18" cy="18" r="14" fill="#1b2416"/>'
+                            + '<path d="M18 10L24 22H12L18 10Z" fill="#9bbd55"/>'
+                            + '<path d="M18 10L14 22H22L18 10Z" fill="#b9dc70"/>'
+                            + '<defs>'
+                            + '<linearGradient id="mossGrad" x1="0" y1="0" x2="36" y2="44" gradientUnits="userSpaceOnUse">'
+                            + '<stop stop-color="#9bbd55"/>'
+                            + '<stop offset="1" stop-color="#4f7a22"/>'
+                            + '</linearGradient>'
+                            + '</defs>'
+                            + '</svg>'
+                            + '</div>',
+                        iconSize: [36, 44],
+                        iconAnchor: [18, 42],
+                        popupAnchor: [0, -38]
+                    });
+                    return L.marker([lat, lng], { icon: svgIcon });
+                }
+
+                /* ── Vẽ Markers và Popups ── */
                 var bounds = [];
 
-                placesData.forEach(function(place) {
+                placesData.forEach(function (place) {
                     var lat = Number(place.lat);
                     var lng = Number(place.lng);
                     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-                    var marker = L.marker([lat, lng]).addTo(mapInstance);
+                    var marker = createMossMarker(lat, lng).addTo(mapInstance);
                     markersMap[place.id] = marker;
 
-                    // Custom HTML Popup Card
-                    var imgHtml = place.image_url 
-                        ? '<img src="' + baseUrl + '/uploads/' + encodeURIComponent(place.image_url) + '" class="place-popup-thumb" alt="' + encodeURIComponent(place.title) + '">'
-                        : '';
+                    // Popup Content
+                    var imgHtml = place.image_url
+                        ? '<img src="' + baseUrl + '/uploads/' + encodeURIComponent(place.image_url) + '" class="place-popup-thumb" alt="' + encodeURIComponent(place.title) + '" loading="lazy">'
+                        : '<div style="height:85px;background:linear-gradient(135deg,#23301a,#141e10);display:flex;align-items:center;justify-content:center;color:rgba(155,189,85,0.7);font-size:2rem;">🏕️</div>';
 
-                    var popupHtml = '<div class="custom-leaflet-popup">' +
-                        imgHtml +
-                        '<div class="place-popup-body">' +
-                            '<div style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: #9bbd55; font-weight: 600; margin-bottom: 2px;">' +
-                                (place.category_name ? place.category_name : 'Địa điểm dã ngoại') +
+                    var starsHtml = '';
+                    var r = Number(place.average_rating) || 0;
+                    for (var i = 1; i <= 5; i++) {
+                        starsHtml += '<span style="color:' + (i <= Math.round(r) ? '#f59e0b' : '#d1d5db') + ';font-size:12px;">★</span>';
+                    }
+
+                    var popupHtml =
+                        '<div>' +
+                            imgHtml +
+                            '<div style="padding:12px 14px 14px;">' +
+                                '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#9bbd55;font-weight:700;margin-bottom:4px;">' +
+                                    (place.category_name ? place.category_name : 'Địa điểm dã ngoại') +
+                                '</div>' +
+                                '<h4 style="font-size:14px;font-weight:600;color:#1a2415;margin:0 0 4px;line-height:1.35;">' +
+                                    place.title +
+                                '</h4>' +
+                                '<div style="font-size:11.5px;color:#6b7280;margin-bottom:8px;display:flex;align-items:center;gap:4px;">' +
+                                    '📍 ' + (place.location || 'Chưa có tên vị trí') +
+                                '</div>' +
+                                '<div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #e5e7eb;">' +
+                                    '<span style="font-size:12px;display:flex;align-items:center;gap:3px;">' +
+                                        starsHtml +
+                                        '<span style="color:#374151;font-size:11px;margin-left:3px;">' + r.toFixed(1) + ' (' + place.review_count + ')</span>' +
+                                    '</span>' +
+                                    '<a href="' + baseUrl + '/posts/' + encodeURIComponent(place.id) + '" ' +
+                                       'style="font-size:11.5px;font-weight:600;color:#fff;background:#2d3a24;padding:4px 12px;border-radius:999px;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background=\'#9bbd55\'" onmouseout="this.style.background=\'#2d3a24\'">' +
+                                        'Xem bài viết →' +
+                                    '</a>' +
+                                '</div>' +
                             '</div>' +
-                            '<h4 style="font-size: 14.5px; font-weight: 600; color: #23261f; margin: 0 0 4px; line-height: 1.35;">' +
-                                place.title +
-                            '</h4>' +
-                            '<div style="font-size: 12px; color: #6c757d; margin-bottom: 8px;">' +
-                                '<i class="bi bi-geo-alt-fill text-danger me-1"></i>' + (place.location || 'Chưa có tên') +
-                            '</div>' +
-                            '<div style="display: flex; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px solid #eee;">' +
-                                '<span style="font-size: 12.5px; font-weight: 600; color: #d97706;">★ ' + Number(place.average_rating).toFixed(1) + ' <small style="color: #888; font-weight: normal;">(' + place.review_count + ')</small></span>' +
-                                '<a href="' + baseUrl + '/posts/' + encodeURIComponent(place.id) + '" style="font-size: 12px; font-weight: 600; color: #2d3328; text-decoration: underline;">Xem bài viết →</a>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>';
+                        '</div>';
 
                     marker.bindPopup(popupHtml, {
                         className: 'custom-leaflet-popup',
-                        maxWidth: 300,
-                        offset: [0, -10]
+                        maxWidth: 290,
+                        offset: [0, -6]
                     });
 
                     bounds.push([lat, lng]);
                 });
 
-                if (bounds.length > 0) {
-                    mapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+                /* ── Fit Bounds căn vừa các ghim ── */
+                if (bounds.length === 1) {
+                    mapInstance.setView(bounds[0], 12);
+                } else if (bounds.length > 1) {
+                    mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
                 }
+
+                /* ── Kích hoạt invalidateSize sau khi DOM hoàn tất render ── */
+                setTimeout(function () {
+                    mapInstance.invalidateSize();
+                }, 200);
             });
 
+            /* ── Di chuyển mượt tới địa điểm khi nhấp nút Xem trên bản đồ ── */
             function focusPlace(lat, lng, id) {
                 if (!mapInstance) return;
                 var mapEl = document.getElementById('places-map');
                 if (mapEl) {
                     mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                mapInstance.flyTo([lat, lng], 13, { duration: 1.2 });
+                mapInstance.flyTo([lat, lng], 13, { duration: 1.2, easeLinearity: 0.5 });
                 if (markersMap[id]) {
-                    setTimeout(function() {
+                    setTimeout(function () {
                         markersMap[id].openPopup();
-                    }, 1200);
+                    }, 1250);
                 }
             }
         </script>

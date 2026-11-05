@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ========================================================================
  *   LIQUID GLASS DESIGN SYSTEM  –  v2 (Safe Mode)
  *   Outdoor Forum – Nature Edition
@@ -457,12 +457,24 @@
 /* ════════════════════════════════════════════════════════════════════════════
    17. MAP container
    ════════════════════════════════════════════════════════════════════════════ */
+#places-map,
 #map,
 .leaflet-container {
-  border-radius: 20px !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  border-top-color: rgba(255,255,255,0.28) !important;
-  box-shadow: 0 20px 48px -10px rgba(0,0,0,0.60) !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.60) !important;
+  overflow: hidden !important;
+  background: #1a2217 !important;
+}
+
+#places-map .leaflet-pane,
+#places-map .leaflet-tile-pane,
+#places-map .leaflet-tile-container,
+#map .leaflet-pane,
+#map .leaflet-tile-pane {
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 
