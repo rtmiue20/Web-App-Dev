@@ -49,4 +49,48 @@ assert(count($emptyTools) === 0, "Không xóa hết dụng cụ cũ!");
 $productModel->syncPostProducts($testPostId, $sampleProductIds);
 echo "6. Khôi phục lại dụng cụ bài viết 1 thành công." . PHP_EOL;
 
+// 7. Kiểm tra thêm dụng cụ mới với người chia sẻ (user_id = 7)
+$newToolId = $productModel->create(
+    1,
+    'Dao đi rừng sinh tồn đa năng Morakniv',
+    350000,
+    'assets/img/products/bep-gas-da-ngoai.png',
+    'Thép carbon sắc bén, cán nhựa chống trượt an toàn',
+    'https://shopee.vn/search?keyword=dao%20morakniv',
+    1,
+    7
+);
+echo "7. Thêm dụng cụ mới thành công, ID: {$newToolId}" . PHP_EOL;
+assert($newToolId > 0, "Không tạo được dụng cụ mới!");
+
+// 8. Kiểm tra lấy thông tin người chia sẻ
+$newTool = $productModel->findById($newToolId);
+echo "8. Người chia sẻ dụng cụ: " . ($newTool['author_username'] ?? 'Không rõ') . PHP_EOL;
+assert(!empty($newTool['author_username']), "Không lấy được tên người chia sẻ!");
+assert((int)$newTool['user_id'] === 7, "User ID người chia sẻ không đúng!");
+
+// 9. Kiểm tra cập nhật dụng cụ
+$updateSuccess = $productModel->update(
+    $newToolId,
+    2,
+    'Dao đi rừng sinh tồn Morakniv Companion Heavy Duty',
+    390000,
+    'assets/img/products/bep-gas-da-ngoai.png',
+    'Bản Heavy Duty lưỡi dày 3.2mm',
+    'https://shopee.vn/search?keyword=dao%20morakniv%20heavy%20duty',
+    1
+);
+echo "9. Cập nhật thông tin dụng cụ: " . ($updateSuccess ? "Thành công" : "Thất bại") . PHP_EOL;
+assert($updateSuccess === true, "Cập nhật dụng cụ thất bại!");
+
+$updatedTool = $productModel->findById($newToolId);
+assert($updatedTool['name'] === 'Dao đi rừng sinh tồn Morakniv Companion Heavy Duty', "Tên dụng cụ sau cập nhật không khớp!");
+assert((float)$updatedTool['price'] == 390000, "Giá dụng cụ sau cập nhật không khớp!");
+
+// 10. Kiểm tra xóa dụng cụ
+$deleteSuccess = $productModel->delete($newToolId);
+echo "10. Xóa dụng cụ thử nghiệm: " . ($deleteSuccess ? "Thành công" : "Thất bại") . PHP_EOL;
+assert($deleteSuccess === true, "Xóa dụng cụ thất bại!");
+assert($productModel->findById($newToolId) === null, "Dụng cụ vẫn còn trong CSDL sau khi xóa!");
+
 echo "=== TẤT CẢ CÁC BƯỚC KIỂM THỬ ĐÃ THÀNH CÔNG VÀ CHÍNH XÁC! ===" . PHP_EOL;

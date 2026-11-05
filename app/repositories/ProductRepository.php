@@ -20,9 +20,12 @@ class ProductRepository extends BaseRepository
             return $this->callProcedure('sp_product_list_by_category', [$categoryId]);
         } catch (PDOException $e) {
             try {
-                $sql = 'SELECT p.*, c.name AS category_name
+                $sql = 'SELECT p.*, c.name AS category_name,
+                               u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
                         FROM products p
                         LEFT JOIN categories c ON c.id = p.category_id
+                        LEFT JOIN users u ON u.id = p.user_id
+                        LEFT JOIN roles r ON r.id = u.role_id
                         WHERE p.is_shared = 1';
                 $params = [];
 
@@ -55,9 +58,12 @@ class ProductRepository extends BaseRepository
         } catch (PDOException $e) {
             try {
                 return $this->queryOne(
-                    'SELECT p.*, c.name AS category_name
+                    'SELECT p.*, c.name AS category_name,
+                            u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
                      FROM products p
                      LEFT JOIN categories c ON c.id = p.category_id
+                     LEFT JOIN users u ON u.id = p.user_id
+                     LEFT JOIN roles r ON r.id = u.role_id
                      WHERE p.id = :id
                      LIMIT 1',
                     ['id' => $id]
@@ -133,11 +139,13 @@ class ProductRepository extends BaseRepository
         ?string $imageUrl,
         ?string $description,
         ?string $link = null,
-        int $isShared = 1
+        int $isShared = 1,
+        ?int $userId = null
     ): int {
         try {
             $rows = $this->callProcedure('sp_product_create', [
                 $categoryId,
+                $userId,
                 $name,
                 $price,
                 $imageUrl,
@@ -149,10 +157,11 @@ class ProductRepository extends BaseRepository
         } catch (PDOException $e) {
             try {
                 $this->execute(
-                    'INSERT INTO products (category_id, name, price, image_url, description, link, is_shared)
-                     VALUES (:category_id, :name, :price, :image_url, :description, :link, :is_shared)',
+                    'INSERT INTO products (category_id, user_id, name, price, image_url, description, link, is_shared)
+                     VALUES (:category_id, :user_id, :name, :price, :image_url, :description, :link, :is_shared)',
                     [
                         'category_id' => $categoryId,
+                        'user_id'     => $userId,
                         'name'        => $name,
                         'price'       => $price,
                         'image_url'   => $imageUrl,

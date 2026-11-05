@@ -625,6 +625,7 @@ class PostController extends Controller {
                 $imgUrl = 'assets/img/tent-forest.png';
             }
 
+            $currentUserId = Auth::id();
             $newId = $this->products->create(
                 $categoryId > 0 ? $categoryId : null,
                 $name,
@@ -632,7 +633,8 @@ class PostController extends Controller {
                 $imgUrl,
                 $desc ?: 'Dụng cụ được chia sẻ bởi người đăng bài',
                 $link !== '' ? $link : null,
-                $isShared
+                $isShared,
+                $currentUserId
             );
 
             if ($newId > 0) {
