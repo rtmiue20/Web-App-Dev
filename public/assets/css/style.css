@@ -1511,25 +1511,48 @@ body {
 
 .search-input-group {
   background: rgba(26, 32, 24, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   overflow: hidden;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.search-input-group:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(26, 32, 24, 0.85);
 }
 
 .search-input-group:focus-within {
   border-color: var(--color-moss, #9bbd55);
-  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.25);
+  background: rgba(20, 26, 18, 0.92);
+  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.2), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.search-input-group .input-group-text {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .nature-search-input {
   background: transparent !important;
+  border: none !important;
   color: #ffffff !important;
   font-size: 0.95rem;
   padding: 0.75rem 0.5rem;
   box-shadow: none !important;
+  outline: none !important;
+}
+
+.nature-search-input:focus {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .nature-search-input::placeholder {

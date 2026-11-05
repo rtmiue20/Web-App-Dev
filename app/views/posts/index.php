@@ -27,15 +27,15 @@ $filterQuery = $catQuery . $sortQuery;
         <div class="col-12 col-md-8 col-lg-7">
             <div class="search-autocomplete-wrapper position-relative">
                 <div class="input-group search-input-group shadow-sm">
-                    <span class="input-group-text bg-transparent border-end-0 ps-3" style="color: var(--color-moss, #9bbd55);">
+                    <span class="input-group-text bg-transparent border-0 ps-3" style="color: var(--color-moss, #9bbd55);">
                         <i class="bi bi-search"></i>
                     </span>
                     <input type="text" 
                            id="forumSearchInput" 
-                           class="form-control border-start-0 border-end-0 nature-search-input" 
+                           class="form-control border-0 nature-search-input" 
                            placeholder="Tìm nhanh bài viết, địa điểm (ví dụ: Tà Xùa, Đà Lạt, lều cắm trại...)" 
                            autocomplete="off">
-                    <span class="input-group-text bg-transparent border-start-0 pe-3" id="searchSpinner" style="display: none;">
+                    <span class="input-group-text bg-transparent border-0 pe-3" id="searchSpinner" style="display: none;">
                         <span class="spinner-border spinner-border-sm text-success" role="status"></span>
                     </span>
                 </div>
@@ -163,11 +163,11 @@ $filterQuery = $catQuery . $sortQuery;
                         <label class="nature-label text-white-50 small mb-1">Loại hình</label>
                         <select name="activity_type" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
                             <option value="">Tất cả loại hình</option>
-                            <option value="camping" <?= (($filters['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
-                            <option value="trekking" <?= (($filters['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>🥾 Trekking (Đi bộ)</option>
-                            <option value="leo_nui" <?= (($filters['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking)</option>
-                            <option value="phuot" <?= (($filters['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
-                            <option value="da_ngoai" <?= (($filters['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại picnic</option>
+                            <option value="camping" <?= (($filters['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>Cắm trại (Camping)</option>
+                            <option value="trekking" <?= (($filters['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>Đi bộ đường dài (Trekking)</option>
+                            <option value="leo_nui" <?= (($filters['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>Leo núi (Hiking / Mountain)</option>
+                            <option value="phuot" <?= (($filters['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>Phượt đường dài</option>
+                            <option value="da_ngoai" <?= (($filters['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>Dã ngoại ngoài trời</option>
                         </select>
                     </div>
 
@@ -176,26 +176,35 @@ $filterQuery = $catQuery . $sortQuery;
                         <label class="nature-label text-white-50 small mb-1">Mức độ khó</label>
                         <select name="difficulty" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
                             <option value="">Tất cả độ khó</option>
-                            <option value="easy" <?= (($filters['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới)</option>
-                            <option value="medium" <?= (($filters['difficulty'] ?? '') === 'medium') ? 'selected' : '' ?>>🟡 Trung bình</option>
-                            <option value="hard" <?= (($filters['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc)</option>
-                            <option value="extreme" <?= (($filters['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao</option>
+                            <option value="easy" <?= (($filters['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>Dễ (Người mới, gia đình)</option>
+                            <option value="medium" <?= (($filters['difficulty'] ?? '') === 'medium') ? 'selected' : '' ?>>Trung bình (Cần thể lực cơ bản)</option>
+                            <option value="hard" <?= (($filters['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>Khó (Đồi dốc, dài ngày)</option>
+                            <option value="extreme" <?= (($filters['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>Thử thách cao (Chuyên nghiệp)</option>
                         </select>
                     </div>
 
-                    <!-- Vùng miền -->
+                    <!-- Khu vực / Vùng miền -->
                     <div class="col-6 col-md-3">
-                        <label class="nature-label text-white-50 small mb-1">Vùng miền</label>
+                        <label class="nature-label text-white-50 small mb-1">Khu vực / Vùng miền</label>
                         <select name="region" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
-                            <option value="">Tất cả vùng miền</option>
-                            <option value="Tây Bắc" <?= (($filters['region'] ?? '') === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
-                            <option value="Đông Bắc" <?= (($filters['region'] ?? '') === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
-                            <option value="Bắc Bộ" <?= (($filters['region'] ?? '') === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
-                            <option value="Bắc Trung Bộ" <?= (($filters['region'] ?? '') === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
-                            <option value="Nam Trung Bộ" <?= (($filters['region'] ?? '') === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
-                            <option value="Tây Nguyên" <?= (($filters['region'] ?? '') === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
-                            <option value="Đông Nam Bộ" <?= (($filters['region'] ?? '') === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
-                            <option value="Tây Nam Bộ" <?= (($filters['region'] ?? '') === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            <option value="">Tất cả khu vực</option>
+                            <optgroup label="Việt Nam">
+                                <option value="Tây Bắc" <?= (($filters['region'] ?? '') === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                                <option value="Đông Bắc" <?= (($filters['region'] ?? '') === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                                <option value="Bắc Bộ" <?= (($filters['region'] ?? '') === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                                <option value="Bắc Trung Bộ" <?= (($filters['region'] ?? '') === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                                <option value="Nam Trung Bộ" <?= (($filters['region'] ?? '') === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                                <option value="Tây Nguyên" <?= (($filters['region'] ?? '') === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                                <option value="Đông Nam Bộ" <?= (($filters['region'] ?? '') === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                                <option value="Tây Nam Bộ" <?= (($filters['region'] ?? '') === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            </optgroup>
+                            <optgroup label="Quốc tế (Nước ngoài)">
+                                <option value="Đông Nam Á" <?= (($filters['region'] ?? '') === 'Đông Nam Á') ? 'selected' : '' ?>>Đông Nam Á</option>
+                                <option value="Châu Á" <?= (($filters['region'] ?? '') === 'Châu Á') ? 'selected' : '' ?>>Châu Á</option>
+                                <option value="Châu Âu" <?= (($filters['region'] ?? '') === 'Châu Âu') ? 'selected' : '' ?>>Châu Âu</option>
+                                <option value="Châu Mỹ" <?= (($filters['region'] ?? '') === 'Châu Mỹ') ? 'selected' : '' ?>>Châu Mỹ</option>
+                                <option value="Châu Úc & Khác" <?= (($filters['region'] ?? '') === 'Châu Úc & Khác') ? 'selected' : '' ?>>Châu Úc / Khác</option>
+                            </optgroup>
                         </select>
                     </div>
 

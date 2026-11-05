@@ -163,13 +163,19 @@ class PostController extends Controller {
         // Khi Moderator hoặc Admin đăng thì được 'published' trực tiếp.
         $status = $canPublishDirectly ? 'published' : 'pending';
 
+        $regionInput = trim((string)($_POST['region'] ?? ''));
+        $customRegion = trim((string)($_POST['custom_region'] ?? ''));
+        if ($regionInput === 'Quốc tế khác') {
+            $regionInput = $customRegion !== '' ? $customRegion : 'Quốc tế';
+        }
+
         $tripData = [
             'route'          => trim((string)($_POST['route'] ?? '')),
             'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
             'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
             'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
             'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
-            'region'         => trim((string)($_POST['region'] ?? '')),
+            'region'         => $regionInput,
             'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
         ];
 
@@ -432,13 +438,19 @@ class PostController extends Controller {
             return;
         }
 
+        $regionInput = trim((string)($_POST['region'] ?? ''));
+        $customRegion = trim((string)($_POST['custom_region'] ?? ''));
+        if ($regionInput === 'Quốc tế khác') {
+            $regionInput = $customRegion !== '' ? $customRegion : 'Quốc tế';
+        }
+
         $tripData = [
             'route'          => trim((string)($_POST['route'] ?? '')),
             'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
             'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
             'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
             'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
-            'region'         => trim((string)($_POST['region'] ?? '')),
+            'region'         => $regionInput,
             'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
         ];
 
