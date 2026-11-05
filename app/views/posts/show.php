@@ -557,7 +557,6 @@ $galleryCount = count($galleryImages);
                                                title="Mở liên kết mua sản phẩm tại tab mới">
                                                 <i class="bi <?= $badgeIcon ?>"></i>
                                                 <span><?= $badgeName ?></span>
-                                                <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 10px;"></i>
                                             </a>
                                         <?php else: ?>
                                             <span class="badge rounded-pill bg-light text-muted border px-2.5 py-1" style="font-size: 11px;">

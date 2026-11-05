@@ -133,7 +133,6 @@ $totalItems = count($products ?? []);
                                            title="Xem nơi mua hoặc đặt mua trực tiếp">
                                             <i class="bi <?= $btnIcon ?>"></i>
                                             <span><?= $btnName ?></span>
-                                            <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 10px;"></i>
                                         </a>
                                     <?php else: ?>
                                         <span class="badge rounded-pill text-bg-light border text-muted px-3 py-2" style="font-size: 12px;">
