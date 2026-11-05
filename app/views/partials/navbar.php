@@ -51,7 +51,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         </a>
 
         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/places"
-           class="dock-pill <?= $isActive('/places') ? 'active' : '' ?>">
+           class="dock-pill <?= $isActive('/places') || $isActive('/map') ? 'active' : '' ?>">
             Bản đồ
         </a>
 

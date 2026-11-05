@@ -37,12 +37,14 @@ class Database
             ];
 
             try {
-                self::$connection = new PDO($dsn, $cfg['user'], $cfg['pass'], $options);
+                self::$connection = new PDO($dsn, $cfg['user'], $cfg['pass'], $options);
+                try { self::$connection->exec("SET time_zone = '+07:00'"); } catch (Throwable $tzEx) {}
             } catch (PDOException $e) {
                 // Thử kết nối mật khẩu rỗng (chuẩn mặc định XAMPP) nếu cấu hình mật khẩu thất bại
                 if (!empty($cfg['pass'])) {
                     try {
-                        self::$connection = new PDO($dsn, $cfg['user'], '', $options);
+                        self::$connection = new PDO($dsn, $cfg['user'], '', $options);
+                        try { self::$connection->exec("SET time_zone = '+07:00'"); } catch (Throwable $tzEx) {}
                         return self::$connection;
                     } catch (PDOException $ex) {
                         // Tiếp tục xử lý báo lỗi bên dưới

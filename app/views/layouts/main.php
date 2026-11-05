@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $successMessage = $success ?? Session::flash('success');
 $errorMessage = $message ?? Session::flash('error');
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
@@ -21,6 +21,8 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     
     <!-- Custom Design System & Animations -->
     <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?: time() ?>" rel="stylesheet">
+    <!-- Liquid Glass Design Layer -->
+    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/liquid-glass.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/liquid-glass.css') ?: time() ?>" rel="stylesheet">
     
     <script>
         window.BASE_URL = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;

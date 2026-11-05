@@ -1,5 +1,8 @@
 <?php
 
+// Thiet lap mui gio Viet Nam (UTC+7) dong bo toan he thong
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 if (!defined('BASE_URL')) {
     if (PHP_SAPI === 'cli-server') {
         define('BASE_URL', '');
