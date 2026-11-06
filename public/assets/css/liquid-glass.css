@@ -234,12 +234,14 @@ select option {
   background: #fafbfa !important;
 }
 
-.modal-content label,
-.modal-content .form-label {
-  color: #555b4e !important;
-  font-weight: 500 !important;
-  font-size: 13px !important;
-  margin-bottom: 0.35rem !important;
+/* Inputs bên trong modal → glass style */
+.modal-content .form-control,
+.modal-content .form-select,
+.modal-content textarea {
+  background: rgba(255,255,255,0.09) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: #ffffff !important;
+  border-radius: 12px;
 }
 
 .modal-content .btn-close {
@@ -247,9 +249,47 @@ select option {
   opacity: 0.45 !important;
   transition: opacity 0.2s ease, transform 0.2s ease !important;
 }
-.modal-content .btn-close:hover {
-  opacity: 0.9 !important;
-  transform: rotate(90deg) scale(1.1) !important;
+
+.modal-content .form-control::placeholder,
+.modal-content textarea::placeholder { color: rgba(255,255,255,0.40) !important; }
+
+.modal-content select option { background: #1a2416; color: #ffffff; }
+
+/* Input group addon bên trong modal */
+.modal-content .input-group-text {
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: #ffffff !important;
+}
+
+/* Đảm bảo bo góc của input-group liền mạch hoàn toàn */
+.modal-content .input-group {
+  border-radius: 12px;
+}
+.modal-content .input-group > .form-control:first-child,
+.modal-content .input-group > .input-group-text:first-child {
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.modal-content .input-group > .form-control:last-child,
+.modal-content .input-group > .input-group-text:last-child {
+  border-top-right-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+.modal-content .input-group > :not(:first-child) {
+  margin-left: -1px;
+}
+
+/* Backdrop */
+.modal-backdrop {
+  background-color: rgba(6, 10, 5, 0.70) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  animation: lg-backdrop-in 0.25s ease forwards;
 }
 
 /* Lớp phủ mờ phía sau modal (Backdrop) */
@@ -359,22 +399,22 @@ select option {
   -webkit-backdrop-filter: blur(20px) !important;
 }
 
-.dock-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 38px;
-  padding: 0 1.15rem;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  text-decoration: none;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.82) !important;
-  border: 1px solid transparent;
-  background: transparent;
-  transition: all 0.2s ease-out;
+
+/* ════════════════════════════════════════════════════════════════════════════
+   7. CATEGORY PAGE & OUTDOOR TRIPS – nature-card với chữ dark
+      Chỉ enhance shadow, border, shimmer
+   ════════════════════════════════════════════════════════════════════════════ */
+.app-container article.nature-card {
+  /* Giữ background gốc (var(--color-paper) = #f2f3ef) */
+  /* Chỉ nâng shadow và border */
+  box-shadow:
+    0 8px 32px -8px rgba(20,24,16,0.25),
+    0 2px 0 rgba(255,255,255,0.80) inset !important;
+  transition:
+    transform 350ms var(--lg-spring),
+    box-shadow 350ms var(--lg-spring) !important;
+  overflow: hidden;
+  position: relative;
 }
 
 .dock-pill:hover {
@@ -401,17 +441,32 @@ select option {
   border: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
-.admin-table th,
-.table th {
-  background: #e9ece4 !important;
-  color: #23261f !important;
-  font-weight: 600 !important;
-  font-size: 0.82rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  padding: 1rem 1.25rem !important;
-  border-bottom: 2px solid #d8dcd2 !important;
+/* Fix nút secondary và văn bản trên thẻ nền sáng (.nature-card) để không bị chữ trắng chìm */
+.nature-card .nature-btn-secondary {
+  background: rgba(32, 37, 28, 0.08) !important;
+  border: 1px solid rgba(32, 37, 28, 0.18) !important;
+  color: #1e241b !important;
 }
+
+.nature-card .nature-btn-secondary:hover {
+  background: rgba(32, 37, 28, 0.16) !important;
+  border-color: rgba(32, 37, 28, 0.3) !important;
+  color: #0d120a !important;
+  transform: translateY(-1px);
+}
+
+.nature-card .text-muted {
+  color: #586150 !important;
+}
+
+.nature-card h1, .nature-card h2, .nature-card h3, .nature-card h4, .nature-card h5, .nature-card h6 {
+  color: #1a2217 !important;
+}
+
+.nature-card .border-top {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
 
 .admin-table td,
 .table td {
