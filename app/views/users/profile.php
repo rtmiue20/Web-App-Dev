@@ -40,11 +40,11 @@ $followingCategories = $followingCategories ?? [];
                         <span class="badge <?= e($roleBadge) ?> px-3 py-1 rounded-pill" style="font-size: 11px;"><?= e($roleLabel) ?></span>
                     </div>
                     <!-- Badge Gamification -->
-                    <div class="mt-1 d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill border" 
-                         style="background: <?= htmlspecialchars($g['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($g['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 12px; color: <?= htmlspecialchars($g['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
-                        <i class="bi <?= htmlspecialchars($g['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?>"></i>
+                    <div class="mt-2 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill border shadow-sm" 
+                         style="background: <?= htmlspecialchars($g['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($g['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 13px; line-height: 1.4; color: <?= htmlspecialchars($g['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
+                        <i class="bi <?= htmlspecialchars($g['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?> me-0.5"></i>
                         <span class="fw-bold"><?= htmlspecialchars($g['title'] ?? 'Tân thủ dã ngoại', ENT_QUOTES, 'UTF-8') ?></span>
-                        <span class="opacity-75">(Cấp <?= (int)($g['level'] ?? 1) ?>)</span>
+                        <span class="opacity-75 ms-1">(Cấp <?= (int)($g['level'] ?? 1) ?>)</span>
                     </div>
                 </div>
             </div>
@@ -165,9 +165,11 @@ $followingCategories = $followingCategories ?? [];
                             <div class="text-danger small mt-1"><?= e($errors['avatar']) ?></div>
                         <?php endif; ?>
                     </div>
-                    <button type="submit" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
-                        Lưu hồ sơ
-                    </button>
+                    <div class="d-flex justify-content-end pt-2">
+                        <button type="submit" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
+                            Lưu hồ sơ
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -180,28 +182,116 @@ $followingCategories = $followingCategories ?? [];
                     <?= csrf_field() ?>
                     <div class="mb-3">
                         <label for="current_password" class="nature-label">Mật khẩu hiện tại</label>
-                        <input class="nature-input" id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+                        <div style="position: relative;">
+                            <input class="nature-input" 
+                                   style="padding-right: 3rem;" 
+                                   id="current_password" 
+                                   name="current_password" 
+                                   type="password" 
+                                   autocomplete="current-password" 
+                                   required 
+                                   placeholder="••••••••">
+                            <button type="button" 
+                                    class="btn-toggle-password" 
+                                    data-target="current_password"
+                                    onclick="togglePasswordVisibility('current_password', this)"
+                                    aria-label="Hiện hoặc ẩn mật khẩu"
+                                    style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                                <!-- Eye Open -->
+                                <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <!-- Eye Closed -->
+                                <svg class="icon-eye-closed" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                    <line x1="2" x2="22" y1="2" y2="22"/>
+                                </svg>
+                            </button>
+                        </div>
                         <?php if (!empty($errors['current_password'])): ?>
                             <div class="text-danger small mt-1"><?= e($errors['current_password']) ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="mb-3">
                         <label for="new_password" class="nature-label">Mật khẩu mới</label>
-                        <input class="nature-input" id="new_password" name="new_password" type="password" minlength="8" autocomplete="new-password" required>
+                        <div style="position: relative;">
+                            <input class="nature-input" 
+                                   style="padding-right: 3rem;" 
+                                   id="new_password" 
+                                   name="new_password" 
+                                   type="password" 
+                                   minlength="8" 
+                                   autocomplete="new-password" 
+                                   required 
+                                   placeholder="••••••••">
+                            <button type="button" 
+                                    class="btn-toggle-password" 
+                                    data-target="new_password"
+                                    onclick="togglePasswordVisibility('new_password', this)"
+                                    aria-label="Hiện hoặc ẩn mật khẩu"
+                                    style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                                <!-- Eye Open -->
+                                <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <!-- Eye Closed -->
+                                <svg class="icon-eye-closed" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                    <line x1="2" x2="22" y1="2" y2="22"/>
+                                </svg>
+                            </button>
+                        </div>
                         <?php if (!empty($errors['new_password'])): ?>
                             <div class="text-danger small mt-1"><?= e($errors['new_password']) ?></div>
                         <?php endif; ?>
                     </div>
                     <div class="mb-3">
                         <label for="password_confirmation" class="nature-label">Xác nhận mật khẩu mới</label>
-                        <input class="nature-input" id="password_confirmation" name="password_confirmation" type="password" minlength="8" autocomplete="new-password" required>
+                        <div style="position: relative;">
+                            <input class="nature-input" 
+                                   style="padding-right: 3rem;" 
+                                   id="password_confirmation" 
+                                   name="password_confirmation" 
+                                   type="password" 
+                                   minlength="8" 
+                                   autocomplete="new-password" 
+                                   required 
+                                   placeholder="••••••••">
+                            <button type="button" 
+                                    class="btn-toggle-password" 
+                                    data-target="password_confirmation"
+                                    onclick="togglePasswordVisibility('password_confirmation', this)"
+                                    aria-label="Hiện hoặc ẩn mật khẩu"
+                                    style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8A8D83; cursor: pointer; padding: 0.4rem; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                                <!-- Eye Open -->
+                                <svg class="icon-eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <!-- Eye Closed -->
+                                <svg class="icon-eye-closed" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                    <line x1="2" x2="22" y1="2" y2="22"/>
+                                </svg>
+                            </button>
+                        </div>
                         <?php if (!empty($errors['password_confirmation'])): ?>
                             <div class="text-danger small mt-1"><?= e($errors['password_confirmation']) ?></div>
                         <?php endif; ?>
                     </div>
-                    <button type="submit" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
-                        Cập nhật mật khẩu
-                    </button>
+                    <div class="d-flex justify-content-end pt-2">
+                        <button type="submit" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
+                            Cập nhật mật khẩu
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

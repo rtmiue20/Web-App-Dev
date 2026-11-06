@@ -398,6 +398,15 @@ class OutdoorController extends Controller
             Session::flash('error', 'Bài viết này chưa có địa điểm để đánh giá.');
             $this->redirect('/posts/' . $postId);
         }
+
+        // Tác giả không được tự đánh giá bài đăng của mình (chỉ Admin và user khác được đánh giá)
+        $isAdmin = (int) ($user['role_id'] ?? 0) === 2 || ($user['role_name'] ?? '') === 'admin';
+        $isAuthor = (int) ($post['user_id'] ?? 0) === (int) $user['id'];
+        if ($isAuthor && !$isAdmin) {
+            Session::flash('error', 'Bạn là tác giả bài viết nên không thể tự đánh giá địa điểm của chính mình.');
+            $this->redirect('/posts/' . $postId);
+        }
+
         if ($rating === false || $rating < 1 || $rating > 5 || mb_strlen($review) < 5 || mb_strlen($review) > 1000) {
             Session::flash('error', 'Vui lòng chọn từ 1 đến 5 sao và viết nhận xét từ 5 đến 1000 ký tự.');
             $this->redirect('/posts/' . $postId);
