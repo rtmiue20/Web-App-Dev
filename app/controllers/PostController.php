@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/Category.php';
@@ -207,7 +207,18 @@ class PostController extends Controller {
                 $this->products->syncPostProducts($postId, $selectedProductIds);
             }
 
-            if ($status === 'pending') {
+                        if (class_exists('Notification')) {
+                Notification::send(
+                    $userId,
+                    $userId,
+                    'create_post',
+                    $postId,
+                    $status === 'pending'
+                        ? "Bài viết '" . mb_substr($title, 0, 35) . "...' đã được gửi và đang chờ duyệt."
+                        : "Bạn đã đăng bài viết mới: '" . mb_substr($title, 0, 35) . "'."
+                );
+            }
+if ($status === 'pending') {
                 Session::flash('success', 'Đăng bài viết thành công! Bài viết của bạn đang ở trạng thái Chờ duyệt (Pending) và sẽ được hiển thị công khai sau khi Quản trị viên phê duyệt.');
             } else {
                 Session::flash('success', 'Đăng bài viết thành công!');

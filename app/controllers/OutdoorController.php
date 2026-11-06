@@ -87,6 +87,9 @@ class OutdoorController extends Controller
                 isset($_POST['is_public']),
                 $items
             );
+                        if (class_exists('Notification') && isset($user['id'])) {
+                Notification::send((int)$user['id'], (int)$user['id'], 'create_checklist', 0, "Bạn đã tạo checklist dã ngoại mới: '" . mb_substr($title, 0, 35) . "'.");
+            }
             Session::flash('success', 'Đã tạo checklist dã ngoại thành công.');
             $this->redirect('/checklists');
         } catch (Throwable $e) {
@@ -216,6 +219,9 @@ class OutdoorController extends Controller
                 $startsAt->format('Y-m-d H:i:s'),
                 (int) $maxParticipants
             );
+                        if (class_exists('Notification') && isset($user['id']) && $tripId > 0) {
+                Notification::send((int)$user['id'], (int)$user['id'], 'create_trip', $tripId, "Bạn đã đăng nhóm đi chung mới: '" . mb_substr($title, 0, 35) . "'.");
+            }
             Session::flash('success', 'Đã đăng chuyến đi chung thành công.');
             $this->redirect('/trips/' . $tripId);
         } catch (Throwable $e) {
@@ -275,6 +281,27 @@ class OutdoorController extends Controller
             ];
             [$type, $message] = $messages[$result] ?? ['error', 'Không thể xử lý yêu cầu.'];
             Session::flash($type, $message);
+
+            if ($result === 'joined' && class_exists('Notification')) {
+                $trip = $this->trips->getById($id);
+                $tripTitle = mb_substr((string)($trip['title'] ?? 'chuyến đi'), 0, 35);
+                Notification::send(
+                    (int) $user['id'],
+                    (int) $user['id'],
+                    'join_trip',
+                    $id,
+                    "Bạn đã đăng ký tham gia chuyến đi: '{$tripTitle}'."
+                );
+                if (!empty($trip['user_id']) && (int)$trip['user_id'] !== (int)$user['id']) {
+                    Notification::send(
+                        (int) $trip['user_id'],
+                        (int) $user['id'],
+                        'trip_new_member',
+                        $id,
+                        htmlspecialchars($user['username'] ?? 'Một thành viên') . " đã đăng ký tham gia chuyến đi của bạn: '{$tripTitle}'."
+                    );
+                }
+            }
         } catch (Throwable $e) {
             error_log('Join trip failed: ' . $e->getMessage());
             Session::flash('error', 'Không thể đăng ký tham gia lúc này. Vui lòng thử lại.');
@@ -299,6 +326,17 @@ class OutdoorController extends Controller
         $success = $this->trips->leave($id, (int) $user['id']);
         if ($success) {
             Session::flash('success', 'Bạn đã hủy đăng ký tham gia chuyến đi này.');
+            if (class_exists('Notification')) {
+                $trip = $this->trips->getById($id);
+                $tripTitle = mb_substr((string)($trip['title'] ?? 'chuyến đi'), 0, 35);
+                Notification::send(
+                    (int) $user['id'],
+                    (int) $user['id'],
+                    'leave_trip',
+                    $id,
+                    "Bạn đã hủy tham gia chuyến đi: '{$tripTitle}'."
+                );
+            }
         } else {
             Session::flash('error', 'Không thể hủy tham gia (bạn là người tổ chức hoặc chưa đăng ký).');
         }
@@ -368,6 +406,25 @@ class OutdoorController extends Controller
         try {
             $this->reviews->save($postId, (int) $user['id'], $rating, $review);
             Session::flash('success', 'Cảm ơn bạn! Đã lưu đánh giá địa điểm dã ngoại thành công.');
+            if (class_exists('Notification')) {
+                $loc = mb_substr((string) ($post['location'] ?? 'địa điểm'), 0, 35);
+                Notification::send(
+                    (int) $user['id'],
+                    (int) $user['id'],
+                    'review_place',
+                    $postId,
+                    "Bạn đã gửi đánh giá cho địa điểm: '{$loc}'."
+                );
+                if (!empty($post['user_id']) && (int)$post['user_id'] !== (int)$user['id']) {
+                    Notification::send(
+                        (int) $post['user_id'],
+                        (int) $user['id'],
+                        'review_place',
+                        $postId,
+                        htmlspecialchars($user['username'] ?? 'Một thành viên') . " đã đánh giá địa điểm bài viết của bạn: '{$loc}'."
+                    );
+                }
+            }
         } catch (Throwable $e) {
             error_log('Save place review failed: ' . $e->getMessage());
             Session::flash('error', 'Không thể lưu đánh giá vào lúc này. Vui lòng thử lại.');

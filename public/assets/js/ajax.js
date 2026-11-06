@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AJAX & Web Service Helper for Forum Dã Ngoại (Vương - FR06, FR07, FR08)
  * - FR08: Thích / Bỏ thích bài viết qua AJAX (JSON + CSRF)
  * - FR07: Gửi bình luận & Xóa bình luận của mình qua AJAX (JSON + CSRF)
@@ -84,7 +84,7 @@ const ForumAjax = {
           downBtn.style.color = isDown ? '#ffffff' : '#8c3b2b';
         });
       } else {
-        alert((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.', 'error'); } else { alert((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.'); }
       }
     } catch (err) {
       console.error('Lỗi khi gửi vote:', err);
@@ -146,7 +146,7 @@ const ForumAjax = {
           }
         });
       } else {
-        alert((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.', 'error'); } else { alert((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.'); }
       }
     } catch (err) {
       console.error('Lỗi khi thích bình luận:', err);
@@ -208,7 +208,7 @@ const ForumAjax = {
         }
         return true;
       } else {
-        alert((data && data.message) || 'Không thể gửi bình luận.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) || 'Không thể gửi bình luận.', 'error'); } else { alert((data && data.message) || 'Không thể gửi bình luận.'); }
         return false;
       }
     } catch (err) {
@@ -424,7 +424,7 @@ const ForumAjax = {
           countBadge.textContent = data.data.total_comments;
         }
       } else {
-        alert((data && data.message) || 'Không thể xóa bình luận.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) || 'Không thể xóa bình luận.', 'error'); } else { alert((data && data.message) || 'Không thể xóa bình luận.'); }
         if (btnElement) btnElement.disabled = false;
       }
     } catch (err) {
@@ -1116,7 +1116,7 @@ const ForumAjax = {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        alert((json && json.message) || 'Không thể thực hiện lưu bài viết.');
+        if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện lưu bài viết.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện lưu bài viết.'); }
         return false;
       }
 
@@ -1168,7 +1168,7 @@ const ForumAjax = {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        alert((json && json.message) || 'Không thể thực hiện theo dõi.');
+        if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện theo dõi.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện theo dõi.'); }
         return false;
       }
 
@@ -1233,7 +1233,7 @@ const ForumAjax = {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        alert((json && json.message) || 'Không thể thực hiện thao tác.');
+        if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện thao tác.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện thao tác.'); }
         return false;
       }
       return true;
@@ -1257,7 +1257,7 @@ const ForumAjax = {
     const details = detailsInput ? detailsInput.value.trim() : '';
 
     if (!reason) {
-      alert('Vui lòng chọn lý do báo cáo vi phạm.');
+      if (typeof window.showToast === 'function') { window.showToast('Vui lòng chọn lý do báo cáo vi phạm.', 'error'); } else { alert('Vui lòng chọn lý do báo cáo vi phạm.'); }
       return false;
     }
 
@@ -1283,7 +1283,7 @@ const ForumAjax = {
       });
 
       const json = await res.json();
-      alert((json && json.message) || 'Đã gửi báo cáo vi phạm.');
+      if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Đã gửi báo cáo vi phạm.', 'error'); } else { alert((json && json.message) || 'Đã gửi báo cáo vi phạm.'); }
 
       // Đóng modal Bootstrap nếu có
       const modalEl = form.closest('.modal');
@@ -1295,7 +1295,7 @@ const ForumAjax = {
       return true;
     } catch (err) {
       console.error('Lỗi gửi báo cáo:', err);
-      alert('Có lỗi xảy ra khi gửi báo cáo vi phạm.');
+      if (typeof window.showToast === 'function') { window.showToast('Có lỗi xảy ra khi gửi báo cáo vi phạm.', 'error'); } else { alert('Có lỗi xảy ra khi gửi báo cáo vi phạm.'); }
       return false;
     } finally {
       if (submitBtn) {
@@ -1358,32 +1358,52 @@ const ForumAjax = {
       let html = '';
       items.forEach(function (n) {
         const isUnread = Number(n.is_read) === 0;
-        let iconClass = 'bi-bell-fill';
-        let iconColor = '#9bbd55';
-        if (n.type === 'like_post' || n.type === 'like_comment') {
-          iconClass = 'bi-heart-fill';
-          iconColor = '#ff6b81';
-        } else if (n.type === 'comment_post' || n.type === 'reply_comment') {
-          iconClass = 'bi-chat-dots-fill';
-          iconColor = '#3498db';
-        } else if (n.type === 'follow_user') {
-          iconClass = 'bi-person-plus-fill';
-          iconColor = '#2ecc71';
-        }
 
-        let linkUrl = `${baseUrl}/posts/${n.target_id}`;
+        // Icon & màu sắc theo loại thông báo
+        const typeConfig = {
+          'like_post':        { icon: 'bi-heart-fill',         color: '#e63946' },
+          'like_comment':     { icon: 'bi-heart-fill',         color: '#e63946' },
+          'comment_post':     { icon: 'bi-chat-dots-fill',     color: '#3498db' },
+          'reply_comment':    { icon: 'bi-chat-quote-fill',    color: '#1d6fa4' },
+          'follow_user':      { icon: 'bi-person-plus-fill',   color: '#2ecc71' },
+          'create_post':      { icon: 'bi-pencil-square',      color: '#9bbd55' },
+          'create_trip':      { icon: 'bi-compass-fill',       color: '#4a7c59' },
+          'join_trip':        { icon: 'bi-people-fill',        color: '#2ecc71' },
+          'leave_trip':       { icon: 'bi-person-dash-fill',   color: '#8c9185' },
+          'trip_new_member':  { icon: 'bi-person-check-fill',  color: '#20c997' },
+          'create_checklist': { icon: 'bi-check2-square',      color: '#6f9e38' },
+          'bookmark_post':    { icon: 'bi-bookmark-fill',      color: '#f4a261' },
+          'review_place':     { icon: 'bi-star-fill',          color: '#f9c74f' },
+          'update_profile':   { icon: 'bi-person-gear',        color: '#6c757d' },
+          'system':           { icon: 'bi-info-circle-fill',   color: '#0dcaf0' },
+          'activity':         { icon: 'bi-activity',           color: '#9bbd55' },
+        };
+        const cfg = typeConfig[n.type] || { icon: 'bi-bell-fill', color: '#9bbd55' };
+
+        // URL đích theo loại thông báo
+        let linkUrl;
         if (n.type === 'follow_user') {
           linkUrl = `${baseUrl}/users/${n.actor_id}`;
+        } else if (['create_trip', 'join_trip', 'leave_trip', 'trip_new_member'].includes(n.type)) {
+          linkUrl = `${baseUrl}/trips/${n.target_id}`;
+        } else if (n.type === 'create_checklist') {
+          linkUrl = `${baseUrl}/checklists`;
+        } else if (n.type === 'update_profile') {
+          linkUrl = `${baseUrl}/profile`;
+        } else if (n.target_id) {
+          linkUrl = `${baseUrl}/posts/${n.target_id}`;
+        } else {
+          linkUrl = `${baseUrl}/`;
         }
 
         html += `
           <a href="${linkUrl}" class="notification-item ${isUnread ? 'unread' : ''}">
-            <div class="notification-icon" style="background: ${iconColor}22; color: ${iconColor};">
-              <i class="bi ${iconClass}"></i>
+            <div class="notification-icon" style="background: ${cfg.color}22; color: ${cfg.color};">
+              <i class="bi ${cfg.icon}"></i>
             </div>
             <div class="notification-content">
               <div class="fw-medium">${self.escapeHtml(n.content)}</div>
-              <div class="notification-time">${self.escapeHtml(n.created_at || 'Vừa xong')}</div>
+              <div class="notification-time"><i class="bi bi-clock" style="font-size:0.68rem;margin-right:3px;"></i>${self.escapeHtml(n.created_at || 'Vừa xong')}</div>
             </div>
           </a>
         `;
