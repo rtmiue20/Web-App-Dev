@@ -12,8 +12,27 @@ class Notification extends Model
         int $targetId,
         string $content
     ): int {
-        // Không gửi thông báo nếu tự mình tương tác với chính mình
-        if ($userId <= 0 || $actorId <= 0 || $userId === $actorId) {
+        // ID người dùng không hợp lệ
+        if ($userId <= 0 || $actorId <= 0) {
+            return 0;
+        }
+
+        // Các thao tác trực tiếp của user mà hệ thống cần thông báo phản hồi (nhật ký hành động)
+        $selfAllowedTypes = [
+            'create_post',
+            'create_trip',
+            'join_trip',
+            'leave_trip',
+            'create_checklist',
+            'bookmark_post',
+            'review_place',
+            'update_profile',
+            'system',
+            'activity'
+        ];
+
+        // Với các tương tác xã hội (tự like, tự bình luận bài của mình), không gửi để tránh spam
+        if ($userId === $actorId && !in_array($type, $selfAllowedTypes, true)) {
             return 0;
         }
 
@@ -21,7 +40,7 @@ class Notification extends Model
             // Tránh spam cùng 1 loại thông báo trong thời gian ngắn (ví dụ like/unlike liên tục)
             $checkSql = "SELECT id FROM notifications 
                          WHERE user_id = :uid AND actor_id = :aid AND type = :t AND target_id = :tid 
-                         AND created_at >= NOW() - INTERVAL 10 MINUTE 
+                         AND created_at >= NOW() - INTERVAL 5 MINUTE 
                          LIMIT 1";
             $existing = Database::query($checkSql, [
                 'uid' => $userId,
@@ -58,7 +77,7 @@ class Notification extends Model
     /**
      * Lấy danh sách thông báo của 1 user
      */
-    public function getByUserId(int $userId, int $limit = 15): array
+    public function getByUserId(int $userId, int $limit = 20): array
     {
         if ($userId <= 0) {
             return [];
@@ -101,7 +120,7 @@ class Notification extends Model
     }
 
     /**
-     * Đánh dấu 1 thông báo đã đọc
+     * Đánh dấu 1 thông báo là đã đọc
      */
     public function markAsRead(int $id, int $userId): bool
     {
