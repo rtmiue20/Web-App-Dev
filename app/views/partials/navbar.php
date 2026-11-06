@@ -65,38 +65,6 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         </a>
 
         <?php if (is_array($currentUser)): ?>
-            <!-- Notification Bell Icon (Tính năng thông báo thời gian thực) -->
-            <div class="position-relative d-inline-block" style="pointer-events: auto;">
-                <button type="button" 
-                        class="dock-pill position-relative d-inline-flex align-items-center justify-content-center p-0" 
-                        id="btnNotificationToggle" 
-                        onclick="event.stopPropagation(); ForumAjax.toggleNotificationsDropdown(event);"
-                        aria-label="Thông báo" 
-                        style="width: 38px; height: 38px; border-radius: 50%; cursor: pointer; pointer-events: auto;">
-                    <i class="bi bi-bell-fill fs-6" style="color: rgba(241, 241, 236, 0.85); pointer-events: none;"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                          id="navUnreadBadge" 
-                          style="display: none; font-size: 9px; padding: 2px 5px; pointer-events: none;">
-                        0
-                    </span>
-                </button>
-
-                <!-- Notifications Dropdown Popup -->
-                <div id="notificationsDropdownMenu" class="notifications-dropdown-menu shadow-lg" style="display: none; pointer-events: auto;">
-                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom border-secondary border-opacity-25">
-                        <span class="fw-bold small text-white"><i class="bi bi-bell me-1 text-success"></i>Thông báo của bạn</span>
-                        <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 small" style="color: #9bbd55; font-size: 11.5px;" onclick="ForumAjax.markAllNotificationsRead()">
-                            Đã đọc tất cả
-                        </button>
-                    </div>
-                    <div id="notificationsListContainer" class="notifications-list-scroll" style="max-height: 320px; overflow-y: auto;">
-                        <div class="text-center py-4 text-white-50 small">
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang tải thông báo...
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- User Profile Link -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
                class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">
@@ -133,6 +101,49 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         <?php endif; ?>
     </nav>
 </header>
+
+<?php if (is_array($currentUser)): ?>
+<!-- ===================================================================== -->
+<!-- FLOATING NOTIFICATION WIDGET (Tách riêng ở góc trên bên phải màn hình)-->
+<!-- ===================================================================== -->
+<aside class="floating-notification-widget" id="floatingNotifWidget" aria-label="Thông báo hệ thống">
+    <!-- Nút chuông nổi độc lập (Desktop) -->
+    <button type="button" 
+            class="floating-bell-btn d-none d-lg-flex" 
+            id="btnNotificationToggle" 
+            onclick="event.stopPropagation(); ForumAjax.toggleNotificationsDropdown(event);" 
+            aria-label="Thông báo"
+            title="Thông báo của bạn">
+        <i class="bi bi-bell-fill"></i>
+        <span class="bell-badge-pulse" id="navUnreadBadge" style="display: none;">0</span>
+    </button>
+
+    <!-- Panel Popup Thông Báo (Nature Paper Card phong cách đồng bộ Admin Dashboard) -->
+    <div id="notificationsDropdownMenu" class="floating-notifications-panel shadow-lg" style="display: none;">
+        <div class="floating-notif-header">
+            <div class="d-flex align-items-center gap-2">
+                <span class="floating-notif-icon-badge">
+                    <i class="bi bi-bell-fill"></i>
+                </span>
+                <span class="floating-notif-title">Thông báo của bạn</span>
+            </div>
+            <button type="button" class="floating-notif-markall" onclick="ForumAjax.markAllNotificationsRead()" title="Đánh dấu đã đọc tất cả">
+                <i class="bi bi-check2-all me-1"></i>Đã đọc tất cả
+            </button>
+        </div>
+        <div id="notificationsListContainer" class="notifications-list-scroll">
+            <div class="text-center py-4 text-muted small">
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang tải thông báo...
+            </div>
+        </div>
+        <div class="floating-notif-footer">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" class="floating-notif-link">
+                <i class="bi bi-clock-history me-1"></i>Xem hoạt động cá nhân
+            </a>
+        </div>
+    </div>
+</aside>
+<?php endif; ?>
 
 <!-- ===================================================================== -->
 <!-- 2. MOBILE & TABLET TOP HEADER BAR (Hiển thị trên màn hình < 992px)    -->
