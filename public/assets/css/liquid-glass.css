@@ -149,9 +149,9 @@ body {
 /* ── 6. Ô NHẬP LIỆU (Input, Textarea, Select) – Trắng sạch, bo góc mềm ────── */
 .nature-input,
 .nature-textarea,
-.form-control,
+.form-control:not(.nature-search-input),
 .form-select,
-.app-container input[type="text"],
+.app-container input[type="text"]:not(.nature-search-input),
 .app-container input[type="email"],
 .app-container input[type="password"],
 .app-container input[type="number"],
@@ -173,9 +173,9 @@ body {
 /* Focus viền xanh rêu tỏa sáng (Signature Moss Glow) */
 .nature-input:focus,
 .nature-textarea:focus,
-.form-control:focus,
+.form-control:not(.nature-search-input):focus,
 .form-select:focus,
-.app-container input:focus,
+.app-container input:not(.nature-search-input):focus,
 .app-container select:focus,
 .app-container textarea:focus {
   background-color: #ffffff !important;
@@ -234,32 +234,85 @@ select option {
   background: #fafbfa !important;
 }
 
-/* Inputs bên trong modal → glass style */
+/* Inputs bên trong modal → Trắng sạch, tương phản cao, bo góc mềm */
 .modal-content .form-control,
 .modal-content .form-select,
 .modal-content textarea {
-  background: rgba(255,255,255,0.09) !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  color: #ffffff !important;
-  border-radius: 12px;
+  background-color: #ffffff !important;
+  border: 1px solid #dcdfd6 !important;
+  color: #23261f !important;
+  border-radius: 14px !important;
+  font-size: 14px !important;
+}
+
+.modal-content .form-control:focus,
+.modal-content .form-select:focus,
+.modal-content textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #9bbd55 !important;
+  color: #23261f !important;
+  box-shadow: 0 0 0 4px rgba(155, 189, 85, 0.22) !important;
 }
 
 .modal-content .btn-close {
   filter: none !important;
-  opacity: 0.45 !important;
+  opacity: 0.55 !important;
   transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+.modal-content .btn-close:hover {
+  opacity: 1 !important;
 }
 
 .modal-content .form-control::placeholder,
-.modal-content textarea::placeholder { color: rgba(255,255,255,0.40) !important; }
+.modal-content textarea::placeholder { 
+  color: #9ea298 !important; 
+  opacity: 0.8 !important;
+}
 
-.modal-content select option { background: #1a2416; color: #ffffff; }
+.modal-content select option { 
+  background: #ffffff !important; 
+  color: #23261f !important; 
+}
 
 /* Input group addon bên trong modal */
 .modal-content .input-group-text {
-  background: rgba(255,255,255,0.12) !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  color: #ffffff !important;
+  background: #f6f7f2 !important;
+  border: 1px solid #dcdfd6 !important;
+  color: #555a4e !important;
+}
+
+/* File input bên trong modal */
+.modal-content input[type="file"].form-control {
+  padding: 0.35rem 0.85rem !important;
+  line-height: normal;
+  cursor: pointer;
+  background-color: #ffffff !important;
+  color: #23261f !important;
+}
+.modal-content input[type="file"].form-control::file-selector-button {
+  background: #20251c;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 1rem;
+  margin-right: 0.85rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.modal-content input[type="file"].form-control::file-selector-button:hover {
+  background: #2e3529;
+  color: #c4e482;
+}
+
+/* Switch toggle bên trong modal */
+.modal-content .form-check-input {
+  cursor: pointer;
+}
+.modal-content .form-check-input:checked {
+  background-color: #7aab3a !important;
+  border-color: #7aab3a !important;
 }
 
 /* Đảm bảo bo góc của input-group liền mạch hoàn toàn */
@@ -553,33 +606,117 @@ select option {
   border-left: 3px solid #9bbd55 !important;
 }
 
-/* ── 12. BỘ TÌM KIẾM (SEARCH INPUT GROUP) ───────────────────────────────── */
+/* ── 12. BỘ TÌM KIẾM (SEARCH INPUT GROUP) – Chìm sâu vào nền rêu tối ──────── */
 .search-input-group {
-  background: rgba(34, 40, 31, 0.82) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-radius: 9999px !important;
+  background: rgba(26, 32, 24, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 999px !important;
   overflow: hidden !important;
   backdrop-filter: blur(14px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
   transition: all 0.25s ease !important;
+}
+
+.search-input-group:hover {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+  background: rgba(26, 32, 24, 0.85) !important;
 }
 
 .search-input-group:focus-within {
   border-color: #9bbd55 !important;
-  background: rgba(22, 28, 20, 0.95) !important;
-  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.25), 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(20, 26, 18, 0.95) !important;
+  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.22), 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
+.search-input-group .input-group-text {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #9bbd55 !important;
+}
+
+.app-container .search-input-group input[type="text"].nature-search-input,
+.search-input-group input.nature-search-input,
 .nature-search-input {
   background: transparent !important;
+  background-color: transparent !important;
   border: none !important;
+  box-shadow: none !important;
   color: #ffffff !important;
-  padding: 0.75rem 1rem !important;
+  font-size: 0.95rem !important;
+  padding: 0.75rem 0.5rem !important;
+  outline: none !important;
+  border-radius: 0 !important;
+}
+
+.app-container .search-input-group input[type="text"].nature-search-input:focus,
+.search-input-group input.nature-search-input:focus,
+.nature-search-input:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
   outline: none !important;
 }
 
 .nature-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.55) !important;
+  color: rgba(255, 255, 255, 0.48) !important;
+}
+
+.search-autocomplete-dropdown {
+  background: rgba(26, 34, 23, 0.96) !important;
+  border: 1px solid rgba(155, 189, 85, 0.35) !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ── 12B. PHÂN TRANG CHUẨN NATURE GLASS (FORUM PAGINATION) ──────────────── */
+.forum-pagination {
+  gap: 0.35rem;
+}
+
+.forum-pagination .page-link {
+  background-color: rgba(34, 40, 31, 0.72) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  padding: 0.5rem 1rem !important;
+  margin: 0 !important;
+  border-radius: 9999px !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  transition: all 0.22s ease !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.forum-pagination .page-link:hover {
+  background-color: var(--color-moss, #9bbd55) !important;
+  color: #1a2217 !important;
+  border-color: var(--color-moss, #9bbd55) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(155, 189, 85, 0.35) !important;
+}
+
+.forum-pagination .page-item.active .page-link {
+  background-color: var(--color-moss, #9bbd55) !important;
+  color: #1a2217 !important;
+  border-color: var(--color-moss, #9bbd55) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 18px rgba(155, 189, 85, 0.45) !important;
+}
+
+.forum-pagination .page-item.disabled .page-link {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 /* ── 13. TRANG TẠO BÀI VIẾT FACEBOOK COMPOSER ───────────────────────────── */

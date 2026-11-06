@@ -37,12 +37,34 @@ class ProductController extends Controller
         $allProducts = $this->products->getAll($selectedCategoryId);
         $currentUser = Session::get('user');
 
+        // Phân trang 6 dụng cụ / trang
+        $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        if ($currentPage < 1) {
+            $currentPage = 1;
+        }
+        $perPage = 6;
+        $totalProducts = count($allProducts);
+        $totalPages = (int)ceil($totalProducts / $perPage);
+        if ($totalPages < 1) {
+            $totalPages = 1;
+        }
+        if ($currentPage > $totalPages && $totalProducts > 0) {
+            $currentPage = $totalPages;
+        }
+
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedProducts = array_slice($allProducts, $offset, $perPage);
+
         $this->render('products/index', [
             'title' => 'Dụng cụ & Trang thiết bị dã ngoại',
-            'products' => $allProducts,
+            'products' => $paginatedProducts,
             'categories' => $allCategories,
             'selectedCategoryId' => $selectedCategoryId,
-            'currentUser' => $currentUser
+            'currentUser' => $currentUser,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+            'totalProducts' => $totalProducts,
+            'perPage' => $perPage
         ]);
     }
 
