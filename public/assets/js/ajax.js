@@ -84,7 +84,7 @@ const ForumAjax = {
           downBtn.style.color = isDown ? '#ffffff' : '#8c3b2b';
         });
       } else {
-        alert((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.', 'error'); } else { alert((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.'); }
       }
     } catch (err) {
       console.error('Lỗi khi gửi vote:', err);
@@ -146,7 +146,7 @@ const ForumAjax = {
           }
         });
       } else {
-        alert((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.', 'error'); } else { alert((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.'); }
       }
     } catch (err) {
       console.error('Lỗi khi thích bình luận:', err);
@@ -208,7 +208,7 @@ const ForumAjax = {
         }
         return true;
       } else {
-        alert((data && data.message) || 'Không thể gửi bình luận.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) || 'Không thể gửi bình luận.', 'error'); } else { alert((data && data.message) || 'Không thể gửi bình luận.'); }
         return false;
       }
     } catch (err) {
@@ -424,7 +424,7 @@ const ForumAjax = {
           countBadge.textContent = data.data.total_comments;
         }
       } else {
-        alert((data && data.message) || 'Không thể xóa bình luận.');
+        if (typeof window.showToast === 'function') { window.showToast((data && data.message) || 'Không thể xóa bình luận.', 'error'); } else { alert((data && data.message) || 'Không thể xóa bình luận.'); }
         if (btnElement) btnElement.disabled = false;
       }
     } catch (err) {
@@ -1116,7 +1116,7 @@ const ForumAjax = {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        alert((json && json.message) || 'Không thể thực hiện lưu bài viết.');
+        if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện lưu bài viết.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện lưu bài viết.'); }
         return false;
       }
 
@@ -1168,7 +1168,7 @@ const ForumAjax = {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        alert((json && json.message) || 'Không thể thực hiện theo dõi.');
+        if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện theo dõi.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện theo dõi.'); }
         return false;
       }
 
@@ -1233,7 +1233,7 @@ const ForumAjax = {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        alert((json && json.message) || 'Không thể thực hiện thao tác.');
+        if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện thao tác.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện thao tác.'); }
         return false;
       }
       return true;
@@ -1257,7 +1257,7 @@ const ForumAjax = {
     const details = detailsInput ? detailsInput.value.trim() : '';
 
     if (!reason) {
-      alert('Vui lòng chọn lý do báo cáo vi phạm.');
+      if (typeof window.showToast === 'function') { window.showToast('Vui lòng chọn lý do báo cáo vi phạm.', 'error'); } else { alert('Vui lòng chọn lý do báo cáo vi phạm.'); }
       return false;
     }
 
@@ -1283,7 +1283,7 @@ const ForumAjax = {
       });
 
       const json = await res.json();
-      alert((json && json.message) || 'Đã gửi báo cáo vi phạm.');
+      if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Đã gửi báo cáo vi phạm.', 'error'); } else { alert((json && json.message) || 'Đã gửi báo cáo vi phạm.'); }
 
       // Đóng modal Bootstrap nếu có
       const modalEl = form.closest('.modal');
@@ -1295,7 +1295,7 @@ const ForumAjax = {
       return true;
     } catch (err) {
       console.error('Lỗi gửi báo cáo:', err);
-      alert('Có lỗi xảy ra khi gửi báo cáo vi phạm.');
+      if (typeof window.showToast === 'function') { window.showToast('Có lỗi xảy ra khi gửi báo cáo vi phạm.', 'error'); } else { alert('Có lỗi xảy ra khi gửi báo cáo vi phạm.'); }
       return false;
     } finally {
       if (submitBtn) {

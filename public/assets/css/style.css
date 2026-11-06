@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500;600;700&display=swap');
 
 :root {
   color-scheme: dark;
@@ -1219,208 +1219,194 @@ body {
 }
 
 /* ==========================================================================
-   Apple Liquid Glass Toast (Góc phải màn hình, Dynamic Island / iOS Glass)
+   Toast Notifications – 4 loại: Success, Error, Warning, Info
+   Phong cách: Colorful Gradient + Blob Icon (theo mẫu thiết kế)
    ========================================================================== */
 #flash-toast-container {
   position: fixed !important;
   top: 5.5rem !important;
-  right: 1.75rem !important;
+  right: 1.5rem !important;
   left: auto !important;
   bottom: auto !important;
   z-index: 999999 !important;
-  width: 350px !important;
-  max-width: calc(100vw - 2.5rem) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 0.75rem !important;
+  gap: 0.65rem !important;
+  width: 340px !important;
+  max-width: calc(100vw - 2rem) !important;
   pointer-events: none !important;
 }
 
 @media (max-width: 576px) {
   #flash-toast-container {
-    top: 5rem !important;
-    right: 1rem !important;
-    left: 1rem !important;
+    top: 4.5rem !important;
+    right: 0.75rem !important;
+    left: 0.75rem !important;
     width: auto !important;
-    max-width: 100% !important;
   }
 }
 
+/* ─── Toast base ─────────────────────────────────────────────────────────── */
 .app-toast {
-  position: relative !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  border-radius: 22px !important;
-  padding: 0.85rem 1.15rem !important;
-  overflow: hidden !important;
-  animation: iosLiquidGlassIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), filter 0.28s ease !important;
   pointer-events: auto !important;
-  background: rgba(18, 24, 18, 0.72) !important;
-  backdrop-filter: blur(30px) saturate(210%) contrast(108%) !important;
-  -webkit-backdrop-filter: blur(30px) saturate(210%) contrast(108%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: 
-    0 24px 48px -8px rgba(0, 0, 0, 0.58),
-    0 0 0 0.5px rgba(255, 255, 255, 0.12) inset,
-    0 1px 1.5px 0 rgba(255, 255, 255, 0.42) inset,
-    0 -1px 1px 0 rgba(0, 0, 0, 0.28) inset !important;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: stretch !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  min-height: 72px !important;
+  box-shadow: 0 10px 36px -6px rgba(0,0,0,0.38), 0 2px 8px rgba(0,0,0,0.18) !important;
+  animation: toastSlideIn 0.38s cubic-bezier(0.34,1.56,0.64,1) both !important;
 }
 
-.app-toast::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
-  border-radius: 22px 22px 0 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
+/* ─── Type backgrounds ───────────────────────────────────────────────────── */
 .app-toast-success {
-  background: linear-gradient(135deg, rgba(28, 42, 24, 0.78) 0%, rgba(14, 22, 15, 0.84) 100%) !important;
-  border: 1px solid rgba(168, 224, 99, 0.32) !important;
+  background: linear-gradient(135deg, #1a7a4a 0%, #27ae60 55%, #2ecc71 100%) !important;
 }
-
 .app-toast-error {
-  background: linear-gradient(135deg, rgba(48, 20, 24, 0.78) 0%, rgba(24, 12, 15, 0.84) 100%) !important;
-  border: 1px solid rgba(255, 107, 129, 0.32) !important;
+  background: linear-gradient(135deg, #962d2d 0%, #c0392b 55%, #e74c3c 100%) !important;
+}
+.app-toast-warning {
+  background: linear-gradient(135deg, #c47d11 0%, #d68910 55%, #f39c12 100%) !important;
+}
+.app-toast-info {
+  background: linear-gradient(135deg, #1a4fa0 0%, #2471a3 55%, #2e86c1 100%) !important;
 }
 
-.toast-body-row {
-  position: relative;
-  z-index: 2;
-  gap: 0.75rem;
+/* ─── Left icon column ───────────────────────────────────────────────────── */
+.toast-icon-col {
+  width: 72px !important;
+  min-width: 72px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
 }
 
-.toast-icon-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  flex-shrink: 0;
+/* Blob décor blob 1 */
+.toast-icon-col::before {
+  content: '' !important;
+  position: absolute !important;
+  width: 68px !important;
+  height: 68px !important;
+  background: rgba(255,255,255,0.14) !important;
+  border-radius: 42% 58% 60% 40% / 40% 44% 56% 60% !important;
+  left: -18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
 }
 
-.toast-icon-success {
-  background: radial-gradient(circle at 35% 35%, rgba(52, 199, 89, 0.4) 0%, rgba(52, 199, 89, 0.16) 100%);
-  color: #55efc4;
-  border: 1px solid rgba(52, 199, 89, 0.5);
-  box-shadow: 0 0 14px rgba(52, 199, 89, 0.32);
+/* Blob décor blob 2 */
+.toast-icon-col::after {
+  content: '' !important;
+  position: absolute !important;
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255,255,255,0.09) !important;
+  border-radius: 60% 40% 30% 70% / 50% 60% 40% 50% !important;
+  right: -10px !important;
+  bottom: -12px !important;
 }
 
-.toast-icon-error {
-  background: radial-gradient(circle at 35% 35%, rgba(255, 59, 48, 0.4) 0%, rgba(255, 59, 48, 0.16) 100%);
-  color: #ff7675;
-  border: 1px solid rgba(255, 59, 48, 0.5);
-  box-shadow: 0 0 14px rgba(255, 59, 48, 0.32);
+.toast-icon-inner {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  background: rgba(255,255,255,0.22) !important;
+  backdrop-filter: blur(4px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.1rem !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important;
+}
+
+/* ─── Text column ────────────────────────────────────────────────────────── */
+.toast-text-col {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 0.85rem 0.5rem 0.85rem 0.4rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
 }
 
 .toast-title {
   font-size: 13.5px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   color: #ffffff !important;
-  letter-spacing: -0.015em !important;
-  line-height: 1.25 !important;
+  letter-spacing: -0.01em !important;
   margin-bottom: 2px !important;
+  line-height: 1.25 !important;
 }
 
 .toast-desc {
-  font-size: 12.5px !important;
-  color: rgba(245, 248, 245, 0.9) !important;
-  line-height: 1.35 !important;
+  font-size: 12px !important;
+  color: rgba(255,255,255,0.90) !important;
+  line-height: 1.4 !important;
   word-break: break-word !important;
-  letter-spacing: -0.005em !important;
 }
 
-.toast-glass-close {
-  width: 22px !important;
-  height: 22px !important;
+/* ─── Close button ───────────────────────────────────────────────────────── */
+.toast-close-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  color: rgba(255, 255, 255, 0.72) !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
+  border: none !important;
+  background: rgba(255,255,255,0.18) !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 0 !important;
-  font-size: 9.5px !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+  margin: auto 0.75rem auto 0 !important;
+  align-self: flex-start !important;
+  margin-top: 0.75rem !important;
+  transition: background 0.15s, transform 0.15s !important;
+  flex-shrink: 0 !important;
 }
 
-.toast-glass-close:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
-  color: #ffffff !important;
+.toast-close-btn:hover {
+  background: rgba(255,255,255,0.35) !important;
   transform: scale(1.12) !important;
 }
 
-.toast-progress-track {
-  position: absolute;
-  bottom: 4px;
-  left: 14px;
-  right: 14px;
-  height: 2px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  z-index: 1;
+/* ─── Progress bar ───────────────────────────────────────────────────────── */
+.toast-progress-bar {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  height: 3px !important;
+  width: 100% !important;
+  background: rgba(255,255,255,0.45) !important;
+  border-radius: 0 0 0 14px !important;
+  animation: toastProgress 5.5s linear forwards !important;
 }
 
-.toast-progress-fill {
-  height: 100%;
-  width: 100%;
-  border-radius: 999px;
-  animation: toastProgress 5s linear forwards !important;
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes toastSlideIn {
+  0%   { opacity: 0; transform: translateX(60px) scale(0.88); }
+  65%  { opacity: 1; transform: translateX(-4px) scale(1.02); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
 }
 
-.toast-progress-success {
-  background: linear-gradient(90deg, #55efc4, #a8e063);
-  box-shadow: 0 0 6px rgba(85, 239, 196, 0.5);
-}
-
-.toast-progress-error {
-  background: linear-gradient(90deg, #ff7675, #fab1a0);
-  box-shadow: 0 0 6px rgba(255, 118, 117, 0.5);
+@keyframes toastProgress {
+  from { width: 100%; }
+  to   { width: 0%; }
 }
 
 .app-toast.toast-hiding {
   opacity: 0 !important;
-  transform: translate3d(40px, 0, 0) scale(0.92) !important;
-  filter: blur(4px) !important;
-}
-
-@keyframes iosLiquidGlassIn {
-  0% {
-    opacity: 0;
-    transform: translate3d(24px, -8px, 0) scale(0.92);
-    filter: blur(4px);
-  }
-  60% {
-    opacity: 1;
-    transform: translate3d(-3px, 1px, 0) scale(1.01);
-    filter: blur(0px);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0px);
-  }
-}
-
-@keyframes toastProgress {
-  from {
-    width: 100%;
-  }
-  to {
-    width: 0%;
-  }
+  transform: translateX(50px) scale(0.88) !important;
+  transition: all 0.28s cubic-bezier(0.4,0,1,1) !important;
+  pointer-events: none !important;
 }
 
 .tool-card-label {
