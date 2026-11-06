@@ -1747,3 +1747,242 @@ body {
 }
 
 
+
+
+/* ==========================================================================
+   26. MOBILE & TABLET RESPONSIVE OVERHAUL (100% iOS & Android Optimized)
+   ========================================================================== */
+
+/* ── Mobile Top Header Bar (< 992px) ────────────────────────────── */
+.mobile-top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1040;
+  height: 56px;
+  background: rgba(20, 26, 18, 0.94);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Mobile Bottom Navigation Bar (< 992px) ───────────────────────── */
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  height: 58px;
+  background: rgba(18, 24, 16, 0.96);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-bottom-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: rgba(241, 241, 236, 0.65);
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 500;
+  gap: 2px;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.mobile-bottom-item:hover,
+.mobile-bottom-item.active {
+  color: #9bbd55;
+}
+
+.mobile-bottom-item i {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.mobile-bottom-fab {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2f5e2e 0%, #4a8c48 100%);
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(47, 94, 46, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  margin-top: -16px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  text-decoration: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-bottom-fab:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 8px rgba(47, 94, 46, 0.4);
+}
+
+/* ── Mobile Offcanvas Drawer ───────────────────────────────────────── */
+.mobile-offcanvas {
+  background: rgba(18, 24, 18, 0.96) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f1f1ec;
+  width: min(86vw, 360px) !important;
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  color: rgba(241, 241, 236, 0.85);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 400;
+  transition: all 0.18s ease;
+  margin-bottom: 3px;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+  background: rgba(155, 189, 85, 0.15);
+  color: #9bbd55;
+  font-weight: 500;
+}
+
+.mobile-nav-link i {
+  font-size: 1.15rem;
+  width: 24px;
+  text-align: center;
+  color: #9bbd55;
+}
+
+/* ── Responsive Container & Content Spacing ───────────────────────── */
+@media (max-width: 991.98px) {
+  .app-container {
+    padding-top: 4.8rem !important;
+    padding-bottom: 5.6rem !important;
+    padding-inline: 1rem !important;
+  }
+  .page-header {
+    margin-bottom: 1.5rem !important;
+  }
+  .page-title {
+    font-size: 1.75rem !important;
+    line-height: 1.25 !important;
+  }
+  .page-subtitle {
+    font-size: 0.95rem !important;
+  }
+  .post-detail-cover {
+    max-height: 300px !important;
+    border-radius: 20px !important;
+  }
+  .post-content-box {
+    padding: 1.5rem !important;
+    border-radius: 24px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-container {
+    padding-top: 4.5rem !important;
+    padding-bottom: 5.6rem !important;
+    padding-inline: 0.75rem !important;
+  }
+  .page-title {
+    font-size: 1.5rem !important;
+  }
+  .page-subtitle {
+    font-size: 0.88rem !important;
+  }
+  .paper-card {
+    border-radius: 22px !important;
+  }
+  .card-image-box {
+    height: 190px !important;
+  }
+  .post-content-box {
+    padding: 1.15rem !important;
+    border-radius: 20px !important;
+  }
+  /* Category Slidebar touch swipe on mobile */
+  .category-slidebar-track {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+    flex-wrap: nowrap !important;
+  }
+  .category-slidebar-track::-webkit-scrollbar {
+    display: none !important;
+  }
+  .category-slidebar-track .dock-pill {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 0.82rem !important;
+    padding: 5px 13px !important;
+  }
+  /* Forms on iOS prevent zoom */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* Notifications dropdown on mobile */
+  .notifications-dropdown-menu {
+    position: fixed !important;
+    top: 56px !important;
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+/* ── Admin Nav Bar on Mobile ───────────────────────────────────────── */
+@media (max-width: 991.98px) {
+  .admin-nav-bar {
+    top: 0.5rem !important;
+    width: calc(100vw - 1rem) !important;
+    border-radius: 18px !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .admin-nav-bar nav {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+    padding-top: 4px !important;
+  }
+  .admin-nav-bar nav::-webkit-scrollbar {
+    display: none !important;
+  }
+  .admin-nav-bar nav .dock-pill {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 0.8rem !important;
+    padding: 4px 10px !important;
+  }
+  .table-responsive {
+    border-radius: 20px;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}

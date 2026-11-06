@@ -1337,14 +1337,15 @@ const ForumAjax = {
       if (!json || !json.success || !json.data) return;
 
       const unreadCount = Number(json.data.unread_count || 0);
-      if (badge) {
+      [document.getElementById('navUnreadBadge'), document.getElementById('mobileNavUnreadBadge')].forEach(b => {
+        if (!b) return;
         if (unreadCount > 0) {
-          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-          badge.style.display = 'inline-block';
+          b.textContent = unreadCount > 99 ? '99+' : unreadCount;
+          b.style.display = 'inline-block';
         } else {
-          badge.style.display = 'none';
+          b.style.display = 'none';
         }
-      }
+      });
 
       if (!container) return;
 
@@ -1409,9 +1410,7 @@ const ForumAjax = {
         body: JSON.stringify({ _csrf: csrfToken }),
       });
 
-      if (badge) {
-        badge.style.display = 'none';
-      }
+      [document.getElementById('navUnreadBadge'), document.getElementById('mobileNavUnreadBadge')].forEach(b => { if (b) b.style.display = 'none'; });
       const unreadItems = document.querySelectorAll('.notification-item.unread');
       unreadItems.forEach(function (item) {
         item.classList.remove('unread');
