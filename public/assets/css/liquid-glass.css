@@ -1,749 +1,571 @@
-﻿/*
+/*
  * ========================================================================
- *   LIQUID GLASS DESIGN SYSTEM  –  v2 (Safe Mode)
- *   Outdoor Forum – Nature Edition
+ *   OUTDOOR FORUM DESIGN SYSTEM  –  NATURE EDITION
+ *   Đồng bộ toàn diện giao diện diễn đàn với Bảng điều khiển Quản trị (Admin Dashboard)
  *
- *   Nguyên tắc an toàn:
- *   – CHỈ nâng cấp backdrop-filter / border / shadow / animation
- *   – KHÔNG override màu chữ nếu không rõ context
- *   – Dùng CSS specificity có kiểm soát, không lạm dụng !important
- *   – Giữ nguyên color tokens gốc, chỉ thêm glass surface
+ *   Đặc trưng thiết kế:
+ *   1. Canvas nền: Màu xanh rêu ô-liu thiên nhiên sâu thẳm (Forest Olive Gradient)
+ *   2. Thẻ nội dung (Cards / Panels): Nền giấy kem / trắng tinh (#ffffff / #f6f7f2)
+ *      bo góc mềm mại 28px - 32px, bóng đổ tự nhiên, chữ mực đậm (#23261f) tương phản 100%
+ *   3. Ô nhập liệu (Input, Field, Textarea): Nền trắng sạch, viền tinh tế #dcdfd6, focus xanh rêu #9bbd55
+ *   4. Cửa sổ nổi (Modals): Đồng bộ thẻ trắng cao cấp, chữ đen rõ ràng, không bị mờ đục
+ *   5. Nút bấm (Pill buttons): Nút bo tròn dạng viên thuốc thanh lịch
  * ========================================================================
  */
 
-/* ── 1. CSS Custom Properties ────────────────────────────────────────────── */
+/* ── 1. Color Tokens & Biến chuẩn ────────────────────────────────────────── */
 :root {
-  --lg-spring:   cubic-bezier(0.16, 1, 0.3, 1);
-  --lg-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --lg-moss:     #9bbd55;
-  --lg-shadow-sm:  0 4px 16px -4px rgba(0,0,0,0.40),  0 1px 4px rgba(0,0,0,0.20);
-  --lg-shadow-md:  0 12px 36px -8px rgba(0,0,0,0.55),  0 2px 8px rgba(0,0,0,0.25);
-  --lg-shadow-lg:  0 24px 56px -12px rgba(0,0,0,0.65), 0 4px 16px rgba(0,0,0,0.30);
+  --color-moss:        #9bbd55;
+  --color-moss-dark:   #7aab3a;
+  --color-moss-subtle: rgba(155, 189, 85, 0.15);
+  --color-scene:       #4a4d44;
+  --color-scene-edge:  #383b34;
+  --color-paper:       #ffffff;
+  --color-paper-warm:  #f6f7f2;
+  --color-ink:         #23261f;
+  --color-ink-muted:   #686d62;
+  --color-border-card: rgba(0, 0, 0, 0.07);
+  --card-radius:       28px;
+  --card-shadow:       0 20px 48px -12px rgba(20, 24, 16, 0.35), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-
-/* ── 2. Keyframe Animations ──────────────────────────────────────────────── */
-@keyframes lg-modal-in {
-  from { opacity: 0; transform: scale(0.94) translateY(14px); filter: blur(6px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);    filter: blur(0);   }
+/* ── 2. Toàn bộ nền trang (Canvas giống hệt Admin Dashboard) ─────────────── */
+body {
+  background: radial-gradient(ellipse 120% 100% at 55% 45%, #4a4d44 0%, #464940 45%, #383b34 100%) fixed !important;
+  color: #ffffff !important;
+  min-height: 100vh;
+  font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-@keyframes lg-backdrop-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+/* Khung nội dung chung */
+.app-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 6.5rem 1.25rem 4rem 1.25rem;
 }
 
-@keyframes lg-card-hover-shine {
-  0%   { opacity: 0; transform: translateX(-100%) rotate(18deg); }
-  40%  { opacity: 1; }
-  100% { opacity: 0; transform: translateX(200%)  rotate(18deg); }
+/* ── 3. Tiêu đề ngoài nền tối (Giữ trắng sắc nét, tinh tế) ───────────────── */
+.page-title {
+  color: #ffffff !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.02em !important;
+  font-size: clamp(2rem, 3.5vw, 2.75rem) !important;
+  margin-bottom: 0.5rem !important;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
 }
 
-@property --lg-spin {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
+.page-subtitle {
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-weight: 300 !important;
+  font-size: 1rem !important;
+  line-height: 1.55 !important;
+  max-width: 58ch;
 }
 
-@keyframes lg-spin { to { --lg-spin: 360deg; } }
+/* Huy hiệu pill trên nền tối (như huy hiệu Khu vực Quản trị) */
+.nature-badge,
+.canvas-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.35rem 0.95rem !important;
+  border-radius: 9999px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  background: rgba(155, 189, 85, 0.16) !important;
+  color: #c4e482 !important;
+  border: 1px solid rgba(155, 189, 85, 0.32) !important;
+  backdrop-filter: blur(8px);
+}
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   3. NAVBAR / DOCK  –  Glass upgrade (nền tối, chữ trắng → giữ nguyên)
-   ════════════════════════════════════════════════════════════════════════════ */
-.dock-nav {
-  background:       rgba(14, 20, 11, 0.76) !important;
-  backdrop-filter:  blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
-  border:           1px solid rgba(255,255,255,0.14) !important;
-  border-top-color: rgba(255,255,255,0.32) !important;
-  box-shadow:
-    0 24px 48px -12px rgba(0,0,0,0.65),
-    0 2px 0 rgba(255,255,255,0.08) inset,
-    0 -1px 0 rgba(0,0,0,0.30) inset !important;
+/* ── 4. Thẻ nội dung chính (Cards / Panels) – TRẮNG SÁNG, RÕ RÀNG ──────── */
+.nature-card,
+.paper-card,
+.post-content-box,
+.fb-composer-card,
+.admin-stat-card,
+.checklist-card,
+.trip-card,
+.app-container .nature-card,
+.app-container article.nature-card {
+  background: #ffffff !important;
+  color: var(--color-ink, #23261f) !important;
+  border-radius: var(--card-radius, 28px) !important;
+  border: 1px solid var(--color-border-card, rgba(0, 0, 0, 0.07)) !important;
+  box-shadow: var(--card-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative;
 }
 
-/* Specular highlight trên top edge của nav */
-.dock-nav::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,0.50) 30%,
-    rgba(255,255,255,0.70) 50%,
-    rgba(255,255,255,0.50) 70%,
-    transparent
-  );
-  pointer-events: none;
+/* Hiệu ứng nổi nhẹ khi rê chuột lên thẻ bài viết / chuyên mục */
+.paper-card:hover,
+.app-container article.nature-card:hover,
+.checklist-card:hover,
+.trip-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 32px 64px -16px rgba(20, 24, 16, 0.45), 0 0 0 1.5px rgba(155, 189, 85, 0.35) !important;
 }
 
-/* Active pill */
-.dock-pill.active {
-  background: rgba(242, 243, 239, 0.94) !important;
-  color:      var(--color-ink) !important;
-  backdrop-filter: blur(8px) !important;
-  box-shadow:
-    0 4px 16px -4px rgba(0,0,0,0.30),
-    0 1px 0 rgba(255,255,255,0.80) inset !important;
+/* ── 5. Màu chữ bên trong thẻ nội dung (Đậm đà, tương phản tuyệt đối) ────── */
+.nature-card h1, .nature-card h2, .nature-card h3, .nature-card h4, .nature-card h5, .nature-card h6,
+.paper-card h1, .paper-card h2, .paper-card h3, .paper-card h4, .paper-card h5, .paper-card h6,
+.post-content-box h1, .post-content-box h2, .post-content-box h3,
+.fb-composer-card h1, .fb-composer-card h2, .fb-composer-card h3,
+.app-container .nature-card h1, .app-container .nature-card h2, .app-container .nature-card h3,
+.app-container .nature-card h4, .app-container .nature-card h5 {
+  color: var(--color-ink, #23261f) !important;
+  font-weight: 600 !important;
 }
 
-.dock-pill:hover:not(.active) {
-  background:   rgba(255,255,255,0.10) !important;
-  border-color: rgba(255,255,255,0.22) !important;
+.nature-card a,
+.paper-card a,
+.app-container .nature-card a {
+  color: var(--color-ink, #23261f);
 }
 
+.nature-card p,
+.paper-card p,
+.app-container .nature-card p {
+  color: #4a5043 !important;
+  line-height: 1.65;
+}
 
-/* ════════════════════════════════════════════════════════════════════════════
-   4. MODALS  –  Liquid Glass dialogs
-   ════════════════════════════════════════════════════════════════════════════ */
+/* Nhãn trường dữ liệu (Label in hoa tinh gọn) */
+.nature-label {
+  display: block !important;
+  color: #72776c !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* ── 6. Ô NHẬP LIỆU (Input, Textarea, Select) – Trắng sạch, bo góc mềm ────── */
+.nature-input,
+.nature-textarea,
+.form-control,
+.form-select,
+.app-container input[type="text"],
+.app-container input[type="email"],
+.app-container input[type="password"],
+.app-container input[type="number"],
+.app-container input[type="date"],
+.app-container select,
+.app-container textarea {
+  background-color: #ffffff !important;
+  color: #23261f !important;
+  border: 1px solid #dcdfd6 !important;
+  border-radius: 14px !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 14.5px !important;
+  font-family: inherit !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+}
+
+/* Focus viền xanh rêu tỏa sáng (Signature Moss Glow) */
+.nature-input:focus,
+.nature-textarea:focus,
+.form-control:focus,
+.form-select:focus,
+.app-container input:focus,
+.app-container select:focus,
+.app-container textarea:focus {
+  background-color: #ffffff !important;
+  color: #23261f !important;
+  border-color: #9bbd55 !important;
+  box-shadow: 0 0 0 4px rgba(155, 189, 85, 0.22) !important;
+  outline: none !important;
+}
+
+::placeholder {
+  color: #9ea298 !important;
+  font-weight: 300 !important;
+  opacity: 0.8 !important;
+}
+
+/* Select options */
+select option {
+  background: #ffffff !important;
+  color: #23261f !important;
+}
+
+/* ── 7. CỬA SỔ NỔI (MODALS) – Thiết kế thẻ trắng sáng đồng bộ ────────────── */
 .modal-content {
-  background:    rgba(14, 20, 11, 0.80) !important;
-  backdrop-filter: blur(40px) saturate(220%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  border-top-color: rgba(255,255,255,0.30) !important;
+  background: #ffffff !important;
+  color: #23261f !important;
   border-radius: 28px !important;
-  box-shadow:
-    0 40px 80px -20px rgba(0,0,0,0.80),
-    0 1px 0 rgba(255,255,255,0.18) inset,
-    0 -1px 0 rgba(0,0,0,0.30) inset !important;
-  animation: lg-modal-in 0.40s var(--lg-spring) forwards;
-  color: #ffffff !important;
-}
-
-/* Tất cả text bên trong modal → trắng */
-.modal-content h1, .modal-content h2, .modal-content h3,
-.modal-content h4, .modal-content h5, .modal-content h6,
-.modal-content p, .modal-content label, .modal-content span:not(.badge),
-.modal-content .form-label, .modal-content small {
-  color: rgba(255,255,255,0.90) !important;
-}
-
-.modal-content .modal-title {
-  color: #ffffff !important;
-  font-weight: 400 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 32px 72px -16px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  overflow: hidden !important;
 }
 
 .modal-header {
-  border-bottom: 1px solid rgba(255,255,255,0.09) !important;
-  position: relative;
+  border-bottom: 1px solid #edf0e8 !important;
+  padding: 1.25rem 1.75rem !important;
+  background: #fafbfa !important;
 }
 
-.modal-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 1.5rem; right: 1.5rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14) 40%, rgba(255,255,255,0.14) 60%, transparent);
-  pointer-events: none;
+.modal-title {
+  color: #23261f !important;
+  font-weight: 600 !important;
+  font-size: 1.15rem !important;
+  letter-spacing: -0.01em !important;
+}
+
+.modal-body {
+  padding: 1.5rem 1.75rem !important;
+  color: #23261f !important;
+  background: #ffffff !important;
 }
 
 .modal-footer {
-  border-top: 1px solid rgba(255,255,255,0.09) !important;
+  border-top: 1px solid #edf0e8 !important;
+  padding: 1rem 1.75rem !important;
+  background: #fafbfa !important;
 }
 
-/* Inputs bên trong modal → glass style */
-.modal-content .form-control,
-.modal-content .form-select,
-.modal-content textarea {
-  background: rgba(255,255,255,0.09) !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  color: #ffffff !important;
-  border-radius: 12px !important;
+.modal-content label,
+.modal-content .form-label {
+  color: #555b4e !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  margin-bottom: 0.35rem !important;
 }
 
-.modal-content .form-control:focus,
-.modal-content .form-select:focus,
-.modal-content textarea:focus {
-  background: rgba(255,255,255,0.14) !important;
-  border-color: var(--lg-moss) !important;
-  box-shadow: 0 0 0 3px rgba(155,189,85,0.22) !important;
-  color: #ffffff !important;
-}
-
-.modal-content .form-control::placeholder,
-.modal-content textarea::placeholder { color: rgba(255,255,255,0.40) !important; }
-
-.modal-content select option { background: #1a2416; color: #ffffff; }
-
-/* Backdrop */
-.modal-backdrop {
-  background-color: rgba(6, 10, 5, 0.70) !important;
-  backdrop-filter: blur(5px) !important;
-  -webkit-backdrop-filter: blur(5px) !important;
-  animation: lg-backdrop-in 0.25s ease forwards;
-}
-.modal-backdrop.show { opacity: 1 !important; }
-
-/* Close button */
-.btn-close {
-  filter: invert(1) !important;
-  opacity: 0.65 !important;
+.modal-content .btn-close {
+  filter: none !important;
+  opacity: 0.45 !important;
   transition: opacity 0.2s ease, transform 0.2s ease !important;
 }
-.btn-close:hover {
+.modal-content .btn-close:hover {
+  opacity: 0.9 !important;
+  transform: rotate(90deg) scale(1.1) !important;
+}
+
+/* Lớp phủ mờ phía sau modal (Backdrop) */
+.modal-backdrop {
+  background-color: rgba(22, 28, 19, 0.75) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+.modal-backdrop.show {
   opacity: 1 !important;
-  transform: scale(1.1) rotate(90deg) !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   5. HOME PAGE PAPER CARDS (post cards, feature cards)
-      Nền sáng → giữ nguyên paper-card, chỉ nâng glass surface nhẹ
-   ════════════════════════════════════════════════════════════════════════════ */
-.paper-card {
-  backdrop-filter: blur(12px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
-  border: 1px solid rgba(220,223,214,0.90) !important;
-  box-shadow:
-    0 24px 56px -20px rgba(20,24,16,0.50),
-    0 2px 0 rgba(255,255,255,0.90) inset !important;
-  transition: transform 400ms var(--lg-spring),
-              box-shadow 400ms var(--lg-spring) !important;
+/* ── 8. NÚT BẤM (BUTTONS) – Dạng viên thuốc thanh lịch ───────────────────── */
+.nature-btn-primary,
+.btn-primary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  height: 48px !important;
+  padding: 0 1.6rem !important;
+  border-radius: 9999px !important;
+  background: #2d3328 !important;
+  color: #ffffff !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  border: none !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 12px 28px -8px rgba(45, 51, 40, 0.65) !important;
+  transition: all 0.22s ease !important;
 }
 
-.paper-card:hover {
-  transform: translateY(-6px) !important;
-  box-shadow:
-    0 40px 80px -20px rgba(20,24,16,0.70),
-    0 2px 0 rgba(255,255,255,0.95) inset,
-    0 0 0 1.5px rgba(155,189,85,0.30) !important;
+.nature-btn-primary:hover,
+.btn-primary:hover {
+  background: #1c2118 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 32px -6px rgba(45, 51, 40, 0.8) !important;
 }
 
-/* Shimmer sweep on hover */
-.paper-card {
-  position: relative;
-  overflow: hidden;
+/* Nút phụ trên nền tối */
+.nature-btn-secondary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  height: 44px !important;
+  padding: 0 1.25rem !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  color: #ffffff !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(8px) !important;
+  transition: all 0.2s ease !important;
 }
-.paper-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    105deg,
-    transparent 40%,
-    rgba(255,255,255,0.14) 50%,
-    transparent 60%
-  );
-  transform: translateX(-100%);
+
+.nature-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Nút phụ bên trong thẻ bài viết trắng */
+.nature-card .nature-btn-secondary,
+.paper-card .nature-btn-secondary {
+  background: rgba(45, 51, 40, 0.05) !important;
+  border: 1px solid rgba(45, 51, 40, 0.12) !important;
+  color: #2d3328 !important;
+}
+
+.nature-card .nature-btn-secondary:hover,
+.paper-card .nature-btn-secondary:hover {
+  background: #2d3328 !important;
+  color: #ffffff !important;
+  border-color: #2d3328 !important;
+}
+
+/* ── 9. THANH ĐIỀU HƯỚNG (NAVBAR DOCK) ───────────────────────────────────── */
+.dock-header {
+  position: fixed;
+  inset-inline: 0;
+  top: 1rem;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  padding-inline: 1rem;
   pointer-events: none;
-  z-index: 1;
-}
-.paper-card:hover::after {
-  animation: lg-card-hover-shine 0.65s var(--lg-ease-out) forwards;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   6. NATURE CARD  –  QUAN TRỌNG: chỉ nâng surface, KHÔNG đổi chữ
-      nature-card được dùng cả trên nền sáng (login/register)
-      và nền tối (profile, checklists) → phải handle từng context
-   ════════════════════════════════════════════════════════════════════════════ */
-
-/* Nền sáng (hero-scene, auth pages) */
-.hero-scene .nature-card,
-.nature-card-wrap .nature-card {
-  backdrop-filter: blur(24px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-  border: 1px solid rgba(255,255,255,0.80) !important;
-  border-top-color: rgba(255,255,255,0.95) !important;
-  box-shadow:
-    0 40px 90px -30px rgba(20,24,16,0.70),
-    0 2px 0 rgba(255,255,255,0.90) inset !important;
+.dock-nav {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(34, 40, 31, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  padding: 0.4rem 0.5rem;
+  border-radius: 9999px !important;
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   7. CATEGORY PAGE  –  nature-card với chữ dark → KHÔNG override bg/color
-      Chỉ enhance shadow, border, shimmer
-   ════════════════════════════════════════════════════════════════════════════ */
-.app-container article.nature-card {
-  /* Giữ background gốc (var(--color-paper) = #f2f3ef) */
-  /* Chỉ nâng shadow và border */
-  box-shadow:
-    0 8px 32px -8px rgba(20,24,16,0.25),
-    0 2px 0 rgba(255,255,255,0.80) inset !important;
-  transition:
-    transform 350ms var(--lg-spring),
-    box-shadow 350ms var(--lg-spring) !important;
-  overflow: hidden;
-  position: relative;
+.dock-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 1.15rem;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: all 0.2s ease-out;
 }
 
-.app-container article.nature-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.80) 40%, rgba(255,255,255,0.80) 60%, transparent);
-  pointer-events: none;
-  z-index: 1;
+.dock-pill:hover {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
-.app-container article.nature-card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow:
-    0 20px 56px -12px rgba(20,24,16,0.40),
-    0 0 0 1.5px rgba(155,189,85,0.25),
-    0 2px 0 rgba(255,255,255,0.90) inset !important;
+.dock-pill.active {
+  background: #f2f3ef !important;
+  color: #23261f !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.20) !important;
+  font-weight: 600;
 }
 
-/* Category badge text fix → dark ink color đọc được trên nền giấy */
-.app-container article.nature-card .nature-badge {
-  color: var(--color-ink) !important;
+/* ── 10. BẢNG BIỂU (TABLES) – Sạch sẽ như Bảng Quản trị ─────────────────── */
+.admin-table,
+.nature-table-wrapper {
+  background: #ffffff !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   8. PROFILE PAGE  –  nature-card dùng nền giấy sáng
-      Text vẫn là var(--color-ink) → giữ nguyên
-   ════════════════════════════════════════════════════════════════════════════ */
-.app-container .nature-card:not(article) {
-  /* Profile / outdoor section cards */
-  box-shadow:
-    0 12px 40px -10px rgba(20,24,16,0.30),
-    0 2px 0 rgba(255,255,255,0.80) inset !important;
-  transition: box-shadow 300ms ease !important;
+.admin-table th,
+.table th {
+  background: #e9ece4 !important;
+  color: #23261f !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 1rem 1.25rem !important;
+  border-bottom: 2px solid #d8dcd2 !important;
 }
 
+.admin-table td,
+.table td {
+  padding: 1.1rem 1.25rem !important;
+  vertical-align: middle !important;
+  color: #2b3026 !important;
+  border-bottom: 1px solid #eef1ea !important;
+}
 
-/* ════════════════════════════════════════════════════════════════════════════
-   9. COMMENT CARDS  (nền tối, chữ trắng → glass dark)
-   ════════════════════════════════════════════════════════════════════════════ */
+.admin-table tr:hover td,
+.table tbody tr:hover td {
+  background-color: rgba(155, 189, 85, 0.08) !important;
+}
+
+/* ── 11. BÌNH LUẬN & THẢO LUẬN (COMMENTS) ────────────────────────────────── */
 .comment-card {
-  background:    rgba(255,255,255,0.055) !important;
-  backdrop-filter: blur(16px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-  border: 1px solid rgba(255,255,255,0.10) !important;
-  border-top-color: rgba(255,255,255,0.20) !important;
+  background: #ffffff !important;
+  border: 1px solid #e7eae2 !important;
   border-radius: 20px !important;
-  box-shadow:
-    0 8px 24px -6px rgba(0,0,0,0.40),
-    0 1px 0 rgba(255,255,255,0.10) inset !important;
-  transition: box-shadow 300ms ease, border-color 300ms ease !important;
+  padding: 1.25rem 1.5rem !important;
+  margin-bottom: 1rem !important;
+  color: #23261f !important;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.06) !important;
 }
 
-.comment-card:hover {
-  border-color: rgba(255,255,255,0.18) !important;
-  box-shadow:
-    0 12px 32px -6px rgba(0,0,0,0.50),
-    0 1px 0 rgba(255,255,255,0.14) inset !important;
+.comment-author {
+  font-weight: 600 !important;
+  color: #3f6620 !important;
+  font-size: 0.95rem !important;
+}
+
+.comment-time {
+  font-size: 0.8rem !important;
+  color: #8c9185 !important;
+}
+
+.comment-text {
+  margin-top: 0.5rem !important;
+  color: #2f3429 !important;
+  line-height: 1.6 !important;
 }
 
 .comment-reply-node > .comment-card {
-  background: rgba(155,189,85,0.07) !important;
-  border-left: 2px solid rgba(155,189,85,0.55) !important;
+  background: #fbfcf9 !important;
+  border-left: 3px solid #9bbd55 !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   10. SEARCH INPUT GROUP  –  Glass upgrade
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ── 12. BỘ TÌM KIẾM (SEARCH INPUT GROUP) ───────────────────────────────── */
 .search-input-group {
-  background: rgba(18, 26, 15, 0.72) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 1px solid rgba(255,255,255,0.13) !important;
-  border-top-color: rgba(255,255,255,0.24) !important;
-  box-shadow:
-    0 8px 24px -6px rgba(0,0,0,0.45),
-    0 1px 0 rgba(255,255,255,0.10) inset !important;
-  transition: border-color 250ms ease, box-shadow 250ms ease !important;
+  background: rgba(34, 40, 31, 0.82) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(14px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.25s ease !important;
 }
 
 .search-input-group:focus-within {
-  border-color: var(--lg-moss) !important;
-  box-shadow:
-    0 0 0 3px rgba(155,189,85,0.20),
-    0 12px 32px -6px rgba(0,0,0,0.50) !important;
+  border-color: #9bbd55 !important;
+  background: rgba(22, 28, 20, 0.95) !important;
+  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.25), 0 12px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
-.search-autocomplete-dropdown {
-  background: rgba(14, 20, 11, 0.95) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  border: 1px solid rgba(155,189,85,0.28) !important;
-  border-top-color: rgba(155,189,85,0.45) !important;
-  box-shadow:
-    0 24px 48px -8px rgba(0,0,0,0.70),
-    0 1px 0 rgba(255,255,255,0.10) inset !important;
+.nature-search-input {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  padding: 0.75rem 1rem !important;
+  outline: none !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   11. NOTIFICATIONS DROPDOWN
-   ════════════════════════════════════════════════════════════════════════════ */
-.notifications-dropdown-menu {
-  background: rgba(18, 26, 15, 0.92) !important;
-  backdrop-filter: blur(32px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
-  border: 1px solid rgba(255,255,255,0.13) !important;
-  border-top-color: rgba(255,255,255,0.26) !important;
-  box-shadow:
-    0 28px 56px -12px rgba(0,0,0,0.75),
-    0 1px 0 rgba(255,255,255,0.12) inset !important;
+.nature-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.55) !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   12. POST DETAIL CONTENT BOX  (nền giấy sáng)
-   ════════════════════════════════════════════════════════════════════════════ */
-.post-content-box {
-  backdrop-filter: blur(16px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
-  border: 1px solid rgba(255,255,255,0.80) !important;
-  border-top-color: rgba(255,255,255,0.95) !important;
-  box-shadow:
-    0 36px 72px -24px rgba(20,24,16,0.60),
-    0 2px 0 rgba(255,255,255,0.90) inset !important;
+/* ── 13. TRANG TẠO BÀI VIẾT FACEBOOK COMPOSER ───────────────────────────── */
+.fb-composer-card {
+  background: #ffffff !important;
+  border-radius: 28px !important;
+  padding: 1.75rem !important;
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.45) !important;
+  color: #23261f !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   13. TOAST  –  Enhance blur
-   ════════════════════════════════════════════════════════════════════════════ */
-.app-toast {
-  backdrop-filter: blur(36px) saturate(220%) contrast(108%) !important;
-  -webkit-backdrop-filter: blur(36px) saturate(220%) contrast(108%) !important;
-  border-top-color: rgba(255,255,255,0.28) !important;
+.fb-composer-title-input {
+  font-size: 1.25rem !important;
+  font-weight: 500 !important;
+  color: #23261f !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #eef1ea !important;
+  border-radius: 0 !important;
+  padding: 0.5rem 0 !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   14. WEATHER WIDGET & STAT CHIPS
-   ════════════════════════════════════════════════════════════════════════════ */
-.weather-widget {
-  backdrop-filter: blur(14px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-  border-top-color: rgba(255,255,255,0.28) !important;
-  box-shadow:
-    0 4px 16px -4px rgba(0,0,0,0.40),
-    0 1px 0 rgba(255,255,255,0.12) inset !important;
+.fb-composer-title-input:focus {
+  border-bottom-color: #9bbd55 !important;
+  box-shadow: none !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   15. CATEGORY SLIDE BUTTONS
-   ════════════════════════════════════════════════════════════════════════════ */
-.category-slide-btn {
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border-top-color: rgba(255,255,255,0.28) !important;
+.fb-composer-content-input {
+  font-size: 1rem !important;
+  color: #23261f !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.75rem 0 !important;
 }
 
-
-/* ════════════════════════════════════════════════════════════════════════════
-   16. PROGRESS BARS  –  Moss gradient
-   ════════════════════════════════════════════════════════════════════════════ */
-.progress {
-  background: rgba(255,255,255,0.10) !important;
-  border-radius: 999px !important;
-  overflow: hidden;
+.fb-composer-content-input:focus {
+  box-shadow: none !important;
 }
 
-.progress-bar {
-  background: linear-gradient(90deg, #6a9e30, #9bbd55) !important;
-  box-shadow: 0 0 8px rgba(155,189,85,0.40) !important;
-  border-radius: 999px !important;
+.fb-composer-toolbar {
+  background: #f8faf5 !important;
+  border: 1px solid #e5eae0 !important;
+  border-radius: 18px !important;
+  padding: 0.65rem 1rem !important;
 }
 
+.fb-composer-tool-btn {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #4a5043 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
 
-/* ════════════════════════════════════════════════════════════════════════════
-   17. MAP container
-   ════════════════════════════════════════════════════════════════════════════ */
-#places-map,
-#map,
-.leaflet-container {
-  border-radius: 24px !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.60) !important;
+.fb-composer-tool-btn:hover {
+  background: #ffffff !important;
+  border-color: #dcdfd6 !important;
+  color: #23261f !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── 14. BẢN ĐỒ DÃ NGOẠI (MAP FRAME) ────────────────────────────────────── */
+#places-map {
+  height: 480px !important;
+  border-radius: 28px !important;
   overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.55) !important;
   background: #1a2217 !important;
 }
 
-#places-map .leaflet-pane,
-#places-map .leaflet-tile-pane,
-#places-map .leaflet-tile-container,
-#map .leaflet-pane,
-#map .leaflet-tile-pane {
-  border-radius: 0 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   18. BUTTONS – Glass pill variants (thêm mới, không override .nature-btn-*)
-   ════════════════════════════════════════════════════════════════════════════ */
-.btn-glass-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0 1.5rem;
-  height: 48px;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, rgba(100,155,40,0.82), rgba(72,118,24,0.92));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(155,189,85,0.50);
-  border-top-color: rgba(200,240,100,0.55);
-  color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  box-shadow: 0 12px 28px -8px rgba(72,118,24,0.65), 0 1px 0 rgba(255,255,255,0.28) inset;
-  transition: transform 300ms var(--lg-spring), box-shadow 300ms var(--lg-spring);
-  position: relative;
-  overflow: hidden;
-}
-.btn-glass-primary::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 100%);
-  border-radius: inherit;
-  pointer-events: none;
-}
-.btn-glass-primary:hover { transform: translateY(-2px); color: #ffffff; box-shadow: 0 20px 40px -8px rgba(72,118,24,0.80), 0 1px 0 rgba(255,255,255,0.35) inset; }
-.btn-glass-primary:active { transform: scale(0.98); }
-
-.btn-glass-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0 1.25rem;
-  height: 44px;
-  border-radius: 9999px;
-  background:   rgba(255,255,255,0.09);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.20);
-  border-top-color: rgba(255,255,255,0.32);
-  color: rgba(255,255,255,0.90);
-  font-size: 0.875rem;
-  text-decoration: none;
-  cursor: pointer;
-  box-shadow: var(--lg-shadow-sm);
-  transition: all 280ms var(--lg-spring);
-}
-.btn-glass-secondary:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.32); color: #ffffff; transform: translateY(-1px); }
-
-.btn-glass-icon {
-  width: 42px; height: 42px;
-  border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.09);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.20);
-  border-top-color: rgba(255,255,255,0.32);
-  color: rgba(255,255,255,0.80);
-  cursor: pointer;
-  transition: all 250ms var(--lg-spring);
-  box-shadow: var(--lg-shadow-sm);
-}
-.btn-glass-icon:hover { background: rgba(255,255,255,0.16); color: #ffffff; transform: scale(1.08); }
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   19. GLASS UTILITY CLASSES (dùng chủ động trong view)
-   ════════════════════════════════════════════════════════════════════════════ */
-
-/* Surface glass tối (dùng cho outdoor pages nếu muốn) */
-.glass-dark {
-  background:    rgba(16, 24, 12, 0.72) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border: 1px solid rgba(255,255,255,0.11) !important;
-  border-top-color: rgba(255,255,255,0.22) !important;
-  color: #e8ede0 !important;
-  box-shadow: var(--lg-shadow-md) !important;
-}
-
-.glass-dark * { color: inherit; }
-.glass-dark h1, .glass-dark h2, .glass-dark h3,
-.glass-dark h4, .glass-dark h5 { color: #ffffff; }
-
-/* Light glass surface */
-.glass-light {
-  background:    rgba(242,243,239,0.88) !important;
-  backdrop-filter: blur(20px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-  border: 1px solid rgba(255,255,255,0.80) !important;
-  border-top-color: rgba(255,255,255,0.95) !important;
-  box-shadow: var(--lg-shadow-md) !important;
-}
-
-/* Badges */
-.glass-badge {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
-  background: rgba(255,255,255,0.09);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.88);
-}
-
-.glass-badge-moss  { background: rgba(100,160,40,0.22); border-color: rgba(155,189,85,0.40); color: #c8f07a; }
-.glass-badge-amber { background: rgba(200,140,30,0.22); border-color: rgba(255,190,80,0.40); color: #ffd580; }
-.glass-badge-danger{ background: rgba(200,40,40,0.22);  border-color: rgba(255,100,100,0.40); color: #ffaaaa; }
-
-/* Divider */
-.glass-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14) 25%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.14) 75%, transparent);
-  margin: 1.5rem 0; border: none;
-}
-
-/* Iridescent animated border */
-.lg-iridescent {
-  position: relative;
-  isolation: isolate;
-}
-.lg-iridescent::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--lg-spin, 0deg),
-    rgba(255,255,255,0.90), #9bbd55, #7fd6d2,
-    rgba(255,185,0,0.80), #c084fc, rgba(255,255,255,0.90)
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask:         linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: lg-spin 4s linear infinite;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.80;
-}
-
-/* FAB */
-.fab-glass {
-  position: fixed; bottom: 1.5rem; right: 1.5rem;
-  width: 50px; height: 50px; border-radius: 50%;
-  background: rgba(100,160,40,0.78);
-  backdrop-filter: blur(16px); border: 1px solid rgba(155,189,85,0.50);
-  color: #ffffff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; box-shadow: var(--lg-shadow-md), 0 0 20px rgba(155,189,85,0.28);
-  cursor: pointer; z-index: 999;
-  text-decoration: none;
-  transition: transform 300ms var(--lg-spring), box-shadow 300ms var(--lg-spring);
-}
-.fab-glass:hover { transform: translateY(-3px) scale(1.08); color: #ffffff; }
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   20. COMPOSER (Tạo bài viết Facebook-style) – glass dark card
-   ════════════════════════════════════════════════════════════════════════════ */
-.composer-glass {
-  background: rgba(16, 24, 12, 0.76) !important;
-  backdrop-filter: blur(32px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
-  border: 1px solid rgba(255,255,255,0.13) !important;
-  border-top-color: rgba(255,255,255,0.28) !important;
-  border-radius: 28px !important;
-  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.14) inset !important;
-  color: #ffffff !important;
-}
-
-.composer-chip {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  padding: 0.3rem 0.85rem; border-radius: 9999px;
-  font-size: 12.5px; font-weight: 500;
-  background: rgba(100,160,40,0.18);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(155,189,85,0.35); color: #c8f07a;
-  cursor: pointer; transition: all 220ms ease;
-}
-.composer-chip:hover { background: rgba(100,160,40,0.28); border-color: rgba(155,189,85,0.55); }
-
-.composer-toolbar {
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 18px; padding: 0.65rem 1rem;
-}
-
-.composer-toolbar-btn {
-  display: inline-flex; flex-direction: column; align-items: center; gap: 0.25rem;
-  padding: 0.5rem 0.75rem; border-radius: 14px;
-  border: 1px solid transparent; background: transparent;
-  color: rgba(255,255,255,0.75); font-size: 0.75rem; font-weight: 400;
-  cursor: pointer; transition: all 220ms var(--lg-spring);
-}
-.composer-toolbar-btn:hover {
-  background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.16);
-  color: #ffffff; transform: translateY(-2px);
-}
-.composer-toolbar-btn i { font-size: 1.25rem; }
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   21. SCROLLBAR
-   ════════════════════════════════════════════════════════════════════════════ */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.12); border-radius: 999px; }
-::-webkit-scrollbar-thumb { background: rgba(155,189,85,0.35); border-radius: 999px; border: 1px solid rgba(255,255,255,0.08); }
-::-webkit-scrollbar-thumb:hover { background: rgba(155,189,85,0.55); }
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   22. FOCUS RING
-   ════════════════════════════════════════════════════════════════════════════ */
-*:focus-visible {
-  outline: 2px solid rgba(155,189,85,0.65) !important;
-  outline-offset: 2px !important;
-}
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   23. BODY BACKGROUND  –  Richer depth gradient
-   ════════════════════════════════════════════════════════════════════════════ */
-body {
-  background:
-    radial-gradient(ellipse 100% 80% at 20% 10%, rgba(80,100,55,0.15) 0%, transparent 55%),
-    radial-gradient(ellipse 80% 60% at 80% 90%, rgba(60,80,40,0.12) 0%, transparent 50%),
-    linear-gradient(170deg, #2a2e24 0%, #1e2419 50%, #181d14 100%) !important;
-  background-attachment: fixed !important;
-}
-
-
-/* ════════════════════════════════════════════════════════════════════════════
-   24. REDUCED MOTION
-   ════════════════════════════════════════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  .lg-iridescent::after { animation: none; }
-  .paper-card, .paper-card:hover, .app-container article.nature-card:hover {
-    transition: none !important; animation: none !important;
-  }
-  .modal-content { animation: none !important; }
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
-   25. MOBILE  –  Giảm blur trên thiết bị yếu
-   ════════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .modal-content {
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  }
-  .dock-nav {
-    backdrop-filter: blur(16px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-  }
+/* ── 15. TOAST THÔNG BÁO GÓC PHẢI ───────────────────────────────────────── */
+.app-toast {
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
 }
