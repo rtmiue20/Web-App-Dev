@@ -1219,8 +1219,8 @@ body {
 }
 
 /* ==========================================================================
-   Toast Notifications – 4 loại: Success, Error, Warning, Info
-   Phong cách: Colorful Gradient + Blob Icon (theo mẫu thiết kế)
+   Toast Notifications - 4 loai: Success, Error, Warning, Info
+   Phong cach: Colorful Liquid Bubble Card (chuan theo mau thiet ke)
    ========================================================================== */
 #flash-toast-container {
   position: fixed !important;
@@ -1231,10 +1231,11 @@ body {
   z-index: 999999 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 0.65rem !important;
-  width: 340px !important;
+  gap: 1.15rem !important;
+  width: 350px !important;
   max-width: calc(100vw - 2rem) !important;
   pointer-events: none !important;
+  padding-top: 14px !important; /* Chừa khoảng trống cho bubble badge nhô lên */
 }
 
 @media (max-width: 576px) {
@@ -1246,151 +1247,190 @@ body {
   }
 }
 
-/* ─── Toast base ─────────────────────────────────────────────────────────── */
+/* Toast Card Base */
 .app-toast {
   pointer-events: auto !important;
   position: relative !important;
+  border-radius: 20px !important;
+  min-height: 74px !important;
+  box-shadow: 0 14px 34px -6px rgba(0, 0, 0, 0.42), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  animation: toastSlideIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
   display: flex !important;
-  align-items: stretch !important;
-  border-radius: 14px !important;
-  overflow: hidden !important;
-  min-height: 72px !important;
-  box-shadow: 0 10px 36px -6px rgba(0,0,0,0.38), 0 2px 8px rgba(0,0,0,0.18) !important;
-  animation: toastSlideIn 0.38s cubic-bezier(0.34,1.56,0.64,1) both !important;
+  align-items: center !important;
+  padding: 0.95rem 2.6rem 0.95rem 1.4rem !important;
+  overflow: visible !important;
+  color: #ffffff !important;
 }
 
-/* ─── Type backgrounds ───────────────────────────────────────────────────── */
-.app-toast-success {
-  background: linear-gradient(135deg, #1a7a4a 0%, #27ae60 55%, #2ecc71 100%) !important;
-}
-.app-toast-error {
-  background: linear-gradient(135deg, #962d2d 0%, #c0392b 55%, #e74c3c 100%) !important;
-}
-.app-toast-warning {
-  background: linear-gradient(135deg, #c47d11 0%, #d68910 55%, #f39c12 100%) !important;
-}
-.app-toast-info {
-  background: linear-gradient(135deg, #1a4fa0 0%, #2471a3 55%, #2e86c1 100%) !important;
-}
-
-/* ─── Left icon column ───────────────────────────────────────────────────── */
-.toast-icon-col {
-  width: 72px !important;
-  min-width: 72px !important;
+/* Bubble Badge nhô lên ở góc trên bên trái */
+.toast-bubble-badge {
+  position: absolute !important;
+  top: -12px !important;
+  left: 20px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  position: relative !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+  z-index: 10 !important;
+}
+
+/* Organic decorative bubbles bên trái */
+.toast-decor-blobs {
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: 20px !important;
   overflow: hidden !important;
-  flex-shrink: 0 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
 }
 
-/* Blob décor blob 1 */
-.toast-icon-col::before {
-  content: '' !important;
+.toast-decor-blobs .blob {
   position: absolute !important;
-  width: 68px !important;
-  height: 68px !important;
-  background: rgba(255,255,255,0.14) !important;
-  border-radius: 42% 58% 60% 40% / 40% 44% 56% 60% !important;
-  left: -18px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
+  border-radius: 50% !important;
 }
 
-/* Blob décor blob 2 */
-.toast-icon-col::after {
-  content: '' !important;
-  position: absolute !important;
-  width: 48px !important;
-  height: 48px !important;
-  background: rgba(255,255,255,0.09) !important;
-  border-radius: 60% 40% 30% 70% / 50% 60% 40% 50% !important;
-  right: -10px !important;
-  bottom: -12px !important;
+/* 4 đốm bong bóng hữu cơ tạo hiệu ứng bọt khí */
+.toast-decor-blobs .blob-1 {
+  width: 80px !important;
+  height: 80px !important;
+  left: -22px !important;
+  bottom: -28px !important;
+}
+.toast-decor-blobs .blob-2 {
+  width: 44px !important;
+  height: 44px !important;
+  left: 38px !important;
+  bottom: 6px !important;
+}
+.toast-decor-blobs .blob-3 {
+  width: 22px !important;
+  height: 22px !important;
+  left: 24px !important;
+  top: 14px !important;
+}
+.toast-decor-blobs .blob-4 {
+  width: 14px !important;
+  height: 14px !important;
+  left: 62px !important;
+  top: 10px !important;
 }
 
-.toast-icon-inner {
+/* 4 bảng màu chính xác theo mẫu thiết kế */
+/* 1. SUCCESS (Green Emerald / Mint) */
+.app-toast-success {
+  background: linear-gradient(135deg, #1b8a51 0%, #22a05e 50%, #2ecc71 100%) !important;
+}
+.app-toast-success .toast-bubble-badge {
+  background: #146c3e !important;
+}
+.app-toast-success .toast-decor-blobs .blob {
+  background: rgba(16, 92, 52, 0.45) !important;
+}
+
+/* 2. FAIL / ERROR (Coral Ruby / Crimson) */
+.app-toast-error {
+  background: linear-gradient(135deg, #d32f2f 0%, #e53935 50%, #f44336 100%) !important;
+}
+.app-toast-error .toast-bubble-badge {
+  background: #a81c1c !important;
+}
+.app-toast-error .toast-decor-blobs .blob {
+  background: rgba(140, 20, 20, 0.45) !important;
+}
+
+/* 3. WARNING (Amber Sunset / Orange) */
+.app-toast-warning {
+  background: linear-gradient(135deg, #e67e22 0%, #f39c12 50%, #f5b041 100%) !important;
+}
+.app-toast-warning .toast-bubble-badge {
+  background: #ba5d0b !important;
+}
+.app-toast-warning .toast-decor-blobs .blob {
+  background: rgba(160, 75, 10, 0.45) !important;
+}
+
+/* 4. HELP / INFO (Cobalt Sky / Blue) */
+.app-toast-info {
+  background: linear-gradient(135deg, #1976d2 0%, #2196f3 50%, #42a5f5 100%) !important;
+}
+.app-toast-info .toast-bubble-badge {
+  background: #0d47a1 !important;
+}
+.app-toast-info .toast-decor-blobs .blob {
+  background: rgba(13, 71, 161, 0.45) !important;
+}
+
+/* Text Content */
+.toast-body-content {
   position: relative !important;
   z-index: 2 !important;
-  width: 38px !important;
-  height: 38px !important;
-  border-radius: 50% !important;
-  background: rgba(255,255,255,0.22) !important;
-  backdrop-filter: blur(4px) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 1.1rem !important;
-  color: #fff !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important;
-}
-
-/* ─── Text column ────────────────────────────────────────────────────────── */
-.toast-text-col {
   flex: 1 !important;
   min-width: 0 !important;
-  padding: 0.85rem 0.5rem 0.85rem 0.4rem !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
 }
 
 .toast-title {
-  font-size: 13.5px !important;
+  font-size: 14.5px !important;
   font-weight: 700 !important;
   color: #ffffff !important;
   letter-spacing: -0.01em !important;
   margin-bottom: 2px !important;
   line-height: 1.25 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
 }
 
 .toast-desc {
-  font-size: 12px !important;
-  color: rgba(255,255,255,0.90) !important;
+  font-size: 12.5px !important;
+  color: rgba(255, 255, 255, 0.95) !important;
   line-height: 1.4 !important;
   word-break: break-word !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* ─── Close button ───────────────────────────────────────────────────────── */
+/* Nút Close 'x' */
 .toast-close-btn {
+  position: absolute !important;
+  top: 10px !important;
+  right: 12px !important;
   width: 26px !important;
   height: 26px !important;
-  min-width: 26px !important;
   border-radius: 50% !important;
   border: none !important;
-  background: rgba(255,255,255,0.18) !important;
-  color: #fff !important;
-  font-size: 11px !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  margin: auto 0.75rem auto 0 !important;
-  align-self: flex-start !important;
-  margin-top: 0.75rem !important;
-  transition: background 0.15s, transform 0.15s !important;
-  flex-shrink: 0 !important;
+  z-index: 5 !important;
+  transition: all 0.18s ease !important;
 }
 
 .toast-close-btn:hover {
-  background: rgba(255,255,255,0.35) !important;
-  transform: scale(1.12) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  transform: scale(1.1) !important;
 }
 
-/* ─── Progress bar ───────────────────────────────────────────────────────── */
+/* Progress bar ở đáy thẻ */
 .toast-progress-bar {
   position: absolute !important;
   bottom: 0 !important;
   left: 0 !important;
-  height: 3px !important;
+  height: 3.5px !important;
   width: 100% !important;
-  background: rgba(255,255,255,0.45) !important;
-  border-radius: 0 0 0 14px !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+  border-radius: 0 0 20px 20px !important;
   animation: toastProgress 5.5s linear forwards !important;
+  z-index: 3 !important;
 }
 
-/* ─── Animations ─────────────────────────────────────────────────────────── */
+/* Animations */
 @keyframes toastSlideIn {
   0%   { opacity: 0; transform: translateX(60px) scale(0.88); }
   65%  { opacity: 1; transform: translateX(-4px) scale(1.02); }
@@ -1405,7 +1445,7 @@ body {
 .app-toast.toast-hiding {
   opacity: 0 !important;
   transform: translateX(50px) scale(0.88) !important;
-  transition: all 0.28s cubic-bezier(0.4,0,1,1) !important;
+  transition: all 0.28s cubic-bezier(0.4, 0, 1, 1) !important;
   pointer-events: none !important;
 }
 

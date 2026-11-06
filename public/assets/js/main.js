@@ -49,21 +49,26 @@ window.showToast = function(message, type, durationMs) {
   toast.setAttribute('role', 'alert');
 
   var closeId = 'tc-' + Date.now();
-  toast.innerHTML =
-    '<div class="toast-icon-col">' +
-      '<div class="toast-icon-inner"><i class="bi ' + cfg.icon + '"></i></div>' +
-    '</div>' +
-    '<div class="toast-text-col">' +
-      '<div class="toast-title">' + cfg.title + '</div>' +
-      '<div class="toast-desc"></div>' +
-    '</div>' +
-    '<button type="button" class="toast-close-btn" id="' + closeId + '" aria-label="Đóng">' +
-      '<i class="bi bi-x-lg"></i>' +
-    '</button>' +
-    '<div class="toast-progress-bar" style="animation-duration:' + (durationMs/1000) + 's"></div>';
+      toast.innerHTML =
+      '<div class="toast-bubble-badge">' +
+        '<i class="bi ' + cfg.icon + '"></i>' +
+      '</div>' +
+      '<div class="toast-decor-blobs" aria-hidden="true">' +
+        '<span class="blob blob-1"></span>' +
+        '<span class="blob blob-2"></span>' +
+        '<span class="blob blob-3"></span>' +
+        '<span class="blob blob-4"></span>' +
+      '</div>' +
+      '<div class="toast-body-content">' +
+        '<div class="toast-title">' + cfg.title + '</div>' +
+        '<div class="toast-desc"></div>' +
+      '</div>' +
+      '<button type="button" class="toast-close-btn" id="' + closeId + '" aria-label="Đóng">' +
+        '<i class="bi bi-x-lg"></i>' +
+      '</button>' +
+      '<div class="toast-progress-bar" style="animation-duration:' + (durationMs/1000) + 's"></div>';
 
-  // Gán textContent an toàn (tránh XSS)
-  toast.querySelector('.toast-desc').textContent = String(message || '');
+  // toast.querySelector('.toast-desc').textContent = String(message || '');
 
   container.appendChild(toast);
 

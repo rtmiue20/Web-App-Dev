@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $successMessage = $success  ?? Session::flash('success');
 $errorMessage   = $message  ?? Session::flash('error');
 $warningMessage = Session::flash('warning');
@@ -11,12 +11,16 @@ function renderToast(string $type, string $title, string $icon, string $message)
     $safeMsg = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
     return <<<HTML
         <div class="app-toast app-toast-{$type}" role="alert">
-            <div class="toast-icon-col">
-                <div class="toast-icon-inner">
-                    <i class="bi {$icon}"></i>
-                </div>
+            <div class="toast-bubble-badge">
+                <i class="bi {$icon}"></i>
             </div>
-            <div class="toast-text-col">
+            <div class="toast-decor-blobs" aria-hidden="true">
+                <span class="blob blob-1"></span>
+                <span class="blob blob-2"></span>
+                <span class="blob blob-3"></span>
+                <span class="blob blob-4"></span>
+            </div>
+            <div class="toast-body-content">
                 <div class="toast-title">{$title}</div>
                 <div class="toast-desc">{$safeMsg}</div>
             </div>
