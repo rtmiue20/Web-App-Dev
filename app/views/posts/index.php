@@ -16,7 +16,7 @@ $filterQuery = $catQuery . $sortQuery;
             <p class="page-subtitle">Khám phá kinh nghiệm, cẩm nang và hành trình thực tế từ các phượt thủ.</p>
         </div>
         <div>
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-primary px-4 py-2" style="width: auto; height: 46px;">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-primary px-4 py-2 w-100 w-sm-auto d-inline-flex justify-content-center align-items-center" style="height: 46px;">
                 <i class="bi bi-pencil-fill me-2"></i> Viết bài chia sẻ
             </a>
         </div>
@@ -33,7 +33,7 @@ $filterQuery = $catQuery . $sortQuery;
                     <input type="text" 
                            id="forumSearchInput" 
                            class="form-control border-0 nature-search-input" 
-                           placeholder="Tìm nhanh bài viết, địa điểm (ví dụ: Tà Xùa, Đà Lạt, lều cắm trại...)" 
+                           placeholder="Tìm nhanh bài viết, địa điểm (Tà Xùa, Đà Lạt, lều cắm trại...)" 
                            autocomplete="off">
                     <span class="input-group-text bg-transparent border-0 pe-3" id="searchSpinner" style="display: none;">
                         <span class="spinner-border spinner-border-sm text-success" role="status"></span>
@@ -52,7 +52,7 @@ $filterQuery = $catQuery . $sortQuery;
                     <div class="category-slidebar-wrapper position-relative d-flex align-items-center">
                         <!-- Nút trượt sang trái -->
                         <button type="button" 
-                                class="category-slide-btn category-slide-prev me-2" 
+                                class="category-slide-btn category-slide-prev me-2 d-none d-md-flex" 
                                 id="catSlidePrev" 
                                 aria-label="Cuộn sang trái" 
                                 title="Xem các chuyên mục trước">
@@ -64,14 +64,14 @@ $filterQuery = $catQuery . $sortQuery;
                             <div class="category-slide-fade category-slide-fade-start" id="catFadeStart"></div>
                             
                             <!-- Track trượt ngang chứa các danh mục -->
-                            <div class="category-slidebar-track d-flex align-items-center gap-2" id="catSlideTrack">
+                            <div class="category-slidebar-track d-flex align-items-center gap-2" id="catSlideTrack" style="overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
                                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?sort=<?= urlencode($selectedSort) ?>" 
-                                   class="dock-pill <?= empty($selectedCategoryId) ? 'active' : '' ?>">
+                                   class="dock-pill text-nowrap flex-shrink-0 <?= empty($selectedCategoryId) ? 'active' : '' ?>">
                                     Tất cả
                                 </a>
                                 <?php foreach ($categories as $cat): ?>
                                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?category=<?= (int)$cat['id'] ?>&sort=<?= urlencode($selectedSort) ?>" 
-                                       class="dock-pill <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
+                                       class="dock-pill text-nowrap flex-shrink-0 <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
                                         <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
                                     </a>
                                 <?php endforeach; ?>
@@ -82,7 +82,7 @@ $filterQuery = $catQuery . $sortQuery;
 
                         <!-- Nút trượt sang phải -->
                         <button type="button" 
-                                class="category-slide-btn category-slide-next ms-2" 
+                                class="category-slide-btn category-slide-next ms-2 d-none d-md-flex" 
                                 id="catSlideNext" 
                                 aria-label="Cuộn sang phải" 
                                 title="Xem thêm chuyên mục">

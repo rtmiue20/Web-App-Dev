@@ -124,28 +124,28 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             <div class="vr mx-2 bg-secondary opacity-25 d-none d-md-block" style="height: 24px;"></div>
 
             <!-- Admin / Moderator Menus -->
-            <nav class="d-flex align-items-center gap-1">
+            <nav class="d-flex align-items-center gap-1 flex-nowrap" style="overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin" 
-                   class="dock-pill <?= $isActive('/admin') ? 'active' : '' ?>">
+                   class="dock-pill text-nowrap <?= $isActive('/admin') ? 'active' : '' ?>">
                     <i class="bi bi-speedometer2 me-1"></i> Dashboard
                 </a>
                 <?php if ($isFullAdmin): ?>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" 
-                       class="dock-pill <?= $isActive('/admin/categories') ? 'active' : '' ?>">
+                       class="dock-pill text-nowrap <?= $isActive('/admin/categories') ? 'active' : '' ?>">
                         <i class="bi bi-tags me-1"></i> Chuyên mục
                     </a>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products" 
-                       class="dock-pill <?= $isActive('/admin/products') ? 'active' : '' ?>" title="Quản lý dụng cụ & thiết bị">
+                       class="dock-pill text-nowrap <?= $isActive('/admin/products') ? 'active' : '' ?>" title="Quản lý dụng cụ & thiết bị">
                         <i class="bi bi-tools me-1"></i> Dụng cụ
                     </a>
                 <?php endif; ?>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" 
-                   class="dock-pill <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Kiểm duyệt & Quản lý bài viết">
+                   class="dock-pill text-nowrap <?= $isActive('/admin/posts') ? 'active' : '' ?>" title="Kiểm duyệt & Quản lý bài viết">
                     <i class="bi bi-file-earmark-text me-1"></i> Bài viết
                 </a>
                 <?php if ($isFullAdmin): ?>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" 
-                       class="dock-pill <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên, Phân quyền RBAC & Cấp lại mật khẩu">
+                       class="dock-pill text-nowrap <?= $isActive('/admin/users') ? 'active' : '' ?>" title="Quản lý thành viên, Phân quyền RBAC & Cấp lại mật khẩu">
                         <i class="bi bi-people me-1"></i> Thành viên
                     </a>
                 <?php endif; ?>
@@ -155,7 +155,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         <div class="d-flex align-items-center gap-2">
             <!-- Back to user forum -->
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" 
-               class="dock-pill" style="color: var(--color-moss); border-color: rgba(155, 189, 85, 0.3);">
+               class="dock-pill text-nowrap" style="color: var(--color-moss); border-color: rgba(155, 189, 85, 0.3);">
                 <i class="bi bi-arrow-left-circle me-1"></i> Diễn đàn
             </a>
 
