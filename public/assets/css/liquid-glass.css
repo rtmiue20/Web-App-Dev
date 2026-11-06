@@ -1,4 +1,4 @@
-﻿/*
+/*
  * ========================================================================
  *   LIQUID GLASS DESIGN SYSTEM  –  v2 (Safe Mode)
  *   Outdoor Forum – Nature Edition
@@ -154,7 +154,7 @@
   background: rgba(255,255,255,0.09) !important;
   border: 1px solid rgba(255,255,255,0.18) !important;
   color: #ffffff !important;
-  border-radius: 12px !important;
+  border-radius: 12px;
 }
 
 .modal-content .form-control:focus,
@@ -170,6 +170,35 @@
 .modal-content textarea::placeholder { color: rgba(255,255,255,0.40) !important; }
 
 .modal-content select option { background: #1a2416; color: #ffffff; }
+
+/* Input group addon bên trong modal */
+.modal-content .input-group-text {
+  background: rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: #ffffff !important;
+}
+
+/* Đảm bảo bo góc của input-group liền mạch hoàn toàn */
+.modal-content .input-group {
+  border-radius: 12px;
+}
+.modal-content .input-group > .form-control:first-child,
+.modal-content .input-group > .input-group-text:first-child {
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.modal-content .input-group > .form-control:last-child,
+.modal-content .input-group > .input-group-text:last-child {
+  border-top-right-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+.modal-content .input-group > :not(:first-child) {
+  margin-left: -1px;
+}
 
 /* Backdrop */
 .modal-backdrop {
@@ -260,7 +289,7 @@
 
 
 /* ════════════════════════════════════════════════════════════════════════════
-   7. CATEGORY PAGE  –  nature-card với chữ dark → KHÔNG override bg/color
+   7. CATEGORY PAGE & OUTDOOR TRIPS – nature-card với chữ dark
       Chỉ enhance shadow, border, shimmer
    ════════════════════════════════════════════════════════════════════════════ */
 .app-container article.nature-card {
@@ -297,6 +326,32 @@
 /* Category badge text fix → dark ink color đọc được trên nền giấy */
 .app-container article.nature-card .nature-badge {
   color: var(--color-ink) !important;
+}
+
+/* Fix nút secondary và văn bản trên thẻ nền sáng (.nature-card) để không bị chữ trắng chìm */
+.nature-card .nature-btn-secondary {
+  background: rgba(32, 37, 28, 0.08) !important;
+  border: 1px solid rgba(32, 37, 28, 0.18) !important;
+  color: #1e241b !important;
+}
+
+.nature-card .nature-btn-secondary:hover {
+  background: rgba(32, 37, 28, 0.16) !important;
+  border-color: rgba(32, 37, 28, 0.3) !important;
+  color: #0d120a !important;
+  transform: translateY(-1px);
+}
+
+.nature-card .text-muted {
+  color: #586150 !important;
+}
+
+.nature-card h1, .nature-card h2, .nature-card h3, .nature-card h4, .nature-card h5, .nature-card h6 {
+  color: #1a2217 !important;
+}
+
+.nature-card .border-top {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 

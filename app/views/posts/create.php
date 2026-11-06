@@ -4,7 +4,7 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 $currentUser = Session::get('user');
 $userName = is_array($currentUser) ? ($currentUser['username'] ?? 'Bạn') : 'Bạn';
 $userAvatar = is_array($currentUser) && !empty($currentUser['avatar_path']) ? upload_url($currentUser['avatar_path']) : null;
-$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$escape = static function($value): string { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); };
 ?>
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -277,36 +277,148 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
     box-shadow: 0 8px 24px -6px rgba(155, 189, 85, 0.5);
 }
 
-/* Modal Form Styles */
+/* ══════════════════════════════════════════════════════════════
+   LIQUID GLASS MODALS FOR POST COMPOSER (Nature Dark Edition)
+   ══════════════════════════════════════════════════════════════ */
 .modal-content.fb-modal-box {
-    border-radius: 28px;
-    border: none;
-    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.4);
+    background: rgba(14, 20, 11, 0.95) !important;
+    backdrop-filter: blur(40px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    border-top-color: rgba(255, 255, 255, 0.32) !important;
+    border-radius: 28px !important;
+    box-shadow: 0 36px 90px -15px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.18) inset !important;
     overflow: hidden;
+    color: #ffffff !important;
 }
 
 .fb-modal-box .modal-header {
-    background: #fbfcf9;
-    border-bottom: 1px solid #edf0ea;
-    padding: 1.1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 1.15rem 1.5rem !important;
+    position: relative;
 }
 
 .fb-modal-box .modal-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1c2219;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.2px;
 }
 
 .fb-modal-box .modal-body {
-    padding: 1.5rem;
+    padding: 1.5rem !important;
     max-height: 75vh;
     overflow-y: auto;
+    color: #ffffff !important;
 }
 
 .fb-modal-box .modal-footer {
-    background: #fbfcf9;
-    border-top: 1px solid #edf0ea;
-    padding: 0.85rem 1.5rem;
+    background: rgba(0, 0, 0, 0.22) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 0.95rem 1.5rem !important;
+}
+
+/* Close button - Crisp white */
+.fb-modal-box .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%) !important;
+    opacity: 0.8 !important;
+    transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+.fb-modal-box .btn-close:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) rotate(90deg) !important;
+}
+
+/* Labels inside modal */
+.fb-modal-box .nature-label,
+.fb-modal-box .form-label {
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+}
+
+/* Inputs and Selects inside modal */
+.fb-modal-box .nature-input,
+.fb-modal-box .nature-textarea,
+.fb-modal-box .form-control,
+.fb-modal-box .form-select {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+    border-radius: 14px !important;
+    font-size: 14.5px !important;
+    transition: all 0.2s ease;
+}
+
+.fb-modal-box .nature-input:focus,
+.fb-modal-box .nature-textarea:focus,
+.fb-modal-box .form-control:focus,
+.fb-modal-box .form-select:focus {
+    background: rgba(255, 255, 255, 0.13) !important;
+    border-color: #9bbd55 !important;
+    box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.28) !important;
+    color: #ffffff !important;
+}
+
+.fb-modal-box .nature-input::placeholder,
+.fb-modal-box .nature-textarea::placeholder,
+.fb-modal-box .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.fb-modal-box select option,
+.fb-modal-box select optgroup {
+    background: #182215 !important;
+    color: #ffffff !important;
+}
+
+/* Accordion inside modal */
+.fb-modal-box .accordion-item {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 18px !important;
+    overflow: hidden;
+}
+
+.fb-modal-box .accordion-button {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.fb-modal-box .accordion-button:not(.collapsed) {
+    background: rgba(155, 189, 85, 0.15) !important;
+    color: #c4e482 !important;
+}
+.fb-modal-box .accordion-button::after {
+    filter: invert(1) brightness(150%) !important;
+}
+
+/* Tool Item Marquee Animation */
+.tool-name-marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+}
+.tool-name-marquee-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: toolMarqueeScroll 12s linear infinite;
+    will-change: transform;
+}
+.tool-item label:hover .tool-name-marquee-text {
+    animation-play-state: paused;
+}
+@keyframes toolMarqueeScroll {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(0); }
+    80% { transform: translateX(calc(-100% + 160px)); }
+    100% { transform: translateX(0); }
 }
 </style>
 
@@ -475,27 +587,27 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                         <h5 class="modal-title" id="modalImagesLabel">
                             <i class="bi bi-images text-success me-2"></i>Thêm hình ảnh bài viết
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Dropzone -->
                         <div class="upload-dropzone p-4 text-center rounded-4 border border-2 border-dashed" 
                              id="imageDropzone" 
-                             style="background: #fafbfa; border-color: rgba(155, 189, 85, 0.4) !important; cursor: pointer; transition: all 0.2s ease;">
-                            <i class="bi bi-cloud-arrow-up-fill fs-1 text-success d-block mb-2"></i>
-                            <div class="fw-semibold text-dark mb-1">Nhấn để chọn ảnh, hoặc kéo thả file vào đây</div>
-                            <div class="text-muted small">Hỗ trợ JPG, PNG, WEBP &lt; 2MB/ảnh. Có thể chọn cùng lúc nhiều ảnh để tạo Album ảnh.</div>
+                             style="background: rgba(255, 255, 255, 0.04); border-color: rgba(155, 189, 85, 0.45) !important; cursor: pointer; transition: all 0.2s ease;">
+                            <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2" style="color: #9bbd55;"></i>
+                            <div class="fw-semibold text-white mb-1">Nhấn để chọn ảnh, hoặc kéo thả file vào đây</div>
+                            <div class="small" style="color: rgba(255, 255, 255, 0.7);">Hỗ trợ JPG, PNG, WEBP &lt; 2MB/ảnh. Có thể chọn cùng lúc nhiều ảnh để tạo Album ảnh.</div>
                             <input class="d-none" id="imagesInput" name="images[]" type="file" multiple accept="image/png, image/jpeg, image/webp">
                         </div>
 
                         <!-- Previews -->
                         <div class="row g-2 mt-3 d-none" id="imagePreviewContainer"></div>
-                        <div class="small text-muted mt-2 d-none" id="imagePreviewCount"></div>
+                        <div class="small mt-2 d-none" id="imagePreviewCount" style="color: rgba(255, 255, 255, 0.85);"></div>
 
                         <!-- Cloud URL Input -->
-                        <div class="mt-4 pt-3 border-top">
-                            <label class="form-label small fw-semibold text-dark mb-1">
-                                <i class="bi bi-link-45deg text-primary me-1"></i>Hoặc dán Link ảnh Cloud (ImgBB / Cloudinary)
+                        <div class="mt-4 pt-3" style="border-top: 1px solid rgba(255, 255, 255, 0.1) !important;">
+                            <label class="form-label small fw-semibold text-white mb-1">
+                                <i class="bi bi-link-45deg me-1" style="color: #9bbd55;"></i>Hoặc dán Link ảnh Cloud (ImgBB / Cloudinary)
                             </label>
                             <input type="text"
                                    name="cloud_image_url"
@@ -525,7 +637,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                         <h5 class="modal-title" id="modalLocationLabel">
                             <i class="bi bi-geo-alt-fill text-danger me-2"></i>Check-in Địa điểm & Bản đồ
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Location Name with Map Picker Button -->
@@ -546,7 +658,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                                     <i class="bi bi-map-fill"></i>
                                 </button>
                             </div>
-                            <small class="text-muted mt-1 d-block">Bấm vào biểu tượng bản đồ bên phải ô nhập để tìm kiếm nhanh tọa độ.</small>
+                            <small class="mt-1 d-block" style="color: rgba(255, 255, 255, 0.65);">Bấm vào biểu tượng bản đồ bên phải ô nhập để tìm kiếm nhanh tọa độ.</small>
                         </div>
 
                         <!-- Coordinates Lat / Lng -->
@@ -574,13 +686,67 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                                        oninput="updateAllChips()">
                             </div>
                         </div>
-                        <div class="p-2.5 rounded-3 mt-3 small text-muted" style="background: rgba(155, 189, 85, 0.1);">
-                            <i class="bi bi-info-circle text-success me-1"></i>Khi có tọa độ GPS, hệ thống sẽ tự động ghim vị trí lên <strong>Bản đồ địa điểm</strong> và kích hoạt <strong>Dự báo thời tiết 4 ngày tới</strong> cho người đọc!
+                        <div class="rounded-3 mt-3 p-3 small" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.3); color: #d6e8b5; line-height: 1.5;">
+                            <i class="bi bi-info-circle-fill me-1" style="color: #9bbd55;"></i>Khi có tọa độ GPS, hệ thống sẽ tự động ghim vị trí lên <strong class="text-white">Bản đồ địa điểm</strong> và kích hoạt <strong class="text-white">Dự báo thời tiết 4 ngày tới</strong> cho người đọc!
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px;">
                             <i class="bi bi-check-lg me-1"></i> Xác nhận địa điểm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 MAP PICKER MODAL (OpenStreetMap + Nominatim)
+                 Đặt trong #modalLocation để tránh xung đột FocusTrap của Bootstrap
+            ══════════════════════════════════════════════════════════ -->
+            <div id="mapPickerModal" style="display:none; position:fixed; inset:0; z-index:1070; background:rgba(0,0,0,0.72); align-items:center; justify-content:center;">
+                <div style="background:#182215; border:1px solid rgba(255,255,255,0.18); border-radius:24px; width:min(640px,96vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.8);">
+                    <!-- Modal Header -->
+                    <div style="padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+                        <i class="bi bi-map-fill" style="color:#9bbd55; font-size:1.15rem;"></i>
+                        <strong style="color:#fff; flex:1; font-size:1.05rem;">Chọn địa điểm trên bản đồ</strong>
+                        <button type="button" onclick="MapPicker.close()" style="background:none;border:none;color:rgba(255,255,255,0.75);font-size:1.25rem;cursor:pointer;padding:0;line-height:1;">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Search bar -->
+                    <div style="padding:0.85rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; gap:8px;">
+                        <input type="text" id="mapSearchInput"
+                               placeholder="Nhập tên địa điểm, ví dụ: Đỉnh Fansipan, Tà Xùa, Núi Bà Đen..."
+                               style="flex:1; background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.2); border-radius:12px;
+                                      color:#fff; padding:0.55rem 0.95rem; font-size:0.92rem; outline:none;"
+                               onkeydown="if(event.key==='Enter'){event.preventDefault();MapPicker.search();}">
+                        <button type="button" onclick="MapPicker.search()"
+                                style="background:#9bbd55; border:none; border-radius:12px; color:#182215; font-weight:600;
+                                       padding:0.55rem 1.2rem; cursor:pointer; font-size:0.9rem; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="bi bi-search"></i> Tìm
+                        </button>
+                    </div>
+
+                    <!-- Search results -->
+                    <div id="mapSearchResults" style="max-height:240px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.08);"></div>
+
+                    <!-- Selected info -->
+                    <div id="mapSelectedInfo" style="padding:0.75rem 1.25rem; background:rgba(155,189,85,0.12); border-bottom:1px solid rgba(155,189,85,0.2); display:none; align-items:center; gap:8px;">
+                        <i class="bi bi-geo-alt-fill" style="color:#9bbd55;"></i>
+                        <span id="mapSelectedText" style="color:#d6e8b5; font-size:0.88rem; flex:1;"></span>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="padding:0.85rem 1.25rem; display:flex; justify-content:flex-end; gap:8px; background:rgba(0,0,0,0.2);">
+                        <button type="button" onclick="MapPicker.close()"
+                                style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:12px;
+                                       color:#eee; padding:0.5rem 1.2rem; cursor:pointer; font-size:0.9rem;">
+                            Hủy
+                        </button>
+                        <button type="button" id="mapConfirmBtn" onclick="MapPicker.confirm()" disabled
+                                style="background:#9bbd55; border:none; border-radius:12px; color:#182215; font-weight:600;
+                                       padding:0.5rem 1.35rem; cursor:pointer; opacity:0.5; font-size:0.9rem;">
+                            <i class="bi bi-check-lg me-1"></i> Xác nhận
                         </button>
                     </div>
                 </div>
@@ -597,10 +763,10 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                         <h5 class="modal-title" id="modalTripInfoLabel">
                             <i class="bi bi-compass-fill text-primary me-2"></i>Thông tin hành trình "Chuyến đi" (Trip Details)
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted small mb-3">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc bài viết và chuẩn bị hành trang.</p>
+                        <p class="small mb-3" style="color: rgba(255, 255, 255, 0.7); font-size: 13.5px;">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc bài viết và chuẩn bị hành trang.</p>
 
                         <div class="row g-3 mb-3">
                             <!-- Loại hình -->
@@ -713,40 +879,41 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                             <h5 class="modal-title mb-0" id="modalToolsGearLabel">
                                 <i class="bi bi-tools text-warning me-2"></i>Dụng cụ & Trang thiết bị chuyến đi
                             </h5>
-                            <span class="badge rounded-pill bg-success text-white" id="modalToolsCountBadge" style="font-size: 11px;">0</span>
+                            <span class="badge rounded-pill text-white" id="modalToolsCountBadge" style="background: #9bbd55; font-size: 11px;">0</span>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <!-- KHỐI 1: TỰ NHẬP CÔNG CỤ CÁ NHÂN -->
-                        <div class="p-3 mb-3 rounded-4 border bg-light">
+                        <div class="p-3 mb-3 rounded-4 border" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12) !important;">
                             <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                                <span class="fw-semibold text-dark small">
-                                    <i class="bi bi-bag-check-fill text-success me-1"></i>Thêm dụng cụ cá nhân bạn dùng
+                                <span class="fw-semibold text-white small">
+                                    <i class="bi bi-bag-check-fill me-1" style="color: #9bbd55;"></i>Thêm dụng cụ cá nhân bạn dùng
                                 </span>
-                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 shadow-sm" onclick="addCustomToolRow()" style="font-size: 12px; font-weight: 500;">
+                                <button type="button" class="btn btn-sm rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 shadow-sm" onclick="addCustomToolRow()" style="font-size: 12px; font-weight: 600; background: rgba(155, 189, 85, 0.2); border: 1px solid #9bbd55; color: #c4e482;">
                                     <i class="bi bi-plus-circle-fill"></i> Thêm món đồ
                                 </button>
                             </div>
                             <div id="customToolsContainer" class="d-flex flex-column gap-3 mt-2"></div>
-                            <div id="emptyToolsNotice" class="text-center py-3 text-muted small" style="background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px dashed rgba(0,0,0,0.12);">
-                                <span>Chưa có món đồ cá nhân nào. Hãy bấm <strong>"Thêm món đồ"</strong> để chia sẻ lều, balo, bếp... kèm link mua Shopee/Lazada!</span>
+                            <div id="emptyToolsNotice" class="text-center py-3 small" style="background: rgba(255, 255, 255, 0.02); border-radius: 14px; border: 1px dashed rgba(255, 255, 255, 0.16); color: rgba(255, 255, 255, 0.72); padding: 1rem;">
+                                <span>Chưa có món đồ cá nhân nào. Hãy bấm <strong class="text-white">"Thêm món đồ"</strong> để chia sẻ lều, balo, bếp... kèm link mua Shopee/Lazada!</span>
                             </div>
                         </div>
 
                         <!-- KHỐI 2: CHỌN TỪ KHO DỤNG CỤ CỘNG ĐỒNG CÓ SẴN -->
                         <?php if (!empty($products)): ?>
                             <div class="accordion border-0" id="accordionExistingTools">
-                                <div class="accordion-item rounded-4 border overflow-hidden">
+                                <div class="accordion-item rounded-4 border overflow-hidden" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12) !important;">
                                     <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed py-2.5 px-3 bg-light text-dark fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExistingTools" aria-expanded="false" style="font-size: 13px;">
-                                            <i class="bi bi-collection me-2 text-muted"></i> Hoặc chọn từ kho dụng cụ cộng đồng sẵn có (<?= count($products) ?> sản phẩm)
+                                        <button class="accordion-button collapsed py-2.5 px-3 fw-semibold text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExistingTools" aria-expanded="false" style="font-size: 13px; background: rgba(255, 255, 255, 0.05); color: #ffffff !important; box-shadow: none;">
+                                            <i class="bi bi-collection me-2" style="color: #9bbd55;"></i> Hoặc chọn từ kho dụng cụ cộng đồng sẵn có (<?= count($products) ?> sản phẩm)
                                         </button>
                                     </h2>
                                     <div id="collapseExistingTools" class="accordion-collapse collapse" data-bs-parent="#accordionExistingTools">
                                         <div class="accordion-body p-3">
                                             <div class="mb-2">
                                                 <input type="text" id="toolSearchInput" class="form-control form-control-sm rounded-pill" 
+                                                       style="background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.18); color: #ffffff;"
                                                        placeholder="Tìm nhanh lều, balo, bếp, đèn pin..." oninput="filterToolsList(this.value)">
                                             </div>
                                             <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 220px; overflow-y: auto;">
@@ -763,14 +930,16 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                                                     }
                                                 ?>
                                                     <div class="col tool-item" data-name="<?= $escape(mb_strtolower($prod['name'])) ?>">
-                                                        <label class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white h-100 position-relative" style="cursor: pointer;">
+                                                        <label class="d-flex align-items-center gap-2 p-2 rounded-3 border h-100 position-relative" style="cursor: pointer; background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12) !important; transition: all 0.2s ease;">
                                                             <input type="checkbox" name="product_ids[]" value="<?= $pId ?>" 
                                                                    class="form-check-input mt-0 tool-checkbox flex-shrink-0" 
                                                                    <?= $isChecked ? 'checked' : '' ?> onchange="updateSelectedToolsCounter()">
                                                             <img src="<?= $escape($toolImg) ?>" alt="<?= $escape($prod['name']) ?>" class="rounded-2 object-fit-cover flex-shrink-0" style="width: 38px; height: 38px;">
-                                                            <div class="min-w-0 flex-grow-1" style="font-size: 12.5px;">
-                                                                <div class="fw-semibold text-truncate text-dark"><?= $escape($prod['name']) ?></div>
-                                                                <div class="text-success fw-bold small"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</div>
+                                                            <div class="min-w-0 flex-grow-1" style="font-size: 12.5px; overflow: hidden;">
+                                                                <div class="tool-name-marquee-container">
+                                                                    <div class="fw-semibold text-white tool-name-marquee-text" title="<?= $escape($prod['name']) ?>"><?= $escape($prod['name']) ?></div>
+                                                                </div>
+                                                                <div class="fw-bold small" style="color: #9bbd55;"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</div>
                                                             </div>
                                                         </label>
                                                     </div>
@@ -791,59 +960,6 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </div>
         </div>
     </form>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════
-     MAP PICKER MODAL (OpenStreetMap + Nominatim)
-══════════════════════════════════════════════════════════════ -->
-<div id="mapPickerModal" style="display:none; position:fixed; inset:0; z-index:1070; background:rgba(0,0,0,0.65); align-items:center; justify-content:center;">
-    <div style="background:#1a1a1a; border-radius:24px; width:min(640px,96vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,0.6);">
-        <!-- Modal Header -->
-        <div style="padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
-            <i class="bi bi-map-fill" style="color:var(--color-moss, #7aab3a); font-size:1.1rem;"></i>
-            <strong style="color:#fff; flex:1;">Chọn địa điểm trên bản đồ</strong>
-            <button onclick="MapPicker.close()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:1.2rem;cursor:pointer;padding:0;line-height:1;">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-
-        <!-- Search bar -->
-        <div style="padding:0.85rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; gap:8px;">
-            <input type="text" id="mapSearchInput"
-                   placeholder="Nhập tên địa điểm, ví dụ: Đỉnh Fansipan, Tà Xùa, Núi Bà Đen..."
-                   style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:10px;
-                          color:#fff; padding:0.5rem 0.85rem; font-size:0.92rem; outline:none;"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();MapPicker.search();}">
-            <button onclick="MapPicker.search()"
-                    style="background:var(--color-moss,#7aab3a); border:none; border-radius:10px; color:#fff;
-                           padding:0.5rem 1.1rem; cursor:pointer; font-size:0.88rem; white-space:nowrap;">
-                <i class="bi bi-search me-1"></i> Tìm
-            </button>
-        </div>
-
-        <!-- Search results -->
-        <div id="mapSearchResults" style="max-height:220px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.07);"></div>
-
-        <!-- Selected info -->
-        <div id="mapSelectedInfo" style="padding:0.65rem 1.25rem; background:rgba(122,171,58,0.08); display:none; align-items:center; gap:8px;">
-            <i class="bi bi-geo-alt-fill" style="color:var(--color-moss,#7aab3a);"></i>
-            <span id="mapSelectedText" style="color:#ccc; font-size:0.86rem; flex:1;"></span>
-        </div>
-
-        <!-- Footer -->
-        <div style="padding:0.85rem 1.25rem; display:flex; justify-content:flex-end; gap:8px;">
-            <button onclick="MapPicker.close()"
-                    style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:10px;
-                           color:#ccc; padding:0.5rem 1.1rem; cursor:pointer;">
-                Hủy
-            </button>
-            <button id="mapConfirmBtn" onclick="MapPicker.confirm()" disabled
-                    style="background:var(--color-moss,#7aab3a); border:none; border-radius:10px; color:#fff;
-                           padding:0.5rem 1.25rem; cursor:pointer; opacity:0.5;">
-                <i class="bi bi-check-lg me-1"></i> Xác nhận
-            </button>
-        </div>
-    </div>
 </div>
 
 <style>
@@ -924,7 +1040,7 @@ function updateAllChips() {
 
     if (locVal !== '' || (latVal !== '' && lngVal !== '')) {
         chipLoc.classList.remove('d-none');
-        chipLocText.textContent = locVal ? '📍 ' + locVal : '📍 Tọa độ GPS (' + latVal + ', ' + lngVal + ')';
+        chipLocText.textContent = locVal ? locVal : 'Tọa độ GPS (' + latVal + ', ' + lngVal + ')';
         anyChipVisible = true;
     } else {
         chipLoc.classList.add('d-none');
@@ -944,7 +1060,7 @@ function updateAllChips() {
         if (actType) labels.push(actType.toUpperCase());
         if (reg) labels.push(reg);
         if (route) labels.push(route.length > 20 ? route.substring(0, 18) + '…' : route);
-        chipTripText.textContent = '🎒 ' + (labels.length ? labels.join(' · ') : 'Chi tiết hành trình');
+        chipTripText.textContent = labels.length ? labels.join(' · ') : 'Chi tiết hành trình';
         anyChipVisible = true;
     } else {
         chipTrip.classList.add('d-none');
@@ -961,7 +1077,7 @@ function updateAllChips() {
 
     if (totalTools > 0) {
         chipTools.classList.remove('d-none');
-        chipToolsText.textContent = '🛠️ ' + totalTools + ' dụng cụ & thiết bị';
+        chipToolsText.textContent = totalTools + ' dụng cụ & thiết bị';
         anyChipVisible = true;
     } else {
         chipTools.classList.add('d-none');
@@ -977,7 +1093,7 @@ function updateAllChips() {
 
     if (numFiles > 0 || hasCloudUrl) {
         chipImages.classList.remove('d-none');
-        chipImagesText.textContent = numFiles > 0 ? '🖼️ ' + numFiles + ' ảnh đã chọn' : '🖼️ Link ảnh Cloud';
+        chipImagesText.textContent = numFiles > 0 ? numFiles + ' ảnh đã chọn' : 'Link ảnh Cloud';
         anyChipVisible = true;
     } else {
         chipImages.classList.add('d-none');
@@ -1060,14 +1176,41 @@ const MapPicker = (function() {
         if (searchInput()) {
             searchInput().value = document.getElementById('location')?.value || '';
         }
-        modal().style.display = 'flex';
+
+        // Tạm thời vô hiệu hóa FocusTrap của Bootstrap Modal nếu đang mở
+        var locModal = document.getElementById('modalLocation');
+        if (locModal && window.bootstrap) {
+            var modalInst = bootstrap.Modal.getInstance(locModal);
+            if (modalInst && modalInst._focustrap && typeof modalInst._focustrap.deactivate === 'function') {
+                modalInst._focustrap.deactivate();
+            }
+        }
+
+        if (modal()) modal().style.display = 'flex';
         setTimeout(function() {
-            if (searchInput()) searchInput().focus();
+            if (searchInput()) {
+                searchInput().focus();
+                searchInput().select();
+            }
         }, 80);
     }
 
     function close() {
-        modal().style.display = 'none';
+        if (modal()) modal().style.display = 'none';
+
+        // Kích hoạt lại FocusTrap của Bootstrap Modal
+        var locModal = document.getElementById('modalLocation');
+        if (locModal && window.bootstrap) {
+            var modalInst = bootstrap.Modal.getInstance(locModal);
+            if (modalInst && modalInst._focustrap && typeof modalInst._focustrap.activate === 'function') {
+                modalInst._focustrap.activate();
+            }
+        }
+
+        var locInput = document.getElementById('location');
+        if (locInput) {
+            setTimeout(function() { locInput.focus(); }, 60);
+        }
     }
 
     async function search() {
@@ -1152,9 +1295,15 @@ const MapPicker = (function() {
         updateAllChips();
     }
 
-    document.getElementById('mapPickerModal')?.addEventListener('click', function(e) {
-        if (e.target === this) close();
-    });
+    var mapModalEl = document.getElementById('mapPickerModal');
+    if (mapModalEl) {
+        mapModalEl.addEventListener('click', function(e) {
+            if (e.target === this) close();
+        });
+        mapModalEl.addEventListener('focusin', function(e) {
+            e.stopPropagation();
+        });
+    }
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && modal()?.style.display === 'flex') close();
@@ -1180,9 +1329,9 @@ function addCustomToolRow(initialData) {
 
     var card = document.createElement('div');
     card.className = 'custom-tool-card p-3 rounded-4 border position-relative';
-    card.style.background = '#ffffff';
-    card.style.borderColor = 'rgba(0,0,0,0.1)';
-    card.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)';
+    card.style.background = 'rgba(255, 255, 255, 0.07)';
+    card.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+    card.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
 
     var nameVal = data.name ? escapeHtml(data.name) : '';
     var priceVal = (data.price !== undefined && data.price !== null) ? escapeHtml(data.price) : '';
@@ -1196,38 +1345,38 @@ function addCustomToolRow(initialData) {
         '</button>' +
         '<div class="row g-2">' +
             '<div class="col-12 col-md-7">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
+                '<label class="form-label small fw-semibold text-white mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
                 '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple" required oninput="updateAllChips()">' +
             '</div>' +
             '<div class="col-12 col-md-5">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>' +
+                '<label class="form-label small fw-semibold text-white mb-1">Giá tham khảo (VNĐ)</label>' +
                 '<div class="input-group input-group-sm">' +
                     '<input type="number" name="custom_tool_price[]" value="' + priceVal + '" class="form-control form-control-sm rounded-start-3" placeholder="VD: 350000" min="0" step="1000">' +
-                    '<span class="input-group-text bg-light text-muted rounded-end-3">đ</span>' +
+                    '<span class="input-group-text rounded-end-3" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85);">đ</span>' +
                 '</div>' +
             '</div>' +
             '<div class="col-12">' +
-                '<label class="form-label small fw-semibold text-dark mb-1"><i class="bi bi-link-45deg text-success me-1"></i>Link mua (Shopee / Lazada...)</label>' +
+                '<label class="form-label small fw-semibold text-white mb-1"><i class="bi bi-link-45deg me-1" style="color: #9bbd55;"></i>Link mua (Shopee / Lazada...)</label>' +
                 '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm rounded-3" placeholder="https://shopee.vn/...">' +
             '</div>' +
             '<div class="col-12 col-md-6">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Tải ảnh lên</label>' +
+                '<label class="form-label small fw-semibold text-white mb-1">Tải ảnh lên</label>' +
                 '<input type="file" name="custom_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">' +
             '</div>' +
             '<div class="col-12 col-md-6">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Hoặc dán URL ảnh</label>' +
+                '<label class="form-label small fw-semibold text-white mb-1">Hoặc dán URL ảnh</label>' +
                 '<input type="url" name="custom_tool_image_url[]" value="' + imgVal + '" class="form-control form-control-sm rounded-3" placeholder="https://domain.com/anh.jpg">' +
             '</div>' +
             '<div class="col-12">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Đánh giá ngắn khi sử dụng</label>' +
+                '<label class="form-label small fw-semibold text-white mb-1">Đánh giá ngắn khi sử dụng</label>' +
                 '<input type="text" name="custom_tool_desc[]" value="' + descVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Lửa mạnh, cản gió tốt, gập gọn nhẹ...">' +
             '</div>' +
-            '<div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(0,0,0,0.06) !important;">' +
+            '<div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(255, 255, 255, 0.1) !important;">' +
                 '<div class="form-check d-flex align-items-center gap-2 m-0">' +
                     '<input class="form-check-input mt-0" type="checkbox" ' + (data.is_shared === 0 ? '' : 'checked') + ' style="cursor: pointer; width: 1.15em; height: 1.15em;" onchange="this.nextElementSibling.value = this.checked ? \'1\' : \'0\'">' +
                     '<input type="hidden" name="custom_tool_is_shared[]" value="' + (data.is_shared === 0 ? '0' : '1') + '">' +
-                    '<label class="form-check-label small text-dark fw-medium" style="cursor: pointer; user-select: none;">' +
-                        '<i class="bi bi-share text-success me-1"></i>Chia sẻ vào kho dụng cụ cộng đồng' +
+                    '<label class="form-check-label small text-white fw-medium" style="cursor: pointer; user-select: none;">' +
+                        '<i class="bi bi-share me-1" style="color: #9bbd55;"></i>Chia sẻ vào kho dụng cụ cộng đồng' +
                     '</label>' +
                 '</div>' +
             '</div>' +
@@ -1285,15 +1434,15 @@ document.addEventListener('DOMContentLoaded', function() {
         ['dragenter', 'dragover'].forEach(function(ev) {
             dropzone.addEventListener(ev, function(e) {
                 e.preventDefault(); e.stopPropagation();
-                dropzone.style.background = '#e8f5e9';
+                dropzone.style.background = 'rgba(155, 189, 85, 0.15)';
                 dropzone.style.borderColor = '#9bbd55';
             });
         });
         ['dragleave', 'drop'].forEach(function(ev) {
             dropzone.addEventListener(ev, function(e) {
                 e.preventDefault(); e.stopPropagation();
-                dropzone.style.background = '#fafbfa';
-                dropzone.style.borderColor = 'rgba(155, 189, 85, 0.4)';
+                dropzone.style.background = 'rgba(255, 255, 255, 0.04)';
+                dropzone.style.borderColor = 'rgba(155, 189, 85, 0.45)';
             });
         });
         dropzone.addEventListener('drop', function(e) {
