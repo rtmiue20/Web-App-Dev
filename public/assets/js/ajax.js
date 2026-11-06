@@ -472,13 +472,13 @@ const ForumAjax = {
                       <div>
                         <div class="fw-semibold text-white" style="font-size: 12px;">${d.day_label}</div>
                         <div class="text-white-50" style="font-size: 10.5px;">${d.date}</div>
-                        <div class="my-1 fs-5"><i class="bi ${d.icon || 'bi-cloud-sun'}"></i></div>
+                        <div class="my-1 fs-4" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><i class="bi ${d.icon || 'bi-cloud-sun-fill text-warning'}"></i></div>
                         <div class="fw-bold text-white" style="font-size: 12.5px;">
                           ${d.temp_max}° <span class="text-white-50 fw-normal" style="font-size: 11px;">/ ${d.temp_min}°C</span>
                         </div>
                       </div>
-                      <div class="mt-1" style="font-size: 10.5px; color: #70d6ff;" title="Xác suất mưa">
-                        <i class="bi bi-droplet-fill me-1"></i>Mưa ${d.rain_prob}%
+                      <div class="mt-1" style="font-size: 11px; font-weight: 500; color: #38bdf8;" title="Xác suất mưa">
+                        <i class="bi bi-droplet-fill me-1" style="color: #38bdf8;"></i>Mưa ${d.rain_prob}%
                       </div>
                     </div>
                   </div>

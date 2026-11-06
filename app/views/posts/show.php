@@ -672,13 +672,13 @@ $galleryCount = count($galleryImages);
 
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
 
-        <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border" style="background: rgba(255, 255, 255, 0.035); border-color: rgba(255, 255, 255, 0.1) !important;">
+        <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border shadow-sm" style="background: rgba(30, 40, 25, 0.88); border-color: rgba(155, 189, 85, 0.3) !important;">
 
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
 
                 <div class="d-flex align-items-center gap-2">
 
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: rgba(155, 189, 85, 0.2); color: #c4e482;">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: rgba(155, 189, 85, 0.25); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.4);">
 
                         <i class="bi bi-cloud-sun-fill fs-5"></i>
 
@@ -686,9 +686,9 @@ $galleryCount = count($galleryImages);
 
                     <div>
 
-                        <h3 class="h6 mb-0 text-white fw-semibold">Dự báo thời tiết & Khuyến nghị chuyến đi</h3>
+                        <h3 class="h6 mb-0 text-white fw-bold" style="font-size: 15px; letter-spacing: 0.2px;">Dự báo thời tiết &amp; Khuyến nghị chuyến đi</h3>
 
-                        <span class="text-white-50" style="font-size: 11.5px;">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
+                        <span style="font-size: 11.5px; color: rgba(255, 255, 255, 0.70);">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
 
                     </div>
 
@@ -696,7 +696,7 @@ $galleryCount = count($galleryImages);
 
                 <?php if (!empty($post['location'])): ?>
 
-                    <span class="badge rounded-pill text-bg-light border text-secondary px-3 py-1.5" style="font-size: 11px;">
+                    <span class="badge rounded-pill px-3 py-1.5" style="background: rgba(255, 255, 255, 0.12); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.22); font-size: 11.5px;">
 
                         <i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
 
@@ -706,11 +706,11 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <div id="weather-forecast-panel" class="p-3 rounded-3" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div id="weather-forecast-panel" class="p-3 rounded-3" style="background: rgba(14, 20, 11, 0.65); border: 1px solid rgba(255, 255, 255, 0.12);">
 
-                <div class="text-center py-3 text-white-50 small">
+                <div class="text-center py-3 text-white small" style="opacity: 0.85;">
 
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>Đang tải dữ liệu khí tượng và dự báo 4 ngày tới...
+                    <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu khí tượng và dự báo 4 ngày tới...
 
                 </div>
 
@@ -1206,32 +1206,38 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <?php if ($isLoggedIn): ?>
+            <?php 
+            $currentUserId = Auth::check() ? (int) Auth::id() : 0;
+            $currentUserObj = Session::get('user');
+            $isCurAdmin = is_array($currentUserObj) && (((int)($currentUserObj['role_id'] ?? 0) === 2) || (($currentUserObj['role_name'] ?? '') === 'admin'));
+            $isAuthorOfPost = $currentUserId > 0 && $currentUserId === (int)($post['user_id'] ?? 0);
+            $canReviewPlace = $isLoggedIn && (!$isAuthorOfPost || $isCurAdmin);
+            ?>
 
-                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int) $post['id'] ?>/reviews" class="row g-3 mt-2">
+            <?php if ($canReviewPlace): ?>
+
+                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int) $post['id'] ?>/reviews" class="row g-3 mt-2" id="placeReviewForm">
 
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="rating" id="place-rating-input" value="5" required>
 
-                    <div class="col-md-3">
-
-                        <label class="form-label" for="place-rating">Số sao</label>
-
-                        <select class="form-select" id="place-rating" name="rating" required>
-
-                            <option value="">Chọn sao</option>
-
-                            <option value="5">5 - Rất tốt</option>
-
-                            <option value="4">4 - Tốt</option>
-
-                            <option value="3">3 - Bình thường</option>
-
-                            <option value="2">2 - Chưa tốt</option>
-
-                            <option value="1">1 - Không tốt</option>
-
-                        </select>
-
+                    <!-- Interactive Star Rating Widget (App Store style) -->
+                    <div class="col-12">
+                        <label class="form-label d-block fw-semibold mb-1" style="font-size: 13.5px;">Chọn số sao đánh giá</label>
+                        <div class="d-inline-flex align-items-center gap-3 p-2 px-3 rounded-4 bg-light border shadow-sm">
+                            <div class="star-rating-widget d-inline-flex align-items-center gap-1.5" 
+                                 id="starRatingWidget"
+                                 role="radiogroup" 
+                                 aria-label="Đánh giá số sao"
+                                 style="cursor: pointer; user-select: none; font-size: 26px; line-height: 1;">
+                                <i class="bi bi-star-fill star-item" data-value="1" title="1 sao - Không tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="2" title="2 sao - Chưa tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="3" title="3 sao - Bình thường" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="4" title="4 sao - Tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="5" title="5 sao - Rất tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                            </div>
+                            <span class="fw-bold small text-dark" id="starRatingLabel" style="min-width: 110px;">5 sao - Rất tốt</span>
+                        </div>
                     </div>
 
                     <div class="col-12">
@@ -1251,6 +1257,13 @@ $galleryCount = count($galleryImages);
                     </div>
 
                 </form>
+
+            <?php elseif ($isLoggedIn && $isAuthorOfPost && !$isCurAdmin): ?>
+
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
+                    <i class="bi bi-info-circle-fill text-muted fs-5"></i>
+                    <span class="small text-muted">Bạn là tác giả bài viết này nên không thể tự đánh giá địa điểm của chính mình. Chỉ Admin và các thành viên khác mới có thể gửi đánh giá.</span>
+                </div>
 
             <?php else: ?>
 
@@ -1321,15 +1334,10 @@ $galleryCount = count($galleryImages);
             </h2>
 
             <span class="badge rounded-pill border fw-normal py-1 px-3 d-inline-flex align-items-center gap-1" 
-
                   id="realtime-comment-status" 
-
                   style="background: rgba(155, 189, 85, 0.12); color: #c4e482; border-color: rgba(155, 189, 85, 0.35) !important; font-size: 11px;">
-
                 <span class="spinner-grow spinner-grow-sm text-success" style="width: 7px; height: 7px;" role="status"></span>
-
-                Trực tiếp (Realtime)
-
+                Trực tiếp
             </span>
 
         </div>
@@ -2632,6 +2640,103 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <?php endif; ?>
 
+    }
+
+    // Star Rating Widget interaction (App Store drag & click style)
+    var starWidget = document.getElementById('starRatingWidget');
+    var ratingInput = document.getElementById('place-rating-input');
+    var ratingLabel = document.getElementById('starRatingLabel');
+
+    if (starWidget && ratingInput && ratingLabel) {
+        var stars = starWidget.querySelectorAll('.star-item');
+        var labels = {
+            1: '1 sao - Không tốt',
+            2: '2 sao - Chưa tốt',
+            3: '3 sao - Bình thường',
+            4: '4 sao - Tốt',
+            5: '5 sao - Rất tốt'
+        };
+
+        function updateStars(val) {
+            val = parseInt(val, 10) || 5;
+            for (var i = 0; i < stars.length; i++) {
+                var sVal = parseInt(stars[i].getAttribute('data-value'), 10);
+                if (sVal <= val) {
+                    stars[i].classList.remove('bi-star');
+                    stars[i].classList.add('bi-star-fill');
+                    stars[i].style.color = '#ff9800';
+                } else {
+                    stars[i].classList.remove('bi-star-fill');
+                    stars[i].classList.add('bi-star');
+                    stars[i].style.color = '#cbd5e1';
+                }
+            }
+            if (labels[val]) {
+                ratingLabel.textContent = labels[val];
+            }
+        }
+
+        // Set initial state
+        updateStars(ratingInput.value || 5);
+
+        for (var j = 0; j < stars.length; j++) {
+            (function(star) {
+                star.addEventListener('mouseenter', function() {
+                    var hVal = this.getAttribute('data-value');
+                    updateStars(hVal);
+                });
+
+                star.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var cVal = this.getAttribute('data-value');
+                    ratingInput.value = cVal;
+                    updateStars(cVal);
+                });
+            })(stars[j]);
+        }
+
+        starWidget.addEventListener('mouseleave', function() {
+            updateStars(ratingInput.value);
+        });
+
+        // Touch / drag support across stars
+        var isDragging = false;
+        function getStarFromPoint(x, y) {
+            var el = document.elementFromPoint(x, y);
+            if (el && el.classList.contains('star-item')) {
+                return el;
+            }
+            if (el && el.closest('.star-item')) {
+                return el.closest('.star-item');
+            }
+            return null;
+        }
+
+        starWidget.addEventListener('touchstart', function(e) {
+            isDragging = true;
+            var touch = e.touches[0];
+            var star = getStarFromPoint(touch.clientX, touch.clientY);
+            if (star) {
+                var val = star.getAttribute('data-value');
+                ratingInput.value = val;
+                updateStars(val);
+            }
+        }, { passive: true });
+
+        starWidget.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            var touch = e.touches[0];
+            var star = getStarFromPoint(touch.clientX, touch.clientY);
+            if (star) {
+                var val = star.getAttribute('data-value');
+                ratingInput.value = val;
+                updateStars(val);
+            }
+        }, { passive: true });
+
+        starWidget.addEventListener('touchend', function() {
+            isDragging = false;
+        });
     }
 
 });

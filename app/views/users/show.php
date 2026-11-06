@@ -30,11 +30,11 @@ $g = $gamification ?? [];
                         </span>
                     </div>
                     <!-- Badge Gamification -->
-                    <div class="mt-1 d-inline-flex align-items-center gap-1 px-2 py-0.5 rounded-pill border" 
-                         style="background: <?= htmlspecialchars($g['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($g['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 11.5px; color: <?= htmlspecialchars($g['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
-                        <i class="bi <?= htmlspecialchars($g['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?>"></i>
+                    <div class="mt-2 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill border shadow-sm" 
+                         style="background: <?= htmlspecialchars($g['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($g['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 13px; line-height: 1.4; color: <?= htmlspecialchars($g['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
+                        <i class="bi <?= htmlspecialchars($g['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?> me-0.5"></i>
                         <span class="fw-bold"><?= htmlspecialchars($g['title'] ?? 'Tân thủ dã ngoại', ENT_QUOTES, 'UTF-8') ?></span>
-                        <span class="opacity-75">(Level <?= (int)($g['level'] ?? 1) ?>)</span>
+                        <span class="opacity-75 ms-1">(Level <?= (int)($g['level'] ?? 1) ?>)</span>
                     </div>
                 </div>
             </div>

@@ -328,6 +328,19 @@
   color: var(--color-ink) !important;
 }
 
+/* Fix nút theo dõi tác giả trạng thái following */
+.follow-user-btn.following {
+  background: rgba(155, 189, 85, 0.20) !important;
+  border-color: rgba(155, 189, 85, 0.45) !important;
+  color: #274718 !important;
+  font-weight: 600 !important;
+}
+.follow-user-btn.following:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #b91c1c !important;
+}
+
 /* Fix nút secondary và văn bản trên thẻ nền sáng (.nature-card) để không bị chữ trắng chìm */
 .nature-card .nature-btn-secondary {
   background: rgba(32, 37, 28, 0.08) !important;
@@ -790,15 +803,54 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   25. MOBILE  –  Giảm blur trên thiết bị yếu
+   26. PROFILE TABS & AVATAR INPUT STYLING (Nature / Liquid Glass)
    ════════════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .modal-content {
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  }
-  .dock-nav {
-    backdrop-filter: blur(16px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-  }
+#profileTabs .nav-link {
+  color: rgba(255, 255, 255, 0.70) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  font-weight: 500;
+  transition: all 0.25s ease !important;
+}
+
+#profileTabs .nav-link:hover:not(.active) {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(155, 189, 85, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+#profileTabs .nav-link.active {
+  color: #1a2217 !important;
+  background: linear-gradient(135deg, #c4e482 0%, #9bbd55 100%) !important;
+  border-color: #9bbd55 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 8px 24px -6px rgba(155, 189, 85, 0.50), 0 1px 0 rgba(255, 255, 255, 0.60) inset !important;
+}
+
+/* File input avatar căn giữa chuẩn */
+input[type="file"].nature-input {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem !important;
+  line-height: normal;
+  cursor: pointer;
+}
+input[type="file"].nature-input::file-selector-button {
+  background: #20251c;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 1rem;
+  margin-right: 0.85rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+input[type="file"].nature-input::file-selector-button:hover {
+  background: #2e3529;
+  color: #c4e482;
 }
