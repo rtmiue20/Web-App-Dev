@@ -223,16 +223,16 @@ $csrfToken = Csrf::token();
 <!-- ========================================== -->
 <div class="modal fade" id="modalAddProduct" tabindex="-1" aria-labelledby="modalAddProductLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden;">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
                 <div>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 mb-2">
+                    <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(155, 189, 85, 0.2); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.4);">
                         <i class="bi bi-plus-circle me-1"></i>Chia sẻ dụng cụ
                     </span>
-                    <h5 class="modal-title fw-bold fs-4 text-dark" id="modalAddProductLabel">Thêm dụng cụ vào kho cộng đồng</h5>
-                    <p class="text-muted small mb-0">Chia sẻ các trang bị hữu ích bạn từng sử dụng để mọi người cùng tham khảo.</p>
+                    <h5 class="modal-title fw-bold fs-4 text-white" id="modalAddProductLabel">Thêm dụng cụ vào kho cộng đồng</h5>
+                    <p class="small mb-0" style="color: rgba(255, 255, 255, 0.65);">Chia sẻ các trang bị hữu ích bạn từng sử dụng để mọi người cùng tham khảo.</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
             <form action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products/store" method="POST" enctype="multipart/form-data">
@@ -243,7 +243,7 @@ $csrfToken = Csrf::token();
                     <div class="row g-3">
                         <!-- Tên dụng cụ -->
                         <div class="col-md-7">
-                            <label class="form-label fw-semibold text-dark small">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-white small">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>
                             <input type="text" 
                                    name="name" 
                                    class="form-control rounded-3" 
@@ -253,7 +253,7 @@ $csrfToken = Csrf::token();
 
                         <!-- Chuyên mục -->
                         <div class="col-md-5">
-                            <label class="form-label fw-semibold text-dark small">Phân mục dã ngoại</label>
+                            <label class="form-label fw-semibold text-white small">Phân mục dã ngoại</label>
                             <select name="category_id" class="form-select rounded-3">
                                 <option value="">-- Chọn phân mục phù hợp --</option>
                                 <?php foreach ($categories as $cat): ?>
@@ -263,34 +263,34 @@ $csrfToken = Csrf::token();
                         </div>
 
                         <!-- Giá tham khảo -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-dark small">Giá tham khảo (VNĐ)</label>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold text-white small">Giá tham khảo (VNĐ)</label>
                             <div class="input-group">
                                 <input type="number" 
                                        name="price" 
-                                       class="form-control rounded-start-3" 
+                                       class="form-control" 
                                        placeholder="VD: 450000" 
                                        min="0" 
                                        step="1000">
-                                <span class="input-group-text rounded-end-3 bg-light text-muted">đ</span>
+                                <span class="input-group-text">đ</span>
                             </div>
                         </div>
 
                         <!-- Link nơi mua -->
-                        <div class="col-md-8">
-                            <label class="form-label fw-semibold text-dark small">Link nơi mua (Shopee, Lazada, web shop...)</label>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold text-white small">Link nơi mua (Shopee, Lazada, web shop...)</label>
                             <div class="input-group">
-                                <span class="input-group-text rounded-start-3 bg-light text-muted"><i class="bi bi-link-45deg"></i></span>
+                                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
                                 <input type="text" 
                                        name="link" 
-                                       class="form-control rounded-end-3" 
+                                       class="form-control" 
                                        placeholder="https://shopee.vn/... hoặc link web shop">
                             </div>
                         </div>
 
                         <!-- Tải ảnh lên -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Tải ảnh lên (từ máy)</label>
+                            <label class="form-label fw-semibold text-white small">Tải ảnh lên (từ máy)</label>
                             <input type="file" 
                                    name="image" 
                                    class="form-control rounded-3" 
@@ -299,7 +299,7 @@ $csrfToken = Csrf::token();
 
                         <!-- Hoặc dán URL ảnh -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Hoặc dán URL ảnh trực tiếp</label>
+                            <label class="form-label fw-semibold text-white small">Hoặc dán URL ảnh trực tiếp</label>
                             <input type="url" 
                                    name="image_url" 
                                    class="form-control rounded-3" 
@@ -308,7 +308,7 @@ $csrfToken = Csrf::token();
 
                         <!-- Kinh nghiệm / Đánh giá ngắn -->
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-dark small">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
+                            <label class="form-label fw-semibold text-white small">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
                             <textarea name="description" 
                                       rows="3" 
                                       class="form-control rounded-3" 
@@ -325,7 +325,7 @@ $csrfToken = Csrf::token();
                                        name="is_shared" 
                                        value="1" 
                                        checked>
-                                <label class="form-check-label text-dark small fw-medium" for="add_is_shared">
+                                <label class="form-check-label text-white small fw-medium" for="add_is_shared">
                                     Chia sẻ công khai vào kho dụng cụ cộng đồng cho mọi người cùng xem và dùng lại
                                 </label>
                             </div>
@@ -333,8 +333,8 @@ $csrfToken = Csrf::token();
                     </div>
                 </div>
 
-                <div class="modal-footer border-0 pt-0 pb-4 px-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
+                    <button type="button" class="btn btn-outline-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="nature-btn-primary px-4 py-2" style="width: auto;">
                         <i class="bi bi-cloud-arrow-up me-1"></i> Chia sẻ dụng cụ
                     </button>
@@ -349,16 +349,16 @@ $csrfToken = Csrf::token();
 <!-- ========================================== -->
 <div class="modal fade" id="modalEditProduct" tabindex="-1" aria-labelledby="modalEditProductLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden;">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
                 <div>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 mb-2">
+                    <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4);">
                         <i class="bi bi-pencil-square me-1"></i>Cập nhật thông tin
                     </span>
-                    <h5 class="modal-title fw-bold fs-4 text-dark" id="modalEditProductLabel">Chỉnh sửa dụng cụ dã ngoại</h5>
-                    <p class="text-muted small mb-0">Cập nhật hình ảnh, giá bán, link mua sắm và nhận xét kinh nghiệm sử dụng.</p>
+                    <h5 class="modal-title fw-bold fs-4 text-white" id="modalEditProductLabel">Chỉnh sửa dụng cụ dã ngoại</h5>
+                    <p class="small mb-0" style="color: rgba(255, 255, 255, 0.65);">Cập nhật hình ảnh, giá bán, link mua sắm và nhận xét kinh nghiệm sử dụng.</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
             <form action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products/update" method="POST" enctype="multipart/form-data">
@@ -370,7 +370,7 @@ $csrfToken = Csrf::token();
                     <div class="row g-3">
                         <!-- Tên dụng cụ -->
                         <div class="col-md-7">
-                            <label class="form-label fw-semibold text-dark small">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-white small">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>
                             <input type="text" 
                                    name="name" 
                                    id="edit_product_name"
@@ -380,7 +380,7 @@ $csrfToken = Csrf::token();
 
                         <!-- Chuyên mục -->
                         <div class="col-md-5">
-                            <label class="form-label fw-semibold text-dark small">Phân mục dã ngoại</label>
+                            <label class="form-label fw-semibold text-white small">Phân mục dã ngoại</label>
                             <select name="category_id" id="edit_product_category" class="form-select rounded-3">
                                 <option value="">-- Chọn phân mục phù hợp --</option>
                                 <?php foreach ($categories as $cat): ?>
@@ -390,45 +390,45 @@ $csrfToken = Csrf::token();
                         </div>
 
                         <!-- Giá tham khảo -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold text-dark small">Giá tham khảo (VNĐ)</label>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold text-white small">Giá tham khảo (VNĐ)</label>
                             <div class="input-group">
                                 <input type="number" 
                                        name="price" 
                                        id="edit_product_price"
-                                       class="form-control rounded-start-3" 
+                                       class="form-control" 
                                        min="0" 
                                        step="1000">
-                                <span class="input-group-text rounded-end-3 bg-light text-muted">đ</span>
+                                <span class="input-group-text">đ</span>
                             </div>
                         </div>
 
                         <!-- Link nơi mua -->
-                        <div class="col-md-8">
-                            <label class="form-label fw-semibold text-dark small">Link nơi mua (Shopee, Lazada, web shop...)</label>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold text-white small">Link nơi mua (Shopee, Lazada, web shop...)</label>
                             <div class="input-group">
-                                <span class="input-group-text rounded-start-3 bg-light text-muted"><i class="bi bi-link-45deg"></i></span>
+                                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
                                 <input type="text" 
                                        name="link" 
                                        id="edit_product_link"
-                                       class="form-control rounded-end-3" 
+                                       class="form-control" 
                                        placeholder="https://shopee.vn/...">
                             </div>
                         </div>
 
                         <!-- Tải ảnh mới lên -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Tải ảnh mới (từ máy)</label>
+                            <label class="form-label fw-semibold text-white small">Tải ảnh mới (từ máy)</label>
                             <input type="file" 
                                    name="image" 
                                    class="form-control rounded-3" 
                                    accept="image/*">
-                            <div class="form-text" style="font-size: 11px;">Để trống nếu muốn giữ nguyên ảnh hiện tại.</div>
+                            <div class="form-text text-white-50" style="font-size: 11px;">Để trống nếu muốn giữ nguyên ảnh hiện tại.</div>
                         </div>
 
                         <!-- Hoặc đổi URL ảnh -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Hoặc cập nhật URL ảnh</label>
+                            <label class="form-label fw-semibold text-white small">Hoặc cập nhật URL ảnh</label>
                             <input type="url" 
                                    name="image_url" 
                                    id="edit_product_image_url"
@@ -438,7 +438,7 @@ $csrfToken = Csrf::token();
 
                         <!-- Kinh nghiệm / Đánh giá ngắn -->
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-dark small">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
+                            <label class="form-label fw-semibold text-white small">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
                             <textarea name="description" 
                                       id="edit_product_desc"
                                       rows="3" 
@@ -454,7 +454,7 @@ $csrfToken = Csrf::token();
                                        id="edit_product_is_shared" 
                                        name="is_shared" 
                                        value="1">
-                                <label class="form-check-label text-dark small fw-medium" for="edit_product_is_shared">
+                                <label class="form-check-label text-white small fw-medium" for="edit_product_is_shared">
                                     Chia sẻ công khai vào kho dụng cụ cộng đồng
                                 </label>
                             </div>
@@ -462,8 +462,8 @@ $csrfToken = Csrf::token();
                     </div>
                 </div>
 
-                <div class="modal-footer border-0 pt-0 pb-4 px-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
+                    <button type="button" class="btn btn-outline-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="nature-btn-primary px-4 py-2" style="width: auto;">
                         <i class="bi bi-check-circle me-1"></i> Lưu thay đổi
                     </button>
@@ -478,15 +478,15 @@ $csrfToken = Csrf::token();
 <!-- ========================================== -->
 <div class="modal fade" id="modalDeleteProduct" tabindex="-1" aria-labelledby="modalDeleteProductLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden;">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
                 <div>
-                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 mb-2">
+                    <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4);">
                         <i class="bi bi-exclamation-triangle me-1"></i>Xác nhận xóa
                     </span>
-                    <h5 class="modal-title fw-bold fs-5 text-dark" id="modalDeleteProductLabel">Xóa dụng cụ khỏi kho?</h5>
+                    <h5 class="modal-title fw-bold fs-5 text-white" id="modalDeleteProductLabel">Xóa dụng cụ khỏi kho?</h5>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
             <form action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products/delete" method="POST">
@@ -494,12 +494,12 @@ $csrfToken = Csrf::token();
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="id" id="delete_product_id" value="">
 
-                <div class="modal-body p-4 text-secondary">
-                    Bạn có chắc chắn muốn xóa dụng cụ <strong id="delete_product_name_display" class="text-dark"></strong> khỏi kho dụng cụ cộng đồng không? Hành động này sẽ gỡ dụng cụ này khỏi danh mục chung.
+                <div class="modal-body p-4" style="color: rgba(255, 255, 255, 0.8);">
+                    Bạn có chắc chắn muốn xóa dụng cụ <strong id="delete_product_name_display" class="text-white"></strong> khỏi kho dụng cụ cộng đồng không? Hành động này sẽ gỡ dụng cụ này khỏi danh mục chung.
                 </div>
 
-                <div class="modal-footer border-0 pt-0 pb-4 px-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
+                    <button type="button" class="btn btn-outline-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm">
                         <i class="bi bi-trash-fill me-1"></i> Xác nhận xóa
                     </button>
