@@ -592,7 +592,7 @@ class Post extends Model {
         }
         try {
             $sql = "UPDATE posts SET " . implode(', ', $fields) . " WHERE id = :id";
-            Database::query($sql, $params);
+            Database::execute($sql, $params);
             return true;
         } catch (PDOException $e) {
             error_log('Error updating trip data: ' . $e->getMessage());
@@ -604,20 +604,39 @@ class Post extends Model {
      * Xóa bài viết theo ID (Tuần 3 - Phúc)
      */
     public function delete(int $id): bool {
+        $deleted = false;
         try {
             Database::call('sp_post_delete', [$id]);
-            return true;
+            $deleted = true;
         } catch (PDOException $e) {
             error_log('Notice: sp_post_delete fallback query: ' . $e->getMessage());
 
             try {
                 $stmt = $this->db->prepare("DELETE FROM posts WHERE id = :id");
-                return $stmt->execute([':id' => $id]);
+                $deleted = $stmt->execute([':id' => $id]);
             } catch (PDOException $ex) {
                 error_log('Error deleting post: ' . $ex->getMessage());
                 return false;
             }
         }
+
+        if ($deleted) {
+            foreach (['post_bookmarks', 'post_products', 'post_tags', 'post_images', 'post_likes', 'place_reviews'] as $childTable) {
+                try {
+                    Database::execute("DELETE FROM {$childTable} WHERE post_id = :id", ['id' => $id]);
+                } catch (Throwable $cleanupEx) {
+                }
+            }
+            try {
+                Database::execute(
+                    "DELETE FROM notifications WHERE target_id = :id AND type IN ('create_post', 'admin_pending_post', 'like_post', 'comment_post', 'reply_comment', 'review_place', 'bookmark_post')",
+                    ['id' => $id]
+                );
+            } catch (Throwable $notifEx) {
+            }
+        }
+
+        return $deleted;
     }
 
     /**

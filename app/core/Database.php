@@ -73,7 +73,9 @@ class Database
     {
         $stmt = self::getConnection()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $rows = $stmt->columnCount() > 0 ? $stmt->fetchAll() : [];
+        $stmt->closeCursor();
+        return $rows;
     }
 
     /** SELECT trả về 1 dòng duy nhất hoặc null. */
@@ -81,7 +83,7 @@ class Database
     {
         $stmt = self::getConnection()->prepare($sql);
         $stmt->execute($params);
-        $row = $stmt->fetch();
+        $row = $stmt->columnCount() > 0 ? $stmt->fetch() : false;
         $stmt->closeCursor();
         return is_array($row) ? $row : null;
     }
@@ -91,7 +93,9 @@ class Database
     {
         $stmt = self::getConnection()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->rowCount();
+        $count = $stmt->rowCount();
+        $stmt->closeCursor();
+        return $count;
     }
 
     /** Gọi stored procedure, ví dụ: Database::call('sp_category_list') */
@@ -103,7 +107,13 @@ class Database
         $marks = implode(',', array_fill(0, count($params), '?'));
         $stmt  = self::getConnection()->prepare("CALL {$procedure}({$marks})");
         $stmt->execute(array_values($params));
-        $rows = $stmt->fetchAll();
+        $rows = $stmt->columnCount() > 0 ? $stmt->fetchAll() : [];
+        try {
+            while ($stmt->nextRowset()) {
+                // Đọc hết các tập kết quả phụ nếu có
+            }
+        } catch (Throwable $e) {
+        }
         $stmt->closeCursor(); // bắt buộc sau CALL để chạy được câu lệnh tiếp theo trên MariaDB
         return $rows;
     }

@@ -2,7 +2,7 @@
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 $user = class_exists('Auth') ? Auth::user() : Session::get('user');
 $userId = is_array($user) ? (int) $user['id'] : null;
-$isAdmin = class_exists('Auth') ? Auth::isAdmin($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
+$isAdmin = class_exists('Auth') ? Auth::isModerator($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
 $isMember = class_exists('Auth') ? Auth::isMember($user) : is_array($user);
 $isGuestAccount = is_array($user) && !$isMember;
 $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
@@ -171,7 +171,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                     <!-- Interactive Checklist Items -->
                     <div class="checklist-items-box flex-grow-1 mb-3">
                         <?php foreach ($items as $itemIdx => $it): ?>
-                            <?php $checkId = 'chk-' . (int)$checklist['id'] . '-' . $itemIdx; ?>
+                            <?php $checkId = 'chk-' . (int)$checklist['id'] . '-' . (int)($it['id'] ?? $itemIdx); ?>
                             <div class="form-check py-1 d-flex align-items-center gap-2 border-bottom border-light-subtle">
                                 <input class="form-check-input mt-0 checklist-item-cb" type="checkbox" id="<?= $checkId ?>"
                                        data-card-id="<?= (int)$checklist['id'] ?>" style="cursor: pointer; width: 1.15em; height: 1.15em;">

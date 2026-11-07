@@ -99,11 +99,25 @@ class Checklist extends Model
     public function delete(int $id, int $userId, bool $isAdmin = false): bool
     {
         if ($isAdmin) {
-            return Database::execute('DELETE FROM trip_checklists WHERE id = :id', ['id' => $id]) > 0;
+            $deleted = Database::execute('DELETE FROM trip_checklists WHERE id = :id', ['id' => $id]) > 0;
+        } else {
+            $deleted = Database::execute(
+                'DELETE FROM trip_checklists WHERE id = :id AND user_id = :user_id',
+                ['id' => $id, 'user_id' => $userId]
+            ) > 0;
         }
-        return Database::execute(
-            'DELETE FROM trip_checklists WHERE id = :id AND user_id = :user_id',
-            ['id' => $id, 'user_id' => $userId]
-        ) > 0;
+
+        if ($deleted) {
+            try {
+                Database::execute('DELETE FROM checklist_items WHERE checklist_id = :id', ['id' => $id]);
+            } catch (Throwable $e) {
+            }
+            try {
+                Database::execute("DELETE FROM notifications WHERE type = 'create_checklist' AND target_id = :id", ['id' => $id]);
+            } catch (Throwable $e) {
+            }
+        }
+
+        return $deleted;
     }
 }

@@ -81,11 +81,11 @@ class Comment extends Model {
             $exists = Database::query($checkSql, ['cid' => $commentId, 'uid' => $userId]);
             if (!empty($exists)) {
                 $delSql = "DELETE FROM comment_likes WHERE comment_id = :cid AND user_id = :uid";
-                Database::query($delSql, ['cid' => $commentId, 'uid' => $userId]);
+                Database::execute($delSql, ['cid' => $commentId, 'uid' => $userId]);
                 $liked = false;
             } else {
                 $insSql = "INSERT IGNORE INTO comment_likes (comment_id, user_id, created_at) VALUES (:cid, :uid, NOW())";
-                Database::query($insSql, ['cid' => $commentId, 'uid' => $userId]);
+                Database::execute($insSql, ['cid' => $commentId, 'uid' => $userId]);
                 $liked = true;
             }
             $countSql = "SELECT COUNT(*) AS total FROM comment_likes WHERE comment_id = :cid";

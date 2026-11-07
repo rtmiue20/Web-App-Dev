@@ -29,10 +29,13 @@ abstract class BaseRepository implements RepositoryInterface
         $placeholders = implode(', ', array_fill(0, count($params), '?'));
         $stmt = $this->db->prepare("CALL {$procedure}({$placeholders})");
         $stmt->execute(array_values($params));
-        $rows = $stmt->fetchAll();
+        $rows = $stmt->columnCount() > 0 ? $stmt->fetchAll() : [];
 
-        while ($stmt->nextRowset()) {
-            // Đọc hết các tập kết quả phụ nếu có
+        try {
+            while ($stmt->nextRowset()) {
+                // Đọc hết các tập kết quả phụ nếu có
+            }
+        } catch (Throwable $e) {
         }
         $stmt->closeCursor();
 
@@ -46,7 +49,9 @@ abstract class BaseRepository implements RepositoryInterface
     {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $rows = $stmt->columnCount() > 0 ? $stmt->fetchAll() : [];
+        $stmt->closeCursor();
+        return $rows;
     }
 
     /**
@@ -56,7 +61,8 @@ abstract class BaseRepository implements RepositoryInterface
     {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        $row = $stmt->fetch();
+        $row = $stmt->columnCount() > 0 ? $stmt->fetch() : false;
+        $stmt->closeCursor();
         return $row === false ? null : $row;
     }
 
@@ -67,7 +73,9 @@ abstract class BaseRepository implements RepositoryInterface
     {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->rowCount();
+        $count = $stmt->rowCount();
+        $stmt->closeCursor();
+        return $count;
     }
 
     /**

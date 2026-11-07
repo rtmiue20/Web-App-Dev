@@ -18,11 +18,11 @@ class Follow extends Model
 
             if (!empty($exists)) {
                 $delSql = "DELETE FROM user_follows WHERE follower_id = :fid AND following_id = :tid";
-                Database::query($delSql, ['fid' => $followerId, 'tid' => $followingId]);
+                Database::execute($delSql, ['fid' => $followerId, 'tid' => $followingId]);
                 $following = false;
             } else {
                 $insSql = "INSERT INTO user_follows (follower_id, following_id, created_at) VALUES (:fid, :tid, NOW())";
-                Database::query($insSql, ['fid' => $followerId, 'tid' => $followingId]);
+                Database::execute($insSql, ['fid' => $followerId, 'tid' => $followingId]);
                 $following = true;
             }
 
@@ -125,11 +125,11 @@ class Follow extends Model
 
             if (!empty($exists)) {
                 $delSql = "DELETE FROM category_follows WHERE user_id = :uid AND category_id = :cid";
-                Database::query($delSql, ['uid' => $userId, 'cid' => $categoryId]);
+                Database::execute($delSql, ['uid' => $userId, 'cid' => $categoryId]);
                 $following = false;
             } else {
                 $insSql = "INSERT INTO category_follows (user_id, category_id, created_at) VALUES (:uid, :cid, NOW())";
-                Database::query($insSql, ['uid' => $userId, 'cid' => $categoryId]);
+                Database::execute($insSql, ['uid' => $userId, 'cid' => $categoryId]);
                 $following = true;
             }
 
