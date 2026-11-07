@@ -544,13 +544,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnCopy.innerHTML = '<i class="bi bi-check-lg me-1"></i> Đã sao chép!';
                 btnCopy.classList.remove('btn-dark');
                 btnCopy.classList.add('btn-success');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Đã sao chép mật khẩu mới vào bộ nhớ tạm!', 'success');
+                }
                 setTimeout(function() {
                     btnCopy.innerHTML = '<i class="bi bi-clipboard me-1"></i> Sao chép mật khẩu';
                     btnCopy.classList.remove('btn-success');
                     btnCopy.classList.add('btn-dark');
                 }, 2500);
             }).catch(function() {
-                alert('Mật khẩu mới: ' + pass);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Mật khẩu mới: ' + pass, 'info');
+                }
             });
         });
     }

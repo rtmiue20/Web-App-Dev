@@ -137,7 +137,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
 
                         <?php if ($canDelete): ?>
                             <form method="post" action="<?= $escape($baseUrl) ?>/checklists/<?= (int) $checklist['id'] ?>/delete"
-                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa checklist này?');" class="m-0">
+                                  onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn xóa checklist “<?= $escape(addslashes($checklist['title'])) ?>” khỏi danh sách trang bị không? Hành động này sẽ gỡ checklist khỏi danh mục chung.', 'Xác nhận xóa', 'Xóa checklist khỏi danh sách?');" class="m-0">
                                 <input type="hidden" name="_csrf" value="<?= $escape(Csrf::token()) ?>">
                                 <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Xóa checklist" aria-label="Xóa checklist">
                                     <i class="bi bi-trash3"></i>

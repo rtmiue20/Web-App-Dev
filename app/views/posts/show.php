@@ -346,7 +346,7 @@ $galleryCount = count($galleryImages);
 
                           class="d-inline" 
 
-                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.');">
+                          onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn xóa bài viết “<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>” khỏi diễn đàn không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', 'Xóa bài viết khỏi diễn đàn?');">
 
                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
 
@@ -1588,21 +1588,21 @@ $galleryCount = count($galleryImages);
 
     <div class="modal fade" id="deleteCommentModal" tabindex="-1" aria-labelledby="deleteCommentModalLabel" aria-hidden="true">
 
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-dialog modal-dialog-centered">
 
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 26px; background: var(--color-paper, #f2f3ef); color: var(--color-ink, #23261f);">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
 
-                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div class="modal-header border-0 pb-0 pt-4 px-4" style="background: transparent;">
 
-                    <div class="d-flex align-items-center gap-2">
+                    <div>
 
-                        <span class="d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(220, 53, 69, 0.14); color: #dc3545;">
+                        <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 600;">
 
-                            <i class="bi bi-trash3-fill fs-5"></i>
+                            <i class="bi bi-exclamation-triangle me-1"></i>Xác nhận xóa
 
                         </span>
 
-                        <h5 class="modal-title fw-semibold mb-0" id="deleteCommentModalLabel">Xác nhận xóa bình luận</h5>
+                        <h5 class="modal-title fw-bold fs-5" id="deleteCommentModalLabel" style="color: #23261f;">Xóa bình luận khỏi bài viết?</h5>
 
                     </div>
 
@@ -1610,23 +1610,19 @@ $galleryCount = count($galleryImages);
 
                 </div>
 
-                <div class="modal-body px-4 py-3">
+                <div class="modal-body p-4" style="color: #4a4f44; background: #ffffff;">
 
-                    <p class="mb-0 text-secondary small">
-
-                        Bạn có chắc chắn muốn xóa bình luận này (cùng các phản hồi trả lời bên dưới nếu có) không? Hành động này không thể hoàn tác.
-
-                    </p>
+                    Bạn có chắc chắn muốn xóa bình luận này (cùng các phản hồi trả lời bên dưới nếu có) khỏi bài viết không? Hành động này không thể hoàn tác.
 
                 </div>
 
-                <div class="modal-footer border-0 pt-0 pb-4 px-4 d-flex justify-content-end gap-2">
+                <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
 
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
 
-                    <button type="button" class="btn btn-danger rounded-pill px-4" id="btnConfirmDeleteComment">
+                    <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm" id="btnConfirmDeleteComment">
 
-                        <i class="bi bi-trash3 me-1"></i> Xóa bình luận
+                        <i class="bi bi-trash-fill me-1"></i> Xác nhận xóa
 
                     </button>
 

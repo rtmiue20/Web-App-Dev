@@ -375,7 +375,7 @@ const ForumAjax = {
         confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xóa...';
         await self.executeDeleteComment(cId, pId, btn);
         confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Xóa bình luận';
+        confirmBtn.innerHTML = '<i class="bi bi-trash-fill me-1"></i> Xác nhận xóa';
         self._pendingDelete = null;
         modalInstance.hide();
       };
@@ -384,7 +384,22 @@ const ForumAjax = {
       return;
     }
 
-    if (confirm('Bạn có chắc muốn xóa bình luận này (cùng các phản hồi bên dưới) không?')) {
+    const self = this;
+    if (typeof window.showConfirmToast === 'function') {
+      window.showConfirmToast(
+        'Bạn có chắc muốn xóa bình luận này (cùng các phản hồi bên dưới) khỏi bài viết không? Hành động này không thể hoàn tác.',
+        function () {
+          self.executeDeleteComment(commentId, postId, btnElement);
+        },
+        {
+          badgeText: 'Xác nhận xóa',
+          title: 'Xóa bình luận khỏi bài viết?',
+          confirmLabel: 'Xác nhận xóa',
+          cancelLabel: 'Hủy',
+          icon: 'bi-trash-fill',
+        }
+      );
+    } else {
       this.executeDeleteComment(commentId, postId, btnElement);
     }
   },
@@ -427,6 +442,9 @@ const ForumAjax = {
         const countBadge = document.getElementById('comments-count-badge');
         if (countBadge && data.data && typeof data.data.total_comments !== 'undefined') {
           countBadge.textContent = data.data.total_comments;
+        }
+        if (typeof window.showToast === 'function') {
+          window.showToast(data.message || 'Đã xóa bình luận thành công.', 'success');
         }
         this.fetchNotifications();
       } else {

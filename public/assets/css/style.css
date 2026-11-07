@@ -1953,3 +1953,57 @@ body {
     white-space: nowrap !important;
   }
 }
+
+/* Interactive Confirm Toast (Thay thế hộp thoại confirm() mặc định của trình duyệt) */
+.app-toast-confirm {
+  align-items: flex-start !important;
+  padding: 1.05rem 2.4rem 1.05rem 1.4rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+}
+
+.toast-confirm-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-top: 0.65rem !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+.toast-btn-confirm,
+.toast-btn-cancel {
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 0.35rem 0.9rem !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  transition: all 0.18s ease !important;
+  line-height: 1.2 !important;
+}
+
+.toast-btn-confirm {
+  background: #ffffff !important;
+  color: #b91c1c !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22) !important;
+}
+
+.toast-btn-confirm:hover {
+  transform: translateY(-1px) !important;
+  background: #fff5f5 !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.toast-btn-cancel {
+  background: rgba(0, 0, 0, 0.22) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+}
+
+.toast-btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}

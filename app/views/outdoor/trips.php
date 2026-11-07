@@ -162,7 +162,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
 
                         <?php if ($canDelete): ?>
                             <form method="post" action="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>/delete"
-                                  onsubmit="return confirm('Bạn có chắc chắn muốn hủy chuyến đi này?');" class="m-0">
+                                  onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn hủy chuyến đi “<?= $escape(addslashes($trip['title'])) ?>” khỏi danh sách đi chung không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', 'Hủy chuyến đi chung?');" class="m-0">
                                 <input type="hidden" name="_csrf" value="<?= $escape(Csrf::token()) ?>">
                                 <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Hủy chuyến" aria-label="Hủy chuyến">
                                     <i class="bi bi-trash3"></i>

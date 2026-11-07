@@ -104,9 +104,10 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                                                     <i class="bi bi-check-lg me-1"></i>Duyệt
                                                 </button>
                                             </form>
-                                            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts/<?= (int)$p['id'] ?>/hide" class="d-inline">
+                                            <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts/<?= (int)$p['id'] ?>/hide" class="d-inline"
+                                                  onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn từ chối và ẩn bài viết “<?= htmlspecialchars(addslashes($p['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>” khỏi diễn đàn không?', 'Xác nhận từ chối', 'Từ chối bài viết?');">
                                                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Từ chối / Ẩn bài" onclick="return confirm('Bạn có chắc chắn muốn ẩn bài viết này?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Từ chối / Ẩn bài">
                                                     <i class="bi bi-x-lg me-1"></i>Từ chối
                                                 </button>
                                             </form>
