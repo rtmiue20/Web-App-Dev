@@ -169,6 +169,17 @@ class PostAdminController extends Controller
         }
 
         if ($this->postRepository->delete($id)) {
+            if (class_exists('Notification')) {
+                $adminId = (int)Auth::id();
+                $authorId = (int)($post['user_id'] ?? 0);
+                $shortTitle = mb_substr((string)($post['title'] ?? 'bài viết'), 0, 38);
+                if ($adminId > 0) {
+                    Notification::send($adminId, $adminId, 'admin_action', 0, "Bạn đã xóa vĩnh viễn bài viết: '{$shortTitle}'.");
+                }
+                if ($authorId > 0 && $authorId !== $adminId) {
+                    Notification::send($authorId, $adminId > 0 ? $adminId : $authorId, 'post_rejected', 0, "Ban quản trị đã xóa bài viết '{$shortTitle}' của bạn.");
+                }
+            }
             Session::flash('success', 'Đã xóa bài viết "' . $post['title'] . '" vĩnh viễn.');
         } else {
             Session::flash('error', 'Không thể xóa bài viết. Vui lòng thử lại.');

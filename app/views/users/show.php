@@ -25,16 +25,21 @@ $g = $gamification ?? [];
                 <div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <h1 class="h3 fw-bold mb-0 text-dark"><?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?></h1>
-                        <span class="badge rounded-pill text-bg-success px-3 py-1" style="font-size: 11px;">
-                            <?= htmlspecialchars(ucfirst($u['role_name'] ?? 'member'), ENT_QUOTES, 'UTF-8') ?>
+                        <?php
+                        $targetRole = (string)($u['role_name'] ?? 'member');
+                        $targetRoleBadge = class_exists('Auth') ? Auth::roleBadgeClass($targetRole) : 'text-bg-success';
+                        $targetRoleLabel = class_exists('Auth') ? Auth::roleLabel($targetRole) : ucfirst($targetRole);
+                        ?>
+                        <span class="badge rounded-pill <?= htmlspecialchars($targetRoleBadge, ENT_QUOTES, 'UTF-8') ?> px-3 py-1" style="font-size: 11px;">
+                            <?= htmlspecialchars($targetRoleLabel, ENT_QUOTES, 'UTF-8') ?>
                         </span>
                     </div>
                     <!-- Badge Gamification -->
-                    <div class="mt-1 d-inline-flex align-items-center gap-1 px-2 py-0.5 rounded-pill border" 
-                         style="background: <?= htmlspecialchars($g['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($g['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 11.5px; color: <?= htmlspecialchars($g['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
-                        <i class="bi <?= htmlspecialchars($g['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?>"></i>
+                    <div class="mt-2 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill border shadow-sm" 
+                         style="background: <?= htmlspecialchars($g['bg'] ?? 'rgba(0,0,0,0.05)', ENT_QUOTES, 'UTF-8') ?>; border-color: <?= htmlspecialchars($g['border'] ?? '#ccc', ENT_QUOTES, 'UTF-8') ?> !important; font-size: 13px; line-height: 1.4; color: <?= htmlspecialchars($g['color'] ?? '#333', ENT_QUOTES, 'UTF-8') ?>;">
+                        <i class="bi <?= htmlspecialchars($g['icon'] ?? 'bi-award', ENT_QUOTES, 'UTF-8') ?> me-0.5"></i>
                         <span class="fw-bold"><?= htmlspecialchars($g['title'] ?? 'Tân thủ dã ngoại', ENT_QUOTES, 'UTF-8') ?></span>
-                        <span class="opacity-75">(Level <?= (int)($g['level'] ?? 1) ?>)</span>
+                        <span class="opacity-75 ms-1">(Level <?= (int)($g['level'] ?? 1) ?>)</span>
                     </div>
                 </div>
             </div>
@@ -45,7 +50,7 @@ $g = $gamification ?? [];
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" class="nature-btn-secondary px-4 py-2 text-dark" style="height: 42px;">
                         <i class="bi bi-gear-fill me-1"></i> Quản lý hồ sơ của tôi
                     </a>
-                <?php elseif (Auth::check()): ?>
+                <?php elseif (Auth::isMember()): ?>
                     <button type="button" 
                             id="btnFollowUser" 
                             class="nature-btn-primary px-4 py-2 follow-user-btn <?= !empty($isFollowing) ? 'following' : '' ?>" 
@@ -55,7 +60,7 @@ $g = $gamification ?? [];
                         <i class="bi <?= !empty($isFollowing) ? 'bi-check-lg' : 'bi-person-plus-fill' ?> me-1"></i>
                         <span class="follow-btn-text"><?= !empty($isFollowing) ? 'Đang theo dõi' : 'Theo dõi' ?></span>
                     </button>
-                <?php else: ?>
+                <?php elseif (!Auth::check()): ?>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-primary px-4 py-2" style="width: auto; height: 42px;">
                         <i class="bi bi-person-plus-fill me-1"></i> Theo dõi
                     </a>

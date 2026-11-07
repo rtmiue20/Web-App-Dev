@@ -68,7 +68,7 @@ $currentAdminId = Auth::id();
 
     <!-- Summary Stats Cards (4 cấp RBAC) -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -81,7 +81,20 @@ $currentAdminId = Auth::id();
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-4 col-xl">
+            <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="text-muted small">Khách / Chỉ xem (Guest)</span>
+                        <h3 class="fw-normal mb-0 mt-1 text-secondary"><?= (int)$guestCount ?></h3>
+                    </div>
+                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(108, 117, 125, 0.14); color: #6c757d;">
+                        <i class="bi bi-eye-fill fs-5"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
             <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -94,7 +107,7 @@ $currentAdminId = Auth::id();
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-6 col-xl">
             <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -107,7 +120,7 @@ $currentAdminId = Auth::id();
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-12 col-md-6 col-xl">
             <div class="nature-card py-3 px-4 h-100" style="border-radius: 22px;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
@@ -544,13 +557,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnCopy.innerHTML = '<i class="bi bi-check-lg me-1"></i> Đã sao chép!';
                 btnCopy.classList.remove('btn-dark');
                 btnCopy.classList.add('btn-success');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Đã sao chép mật khẩu mới vào bộ nhớ tạm!', 'success');
+                }
                 setTimeout(function() {
                     btnCopy.innerHTML = '<i class="bi bi-clipboard me-1"></i> Sao chép mật khẩu';
                     btnCopy.classList.remove('btn-success');
                     btnCopy.classList.add('btn-dark');
                 }, 2500);
             }).catch(function() {
-                alert('Mật khẩu mới: ' + pass);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Mật khẩu mới: ' + pass, 'info');
+                }
             });
         });
     }

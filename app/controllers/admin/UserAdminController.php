@@ -87,6 +87,15 @@ class UserAdminController extends Controller
         $result = $this->userService->changeUserRole($id, $newRoleId, Auth::id());
 
         if ($result['success']) {
+            if (class_exists('Notification')) {
+                $adminId = (int)Auth::id();
+                if ($adminId > 0) {
+                    Notification::send($adminId, $adminId, 'admin_action', $id, $result['message']);
+                }
+                if ($id > 0 && $id !== $adminId) {
+                    Notification::send($id, $adminId > 0 ? $adminId : $id, 'system', $id, 'Ban quản trị đã cập nhật quyền hạn tài khoản của bạn.');
+                }
+            }
             Session::flash('success', $result['message']);
         } else {
             Session::flash('error', $result['message']);

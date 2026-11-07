@@ -2,8 +2,8 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../app/bootstrap.php';
 
-$lat = filter_input(INPUT_GET, 'lat', FILTER_VALIDATE_FLOAT);
-$lng = filter_input(INPUT_GET, 'lng', FILTER_VALIDATE_FLOAT);
+$lat = isset($_GET['lat']) ? filter_var($_GET['lat'], FILTER_VALIDATE_FLOAT) : null;
+$lng = isset($_GET['lng']) ? filter_var($_GET['lng'], FILTER_VALIDATE_FLOAT) : null;
 $forecastDate = trim((string) ($_GET['date'] ?? ''));
 if ($lat === false || $lat === null || $lat < -90 || $lat > 90
     || $lng === false || $lng === null || $lng < -180 || $lng > 180) {
@@ -49,8 +49,9 @@ $url = 'https://api.open-meteo.com/v1/forecast?' . http_build_query($query);
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+curl_setopt($ch, CURLOPT_USERAGENT, 'OutdoorForum/1.0 (WebDev)');
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $response = curl_exec($ch);
 $httpStatus = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
@@ -100,6 +101,18 @@ $condition = match (true) {
     default => 'Thời tiết thay đổi'
 };
 
+$currentIcon = match (true) {
+    $weatherCode === 0 => 'bi-sun-fill text-warning',
+    $weatherCode === 1 || $weatherCode === 2 => 'bi-cloud-sun-fill text-warning',
+    $weatherCode === 3 => 'bi-clouds-fill text-white',
+    $weatherCode >= 45 && $weatherCode <= 48 => 'bi-cloud-haze2-fill text-white-50',
+    $weatherCode >= 51 && $weatherCode <= 67 => 'bi-cloud-rain-heavy-fill text-info',
+    $weatherCode >= 71 && $weatherCode <= 77 => 'bi-snow text-info',
+    $weatherCode >= 80 && $weatherCode <= 82 => 'bi-cloud-rain-fill text-info',
+    $weatherCode >= 95 && $weatherCode <= 99 => 'bi-cloud-lightning-rain-fill text-warning',
+    default => 'bi-cloud-sun-fill text-warning'
+};
+
 $dailyForecast = [];
 if ($forecastDate === '' && isset($data['daily']['time']) && is_array($data['daily']['time'])) {
     foreach (array_slice($data['daily']['time'], 0, 4) as $index => $day) {
@@ -119,7 +132,17 @@ if ($forecastDate === '' && isset($data['daily']['time']) && is_array($data['dai
                 $dayCode >= 95 && $dayCode <= 99 => 'Dông',
                 default => 'Thời tiết thay đổi',
             },
-            'icon' => 'bi-cloud-sun',
+            'icon' => match (true) {
+                $dayCode === 0 => 'bi-sun-fill text-warning',
+                $dayCode === 1 || $dayCode === 2 => 'bi-cloud-sun-fill text-warning',
+                $dayCode === 3 => 'bi-clouds-fill text-white',
+                $dayCode >= 45 && $dayCode <= 48 => 'bi-cloud-haze2-fill text-white-50',
+                $dayCode >= 51 && $dayCode <= 67 => 'bi-cloud-rain-heavy-fill text-info',
+                $dayCode >= 71 && $dayCode <= 77 => 'bi-snow text-info',
+                $dayCode >= 80 && $dayCode <= 82 => 'bi-cloud-rain-fill text-info',
+                $dayCode >= 95 && $dayCode <= 99 => 'bi-cloud-lightning-rain-fill text-warning',
+                default => 'bi-cloud-sun-fill text-warning'
+            },
         ];
     }
 }
@@ -141,6 +164,7 @@ echo json_encode([
         'temp' => round($temperature),
         'windspeed' => $windSpeed,
         'condition' => $condition,
+        'icon' => $currentIcon,
         'alerts' => $alerts,
         'date' => $forecastDate !== '' ? $forecastDate : null,
         'daily' => $dailyForecast,

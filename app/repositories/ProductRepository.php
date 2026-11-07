@@ -17,26 +17,44 @@ class ProductRepository extends BaseRepository
     public function findByCategory(?int $categoryId = null): array
     {
         try {
-            return $this->callProcedure('sp_product_list_by_category', [$categoryId]);
+            $rows = $this->callProcedure('sp_product_list_by_category', [$categoryId]);
+            if (empty($rows) || (array_key_exists('user_id', $rows[0]) && array_key_exists('author_username', $rows[0]))) {
+                return $rows;
+            }
         } catch (PDOException $e) {
+            // Chuyển sang câu lệnh SQL đầy đủ bên dưới
+        }
+
+        try {
+            $sql = 'SELECT p.*, c.name AS category_name,
+                           u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
+                    FROM products p
+                    LEFT JOIN categories c ON c.id = p.category_id
+                    LEFT JOIN users u ON u.id = p.user_id
+                    LEFT JOIN roles r ON r.id = u.role_id
+                    WHERE p.is_shared = 1';
+            $params = [];
+
+            if ($categoryId !== null && $categoryId > 0) {
+                $sql .= ' AND p.category_id = :category_id';
+                $params['category_id'] = $categoryId;
+            }
+
+            $sql .= ' ORDER BY p.id DESC';
+            return $this->query($sql, $params);
+        } catch (PDOException $ex) {
             try {
-                $sql = 'SELECT p.*, c.name AS category_name,
-                               u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
-                        FROM products p
-                        LEFT JOIN categories c ON c.id = p.category_id
-                        LEFT JOIN users u ON u.id = p.user_id
-                        LEFT JOIN roles r ON r.id = u.role_id
-                        WHERE p.is_shared = 1';
-                $params = [];
-
+                $sql2 = 'SELECT p.*, c.name AS category_name
+                         FROM products p
+                         LEFT JOIN categories c ON c.id = p.category_id';
+                $params2 = [];
                 if ($categoryId !== null && $categoryId > 0) {
-                    $sql .= ' AND p.category_id = :category_id';
-                    $params['category_id'] = $categoryId;
+                    $sql2 .= ' WHERE p.category_id = :category_id';
+                    $params2['category_id'] = $categoryId;
                 }
-
-                $sql .= ' ORDER BY p.id DESC';
-                return $this->query($sql, $params);
-            } catch (PDOException $ex) {
+                $sql2 .= ' ORDER BY p.id DESC';
+                return $this->query($sql2, $params2);
+            } catch (PDOException $ex2) {
                 return [];
             }
         }
@@ -54,21 +72,36 @@ class ProductRepository extends BaseRepository
     {
         try {
             $rows = $this->callProcedure('sp_product_get', [$id]);
-            return !empty($rows) ? $rows[0] : null;
+            if (!empty($rows) && array_key_exists('user_id', $rows[0]) && array_key_exists('is_shared', $rows[0])) {
+                return $rows[0];
+            }
         } catch (PDOException $e) {
+            // Chuyển sang câu lệnh SQL đầy đủ bên dưới
+        }
+
+        try {
+            return $this->queryOne(
+                'SELECT p.*, c.name AS category_name,
+                        u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
+                 FROM products p
+                 LEFT JOIN categories c ON c.id = p.category_id
+                 LEFT JOIN users u ON u.id = p.user_id
+                 LEFT JOIN roles r ON r.id = u.role_id
+                 WHERE p.id = :id
+                 LIMIT 1',
+                ['id' => $id]
+            );
+        } catch (PDOException $ex) {
             try {
                 return $this->queryOne(
-                    'SELECT p.*, c.name AS category_name,
-                            u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
+                    'SELECT p.*, c.name AS category_name
                      FROM products p
                      LEFT JOIN categories c ON c.id = p.category_id
-                     LEFT JOIN users u ON u.id = p.user_id
-                     LEFT JOIN roles r ON r.id = u.role_id
                      WHERE p.id = :id
                      LIMIT 1',
                     ['id' => $id]
                 );
-            } catch (PDOException $ex) {
+            } catch (PDOException $ex2) {
                 return null;
             }
         }
@@ -172,7 +205,23 @@ class ProductRepository extends BaseRepository
                 );
                 return $this->lastInsertId();
             } catch (PDOException $ex) {
-                return 0;
+                try {
+                    $this->execute(
+                        'INSERT INTO products (category_id, name, price, image_url, description, link)
+                         VALUES (:category_id, :name, :price, :image_url, :description, :link)',
+                        [
+                            'category_id' => $categoryId,
+                            'name'        => $name,
+                            'price'       => $price,
+                            'image_url'   => $imageUrl,
+                            'description' => $description,
+                            'link'        => $link,
+                        ]
+                    );
+                    return $this->lastInsertId();
+                } catch (PDOException $ex2) {
+                    return 0;
+                }
             }
         }
     }
@@ -227,7 +276,30 @@ class ProductRepository extends BaseRepository
                 );
                 return true;
             } catch (PDOException $ex) {
-                return false;
+                try {
+                    $this->execute(
+                        'UPDATE products
+                         SET category_id = :category_id,
+                             name = :name,
+                             price = :price,
+                             image_url = COALESCE(:image_url, image_url),
+                             description = :description,
+                             link = :link
+                         WHERE id = :id',
+                        [
+                            'category_id' => $categoryId,
+                            'name'        => $name,
+                            'price'       => $price,
+                            'image_url'   => $imageUrl,
+                            'description' => $description,
+                            'link'        => $link,
+                            'id'          => $id,
+                        ]
+                    );
+                    return true;
+                } catch (PDOException $ex2) {
+                    return false;
+                }
             }
         }
     }
@@ -237,16 +309,26 @@ class ProductRepository extends BaseRepository
      */
     public function delete(int $id): bool
     {
+        $deleted = false;
         try {
             $this->callProcedure('sp_product_delete', [$id]);
-            return true;
+            $deleted = true;
         } catch (PDOException $e) {
             try {
-                return parent::delete($id);
+                $deleted = parent::delete($id);
             } catch (PDOException $ex) {
                 return false;
             }
         }
+
+        if ($deleted) {
+            try {
+                $this->execute('DELETE FROM post_products WHERE product_id = :id', ['id' => $id]);
+            } catch (Throwable $e) {
+            }
+        }
+
+        return $deleted;
     }
 }
 

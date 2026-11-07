@@ -166,11 +166,28 @@ class Trip extends Model
     public function delete(int $tripId, int $userId, bool $isAdmin = false): bool
     {
         if ($isAdmin) {
-            return Database::execute('DELETE FROM trips WHERE id = :id', ['id' => $tripId]) > 0;
+            $deleted = Database::execute('DELETE FROM trips WHERE id = :id', ['id' => $tripId]) > 0;
+        } else {
+            $deleted = Database::execute(
+                'DELETE FROM trips WHERE id = :id AND user_id = :user_id',
+                ['id' => $tripId, 'user_id' => $userId]
+            ) > 0;
         }
-        return Database::execute(
-            'DELETE FROM trips WHERE id = :id AND user_id = :user_id',
-            ['id' => $tripId, 'user_id' => $userId]
-        ) > 0;
+
+        if ($deleted) {
+            try {
+                Database::execute('DELETE FROM trip_participants WHERE trip_id = :id', ['id' => $tripId]);
+            } catch (Throwable $e) {
+            }
+            try {
+                Database::execute(
+                    "DELETE FROM notifications WHERE type IN ('create_trip', 'join_trip', 'trip_new_member') AND target_id = :id",
+                    ['id' => $tripId]
+                );
+            } catch (Throwable $e) {
+            }
+        }
+
+        return $deleted;
     }
 }

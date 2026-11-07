@@ -1,8 +1,10 @@
 <?php
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$user = Session::get('user');
+$user = class_exists('Auth') ? Auth::user() : Session::get('user');
 $userId = is_array($user) ? (int) $user['id'] : null;
-$isAdmin = is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin'));
+$isAdmin = class_exists('Auth') ? Auth::isModerator($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
+$isMember = class_exists('Auth') ? Auth::isMember($user) : is_array($user);
+$isGuestAccount = is_array($user) && !$isMember;
 $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 ?>
 <main class="app-container" style="max-width: 1100px;">
@@ -44,8 +46,8 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         </div>
     <?php endif; ?>
 
-    <!-- Create Checklist Card (Logged-in only) -->
-    <?php if (is_array($user)): ?>
+    <!-- Create Checklist Card (Member / Moderator / Admin only) -->
+    <?php if ($isMember): ?>
         <section class="nature-card p-4 mb-4" style="border-radius: 28px;">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="d-flex align-items-center gap-2">
@@ -91,6 +93,13 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                 </div>
             </form>
         </section>
+    <?php elseif ($isGuestAccount): ?>
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-eye-fill text-success fs-5"></i>
+                <span class="text-white">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong>. Bạn có thể xem và đánh dấu thử các mẫu checklist công khai, nhưng không thể tạo checklist mới.</span>
+            </div>
+        </div>
     <?php else: ?>
         <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
             <div class="d-flex align-items-center gap-2">
@@ -118,7 +127,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         <?php foreach ($checklists as $idx => $checklist): ?>
             <?php
             $isOwner = $userId !== null && (int) $checklist['user_id'] === $userId;
-            $canDelete = $isOwner || $isAdmin;
+            $canDelete = $isMember && ($isOwner || $isAdmin);
             $items = $checklist['items'] ?? [];
             $totalItems = count($items);
             ?>
@@ -137,7 +146,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
 
                         <?php if ($canDelete): ?>
                             <form method="post" action="<?= $escape($baseUrl) ?>/checklists/<?= (int) $checklist['id'] ?>/delete"
-                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa checklist này?');" class="m-0">
+                                  onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn xóa checklist “<?= $escape(addslashes($checklist['title'])) ?>” khỏi danh sách trang bị không? Hành động này sẽ gỡ checklist khỏi danh mục chung.', 'Xác nhận xóa', 'Xóa checklist khỏi danh sách?');" class="m-0">
                                 <input type="hidden" name="_csrf" value="<?= $escape(Csrf::token()) ?>">
                                 <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Xóa checklist" aria-label="Xóa checklist">
                                     <i class="bi bi-trash3"></i>
@@ -162,7 +171,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                     <!-- Interactive Checklist Items -->
                     <div class="checklist-items-box flex-grow-1 mb-3">
                         <?php foreach ($items as $itemIdx => $it): ?>
-                            <?php $checkId = 'chk-' . (int)$checklist['id'] . '-' . $itemIdx; ?>
+                            <?php $checkId = 'chk-' . (int)$checklist['id'] . '-' . (int)($it['id'] ?? $itemIdx); ?>
                             <div class="form-check py-1 d-flex align-items-center gap-2 border-bottom border-light-subtle">
                                 <input class="form-check-input mt-0 checklist-item-cb" type="checkbox" id="<?= $checkId ?>"
                                        data-card-id="<?= (int)$checklist['id'] ?>" style="cursor: pointer; width: 1.15em; height: 1.15em;">

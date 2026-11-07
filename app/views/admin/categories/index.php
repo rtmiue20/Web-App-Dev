@@ -118,36 +118,36 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 <!-- Modal Xác Nhận Xóa Chuyên Mục (FR11 Requirement) -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden;">
-            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(220, 53, 69, 0.12); color: #dc3545;">
-                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4" style="background: transparent;">
+                <div>
+                    <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 600;">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Xác nhận xóa
                     </span>
-                    <h5 class="modal-title fw-normal mb-0" id="deleteConfirmModalLabel" style="color: var(--color-ink);">Xác nhận xóa chuyên mục</h5>
+                    <h5 class="modal-title fw-bold fs-5" id="deleteConfirmModalLabel" style="color: #23261f;">Xóa chuyên mục khỏi hệ thống?</h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
-            <div class="modal-body px-4 py-3">
-                <p class="text-secondary mb-2">
-                    Bạn có chắc chắn muốn xóa chuyên mục: <strong id="deleteCategoryName" class="text-dark"></strong> (ID: #<span id="deleteCategoryId"></span>)?
+            <div class="modal-body p-4" style="color: #4a4f44; background: #ffffff;">
+                <p class="mb-2">
+                    Bạn có chắc chắn muốn xóa chuyên mục <strong id="deleteCategoryName" style="color: #23261f;"></strong> (ID: #<span id="deleteCategoryId"></span>) khỏi danh mục chung không?
                 </p>
                 <div id="deleteWarningBox" class="alert alert-warning border-0 rounded-4 d-none small mb-0">
                     <i class="bi bi-info-circle-fill me-1"></i>
                     <strong>Lưu ý:</strong> Chuyên mục này đang có <span id="deletePostCount" class="fw-bold"></span> bài viết. Do quy định an toàn dữ liệu, bạn không thể xóa chuyên mục khi vẫn còn bài viết bên trong.
                 </div>
                 <div id="deleteSafeNotice" class="text-muted small">
-                    Hành động này sẽ xóa hoàn toàn danh mục khỏi hệ thống và không thể hoàn tác.
+                    Hành động này sẽ xóa hoàn toàn chuyên mục khỏi hệ thống và không thể hoàn tác.
                 </div>
             </div>
 
-            <div class="modal-footer border-0 pt-0 pb-4 px-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
-                <form id="deleteCategoryForm" method="post" action="">
+            <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteCategoryForm" method="post" action="" class="m-0">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" id="btnConfirmDelete" class="btn btn-danger rounded-pill px-4">
-                        <i class="bi bi-trash3 me-1"></i> Đồng ý xóa
+                    <button type="submit" id="btnConfirmDelete" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                        <i class="bi bi-trash-fill me-1"></i> Xác nhận xóa
                     </button>
                 </form>
             </div>

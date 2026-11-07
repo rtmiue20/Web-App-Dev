@@ -15,14 +15,25 @@ class PlaceReview extends Model
 
     public function getByPost(int $postId): array
     {
-        return Database::query(
-            'SELECT r.*, u.username, u.avatar_path
-             FROM place_reviews r
-             JOIN users u ON u.id = r.user_id
-             WHERE r.post_id = :post_id
-             ORDER BY r.created_at DESC',
-            ['post_id' => $postId]
-        );
+        try {
+            return Database::query(
+                'SELECT r.*, u.username, u.avatar_path
+                 FROM place_reviews r
+                 JOIN users u ON u.id = r.user_id
+                 WHERE r.post_id = :post_id
+                 ORDER BY r.created_at DESC',
+                ['post_id' => $postId]
+            );
+        } catch (Throwable $e) {
+            return Database::query(
+                'SELECT r.*, u.username
+                 FROM place_reviews r
+                 JOIN users u ON u.id = r.user_id
+                 WHERE r.post_id = :post_id
+                 ORDER BY r.created_at DESC',
+                ['post_id' => $postId]
+            );
+        }
     }
 
     public function save(int $postId, int $userId, int $rating, string $review): void

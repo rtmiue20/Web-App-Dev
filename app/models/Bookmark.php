@@ -14,11 +14,11 @@ class Bookmark extends Model
 
             if (!empty($exists)) {
                 $delSql = "DELETE FROM post_bookmarks WHERE user_id = :uid AND post_id = :pid";
-                Database::query($delSql, ['uid' => $userId, 'pid' => $postId]);
+                Database::execute($delSql, ['uid' => $userId, 'pid' => $postId]);
                 $bookmarked = false;
             } else {
                 $insSql = "INSERT INTO post_bookmarks (user_id, post_id, created_at) VALUES (:uid, :pid, NOW())";
-                Database::query($insSql, ['uid' => $userId, 'pid' => $postId]);
+                Database::execute($insSql, ['uid' => $userId, 'pid' => $postId]);
                 $bookmarked = true;
             }
 

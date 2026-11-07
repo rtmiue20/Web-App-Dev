@@ -346,7 +346,7 @@ $galleryCount = count($galleryImages);
 
                           class="d-inline" 
 
-                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.');">
+                          onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn xóa bài viết “<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>” khỏi diễn đàn không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', 'Xóa bài viết khỏi diễn đàn?');">
 
                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
 
@@ -672,13 +672,13 @@ $galleryCount = count($galleryImages);
 
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
 
-        <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border" style="background: rgba(255, 255, 255, 0.035); border-color: rgba(255, 255, 255, 0.1) !important;">
+        <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border shadow-sm" style="background: rgba(30, 40, 25, 0.88); border-color: rgba(155, 189, 85, 0.3) !important;">
 
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
 
                 <div class="d-flex align-items-center gap-2">
 
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: rgba(155, 189, 85, 0.2); color: #c4e482;">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: rgba(155, 189, 85, 0.25); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.4);">
 
                         <i class="bi bi-cloud-sun-fill fs-5"></i>
 
@@ -686,9 +686,9 @@ $galleryCount = count($galleryImages);
 
                     <div>
 
-                        <h3 class="h6 mb-0 text-white fw-semibold">Dự báo thời tiết & Khuyến nghị chuyến đi</h3>
+                        <h3 class="h6 mb-0 text-white fw-bold" style="font-size: 15px; letter-spacing: 0.2px;">Dự báo thời tiết &amp; Khuyến nghị chuyến đi</h3>
 
-                        <span class="text-white-50" style="font-size: 11.5px;">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
+                        <span style="font-size: 11.5px; color: rgba(255, 255, 255, 0.70);">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
 
                     </div>
 
@@ -696,7 +696,7 @@ $galleryCount = count($galleryImages);
 
                 <?php if (!empty($post['location'])): ?>
 
-                    <span class="badge rounded-pill text-bg-light border text-secondary px-3 py-1.5" style="font-size: 11px;">
+                    <span class="badge rounded-pill px-3 py-1.5" style="background: rgba(255, 255, 255, 0.12); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.22); font-size: 11.5px;">
 
                         <i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
 
@@ -706,11 +706,11 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <div id="weather-forecast-panel" class="p-3 rounded-3" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div id="weather-forecast-panel" class="p-3 rounded-3" style="background: rgba(14, 20, 11, 0.65); border: 1px solid rgba(255, 255, 255, 0.12);">
 
-                <div class="text-center py-3 text-white-50 small">
+                <div class="text-center py-3 text-white small" style="opacity: 0.85;">
 
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>Đang tải dữ liệu khí tượng và dự báo 4 ngày tới...
+                    <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu khí tượng và dự báo 4 ngày tới...
 
                 </div>
 
@@ -1206,32 +1206,38 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <?php if ($isLoggedIn): ?>
+            <?php 
+            $currentUserId = Auth::check() ? (int) Auth::id() : 0;
+            $currentUserObj = Auth::user();
+            $isCurAdmin = Auth::isAdmin($currentUserObj);
+            $isAuthorOfPost = $currentUserId > 0 && $currentUserId === (int)($post['user_id'] ?? 0);
+            $canReviewPlace = Auth::isMember($currentUserObj) && (!$isAuthorOfPost || $isCurAdmin);
+            ?>
 
-                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int) $post['id'] ?>/reviews" class="row g-3 mt-2">
+            <?php if ($canReviewPlace): ?>
+
+                <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int) $post['id'] ?>/reviews" class="row g-3 mt-2" id="placeReviewForm">
 
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="rating" id="place-rating-input" value="5" required>
 
-                    <div class="col-md-3">
-
-                        <label class="form-label" for="place-rating">Số sao</label>
-
-                        <select class="form-select" id="place-rating" name="rating" required>
-
-                            <option value="">Chọn sao</option>
-
-                            <option value="5">5 - Rất tốt</option>
-
-                            <option value="4">4 - Tốt</option>
-
-                            <option value="3">3 - Bình thường</option>
-
-                            <option value="2">2 - Chưa tốt</option>
-
-                            <option value="1">1 - Không tốt</option>
-
-                        </select>
-
+                    <!-- Interactive Star Rating Widget (App Store style) -->
+                    <div class="col-12">
+                        <label class="form-label d-block fw-semibold mb-1" style="font-size: 13.5px;">Chọn số sao đánh giá</label>
+                        <div class="d-inline-flex align-items-center gap-3 p-2 px-3 rounded-4 bg-light border shadow-sm">
+                            <div class="star-rating-widget d-inline-flex align-items-center gap-1.5" 
+                                 id="starRatingWidget"
+                                 role="radiogroup" 
+                                 aria-label="Đánh giá số sao"
+                                 style="cursor: pointer; user-select: none; font-size: 26px; line-height: 1;">
+                                <i class="bi bi-star-fill star-item" data-value="1" title="1 sao - Không tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="2" title="2 sao - Chưa tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="3" title="3 sao - Bình thường" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="4" title="4 sao - Tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="5" title="5 sao - Rất tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                            </div>
+                            <span class="fw-bold small text-dark" id="starRatingLabel" style="min-width: 110px;">5 sao - Rất tốt</span>
+                        </div>
                     </div>
 
                     <div class="col-12">
@@ -1251,6 +1257,20 @@ $galleryCount = count($galleryImages);
                     </div>
 
                 </form>
+
+            <?php elseif ($isLoggedIn && Auth::isGuest()): ?>
+
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
+                    <i class="bi bi-eye-fill text-muted fs-5"></i>
+                    <span class="small text-muted">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên không thể gửi đánh giá địa điểm.</span>
+                </div>
+
+            <?php elseif ($isLoggedIn && $isAuthorOfPost && !$isCurAdmin): ?>
+
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
+                    <i class="bi bi-info-circle-fill text-muted fs-5"></i>
+                    <span class="small text-muted">Bạn là tác giả bài viết này nên không thể tự đánh giá địa điểm của chính mình. Chỉ Admin và các thành viên khác mới có thể gửi đánh giá.</span>
+                </div>
 
             <?php else: ?>
 
@@ -1321,15 +1341,10 @@ $galleryCount = count($galleryImages);
             </h2>
 
             <span class="badge rounded-pill border fw-normal py-1 px-3 d-inline-flex align-items-center gap-1" 
-
                   id="realtime-comment-status" 
-
                   style="background: rgba(155, 189, 85, 0.12); color: #c4e482; border-color: rgba(155, 189, 85, 0.35) !important; font-size: 11px;">
-
                 <span class="spinner-grow spinner-grow-sm text-success" style="width: 7px; height: 7px;" role="status"></span>
-
-                Trực tiếp (Realtime)
-
+                Trực tiếp
             </span>
 
         </div>
@@ -1373,6 +1388,16 @@ $galleryCount = count($galleryImages);
                     </div>
 
                 </form>
+
+            </div>
+
+        <?php elseif (class_exists('Auth') && Auth::check() && Auth::isGuest()): ?>
+
+            <div class="nature-alert nature-alert-success mb-4 d-flex align-items-center gap-2">
+
+                <i class="bi bi-eye-fill fs-5"></i>
+
+                <span>Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên chỉ có thể xem nội dung thảo luận, không thể gửi bình luận mới.</span>
 
             </div>
 
@@ -1580,21 +1605,21 @@ $galleryCount = count($galleryImages);
 
     <div class="modal fade" id="deleteCommentModal" tabindex="-1" aria-labelledby="deleteCommentModalLabel" aria-hidden="true">
 
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-dialog modal-dialog-centered">
 
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 26px; background: var(--color-paper, #f2f3ef); color: var(--color-ink, #23261f);">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
 
-                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div class="modal-header border-0 pb-0 pt-4 px-4" style="background: transparent;">
 
-                    <div class="d-flex align-items-center gap-2">
+                    <div>
 
-                        <span class="d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(220, 53, 69, 0.14); color: #dc3545;">
+                        <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 600;">
 
-                            <i class="bi bi-trash3-fill fs-5"></i>
+                            <i class="bi bi-exclamation-triangle me-1"></i>Xác nhận xóa
 
                         </span>
 
-                        <h5 class="modal-title fw-semibold mb-0" id="deleteCommentModalLabel">Xác nhận xóa bình luận</h5>
+                        <h5 class="modal-title fw-bold fs-5" id="deleteCommentModalLabel" style="color: #23261f;">Xóa bình luận khỏi bài viết?</h5>
 
                     </div>
 
@@ -1602,23 +1627,19 @@ $galleryCount = count($galleryImages);
 
                 </div>
 
-                <div class="modal-body px-4 py-3">
+                <div class="modal-body p-4" style="color: #4a4f44; background: #ffffff;">
 
-                    <p class="mb-0 text-secondary small">
-
-                        Bạn có chắc chắn muốn xóa bình luận này (cùng các phản hồi trả lời bên dưới nếu có) không? Hành động này không thể hoàn tác.
-
-                    </p>
+                    Bạn có chắc chắn muốn xóa bình luận này (cùng các phản hồi trả lời bên dưới nếu có) khỏi bài viết không? Hành động này không thể hoàn tác.
 
                 </div>
 
-                <div class="modal-footer border-0 pt-0 pb-4 px-4 d-flex justify-content-end gap-2">
+                <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
 
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
 
-                    <button type="button" class="btn btn-danger rounded-pill px-4" id="btnConfirmDeleteComment">
+                    <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm" id="btnConfirmDeleteComment">
 
-                        <i class="bi bi-trash3 me-1"></i> Xóa bình luận
+                        <i class="bi bi-trash-fill me-1"></i> Xác nhận xóa
 
                     </button>
 
@@ -2632,6 +2653,103 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <?php endif; ?>
 
+    }
+
+    // Star Rating Widget interaction (App Store drag & click style)
+    var starWidget = document.getElementById('starRatingWidget');
+    var ratingInput = document.getElementById('place-rating-input');
+    var ratingLabel = document.getElementById('starRatingLabel');
+
+    if (starWidget && ratingInput && ratingLabel) {
+        var stars = starWidget.querySelectorAll('.star-item');
+        var labels = {
+            1: '1 sao - Không tốt',
+            2: '2 sao - Chưa tốt',
+            3: '3 sao - Bình thường',
+            4: '4 sao - Tốt',
+            5: '5 sao - Rất tốt'
+        };
+
+        function updateStars(val) {
+            val = parseInt(val, 10) || 5;
+            for (var i = 0; i < stars.length; i++) {
+                var sVal = parseInt(stars[i].getAttribute('data-value'), 10);
+                if (sVal <= val) {
+                    stars[i].classList.remove('bi-star');
+                    stars[i].classList.add('bi-star-fill');
+                    stars[i].style.color = '#ff9800';
+                } else {
+                    stars[i].classList.remove('bi-star-fill');
+                    stars[i].classList.add('bi-star');
+                    stars[i].style.color = '#cbd5e1';
+                }
+            }
+            if (labels[val]) {
+                ratingLabel.textContent = labels[val];
+            }
+        }
+
+        // Set initial state
+        updateStars(ratingInput.value || 5);
+
+        for (var j = 0; j < stars.length; j++) {
+            (function(star) {
+                star.addEventListener('mouseenter', function() {
+                    var hVal = this.getAttribute('data-value');
+                    updateStars(hVal);
+                });
+
+                star.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var cVal = this.getAttribute('data-value');
+                    ratingInput.value = cVal;
+                    updateStars(cVal);
+                });
+            })(stars[j]);
+        }
+
+        starWidget.addEventListener('mouseleave', function() {
+            updateStars(ratingInput.value);
+        });
+
+        // Touch / drag support across stars
+        var isDragging = false;
+        function getStarFromPoint(x, y) {
+            var el = document.elementFromPoint(x, y);
+            if (el && el.classList.contains('star-item')) {
+                return el;
+            }
+            if (el && el.closest('.star-item')) {
+                return el.closest('.star-item');
+            }
+            return null;
+        }
+
+        starWidget.addEventListener('touchstart', function(e) {
+            isDragging = true;
+            var touch = e.touches[0];
+            var star = getStarFromPoint(touch.clientX, touch.clientY);
+            if (star) {
+                var val = star.getAttribute('data-value');
+                ratingInput.value = val;
+                updateStars(val);
+            }
+        }, { passive: true });
+
+        starWidget.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            var touch = e.touches[0];
+            var star = getStarFromPoint(touch.clientX, touch.clientY);
+            if (star) {
+                var val = star.getAttribute('data-value');
+                ratingInput.value = val;
+                updateStars(val);
+            }
+        }, { passive: true });
+
+        starWidget.addEventListener('touchend', function() {
+            isDragging = false;
+        });
     }
 
 });
