@@ -105,8 +105,8 @@ class ProductController extends Controller
      */
     public function store(): void
     {
-        if (!Auth::check()) {
-            $this->respondOrRedirect(false, 'Vui lòng đăng nhập để chia sẻ dụng cụ!', '/login');
+        if (!Auth::isMember()) {
+            $this->respondOrRedirect(false, Auth::denyGuestMessage('chia sẻ dụng cụ'), Auth::check() ? '/products' : '/login');
             return;
         }
 
@@ -174,8 +174,8 @@ class ProductController extends Controller
      */
     public function update(): void
     {
-        if (!Auth::check()) {
-            $this->respondOrRedirect(false, 'Vui lòng đăng nhập để thực hiện!', '/login');
+        if (!Auth::isMember()) {
+            $this->respondOrRedirect(false, Auth::denyGuestMessage('chỉnh sửa dụng cụ'), Auth::check() ? '/products' : '/login');
             return;
         }
 
@@ -257,8 +257,8 @@ class ProductController extends Controller
      */
     public function destroy(): void
     {
-        if (!Auth::check()) {
-            $this->respondOrRedirect(false, 'Vui lòng đăng nhập để thực hiện!', '/login');
+        if (!Auth::isMember()) {
+            $this->respondOrRedirect(false, Auth::denyGuestMessage('xóa dụng cụ'), Auth::check() ? '/products' : '/login');
             return;
         }
 

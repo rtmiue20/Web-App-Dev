@@ -1,8 +1,10 @@
 <?php
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$user = Session::get('user');
+$user = class_exists('Auth') ? Auth::user() : Session::get('user');
 $userId = is_array($user) ? (int) $user['id'] : null;
-$isAdmin = is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin'));
+$isAdmin = class_exists('Auth') ? Auth::isAdmin($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
+$isMember = class_exists('Auth') ? Auth::isMember($user) : is_array($user);
+$isGuestAccount = is_array($user) && !$isMember;
 $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 ?>
 <main class="app-container" style="max-width: 1100px;">
@@ -44,8 +46,8 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         </div>
     <?php endif; ?>
 
-    <!-- Create Checklist Card (Logged-in only) -->
-    <?php if (is_array($user)): ?>
+    <!-- Create Checklist Card (Member / Moderator / Admin only) -->
+    <?php if ($isMember): ?>
         <section class="nature-card p-4 mb-4" style="border-radius: 28px;">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="d-flex align-items-center gap-2">
@@ -91,6 +93,13 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                 </div>
             </form>
         </section>
+    <?php elseif ($isGuestAccount): ?>
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-eye-fill text-success fs-5"></i>
+                <span class="text-white">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong>. Bạn có thể xem và đánh dấu thử các mẫu checklist công khai, nhưng không thể tạo checklist mới.</span>
+            </div>
+        </div>
     <?php else: ?>
         <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
             <div class="d-flex align-items-center gap-2">
@@ -118,7 +127,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         <?php foreach ($checklists as $idx => $checklist): ?>
             <?php
             $isOwner = $userId !== null && (int) $checklist['user_id'] === $userId;
-            $canDelete = $isOwner || $isAdmin;
+            $canDelete = $isMember && ($isOwner || $isAdmin);
             $items = $checklist['items'] ?? [];
             $totalItems = count($items);
             ?>

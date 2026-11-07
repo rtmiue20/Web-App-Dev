@@ -50,14 +50,25 @@ $followingCategories = $followingCategories ?? [];
             </div>
 
             <div class="d-flex flex-wrap gap-2">
-                <a href="<?= e(base_url('/posts/create')) ?>" class="nature-btn-primary px-3 py-2" style="width: auto; height: 42px;">
-                    <i class="bi bi-pencil-fill me-1"></i> Viết bài mới
-                </a>
+                <?php if (class_exists('Auth') && Auth::isMember($user)): ?>
+                    <a href="<?= e(base_url('/posts/create')) ?>" class="nature-btn-primary px-3 py-2" style="width: auto; height: 42px;">
+                        <i class="bi bi-pencil-fill me-1"></i> Viết bài mới
+                    </a>
+                <?php endif; ?>
                 <a href="<?= e(base_url('/users/' . (int)$user['id'])) ?>" class="nature-btn-secondary px-3 py-2 text-dark" style="height: 42px;" target="_blank">
                     <i class="bi bi-box-arrow-up-right me-1"></i> Xem hồ sơ công khai
                 </a>
             </div>
         </div>
+
+        <?php if (class_exists('Auth') && Auth::isGuest($user)): ?>
+            <div class="alert alert-secondary d-flex align-items-center gap-2 rounded-4 mb-4" style="background: rgba(108, 117, 125, 0.08); border: 1px solid rgba(108, 117, 125, 0.25);">
+                <i class="bi bi-eye-fill text-secondary fs-5"></i>
+                <div class="small text-dark">
+                    <strong>Chế độ Khách (Guest — Chỉ xem):</strong> Tài khoản của bạn hiện đang được phân quyền chỉ xem nội dung trên diễn đàn. Bạn vẫn có thể cập nhật hồ sơ cá nhân tại đây.
+                </div>
+            </div>
+        <?php endif; ?>
 
         <?php if (!empty($user['bio'])): ?>
             <div class="p-3 rounded-3 mb-4" style="background: rgba(0,0,0,0.03); border-left: 3px solid var(--color-moss, #9bbd55);">

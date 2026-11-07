@@ -9,6 +9,8 @@ $totalItems = $totalProducts;
 $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId . '&' : '';
 
 $isLoggedIn = Auth::check();
+$isMember = Auth::isMember();
+$isGuestAccount = $isLoggedIn && Auth::isGuest();
 $currentUserId = Auth::id();
 $isAdmin = Auth::isAdmin();
 $csrfToken = Csrf::token();
@@ -29,18 +31,22 @@ $csrfToken = Csrf::token();
             <p class="page-subtitle mb-0">Các công cụ, trang bị sinh tồn và đồ cắm trại được cộng đồng chia sẻ, tin dùng trong các chuyến đi.</p>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <?php if ($isLoggedIn): ?>
+            <?php if ($isMember): ?>
                 <button type="button" class="nature-btn-primary px-4 py-2" style="width: auto; height: 46px;" data-bs-toggle="modal" data-bs-target="#modalAddProduct">
                     <i class="bi bi-plus-circle-fill me-2"></i> Chia sẻ dụng cụ mới
                 </button>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-secondary px-4 py-2 text-white border-white-50" style="width: auto; height: 46px; background: rgba(255,255,255,0.08);">
+                    <i class="bi bi-pencil-fill me-2"></i> Viết bài trải nghiệm
+                </a>
+            <?php elseif ($isGuestAccount): ?>
+                <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1" style="background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.22); font-size: 13px; font-weight: 500;">
+                    <i class="bi bi-eye me-1"></i> Tài khoản Khách (Chỉ xem)
+                </span>
             <?php else: ?>
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-primary px-4 py-2" style="width: auto; height: 46px;">
                     <i class="bi bi-box-arrow-in-right me-2"></i> Đăng nhập để chia sẻ
                 </a>
             <?php endif; ?>
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-secondary px-4 py-2 text-white border-white-50" style="width: auto; height: 46px; background: rgba(255,255,255,0.08);">
-                <i class="bi bi-pencil-fill me-2"></i> Viết bài trải nghiệm
-            </a>
         </div>
     </div>
 
@@ -70,7 +76,7 @@ $csrfToken = Csrf::token();
                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products" class="nature-btn-secondary px-4 py-2 text-dark border-dark-subtle d-inline-flex" style="width: auto;">
                     <i class="bi bi-arrow-counterclockwise me-1"></i> Xem tất cả dụng cụ
                 </a>
-                <?php if ($isLoggedIn): ?>
+                <?php if ($isMember): ?>
                     <button type="button" class="nature-btn-primary px-4 py-2" style="width: auto;" data-bs-toggle="modal" data-bs-target="#modalAddProduct">
                         <i class="bi bi-plus-circle me-1"></i> Thêm dụng cụ ngay
                     </button>
@@ -90,10 +96,10 @@ $csrfToken = Csrf::token();
                 }
                 $prodLink = trim((string)($prod['link'] ?? ''));
 
-                // Quyền quản lý: Người chia sẻ hoặc Admin
+                // Quyền quản lý: Người chia sẻ (từ cấp Member trở lên) hoặc Admin
                 $toolUserId = (int)($prod['user_id'] ?? 0);
                 $isOwner = $isLoggedIn && ($toolUserId === (int)$currentUserId);
-                $canManage = $isLoggedIn && ($isAdmin || $isOwner);
+                $canManage = $isMember && ($isAdmin || $isOwner);
 
                 // Thông tin người chia sẻ
                 $sharerName = !empty($prod['author_username']) ? $prod['author_username'] : 'Ban quản trị';

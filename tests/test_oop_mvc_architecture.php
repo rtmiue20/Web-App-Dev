@@ -97,6 +97,30 @@ assertTrue($token1 !== $token2 && Csrf::verify($token2) && !Csrf::verify($token1
 
 assertTrue(class_exists('BaseController') && class_exists('BaseModel'), 'Alias BaseController & BaseModel tương thích chuẩn tài liệu thiết kế');
 
+// Kiểm thử phân quyền Khách (Guest) & 4 cấp độ RBAC
+$guestVisitor = null;
+$guestAccount = ['id' => 999904, 'username' => 'guest_demo', 'role_id' => 4, 'role_name' => 'guest'];
+$memberAccount = ['id' => 999901, 'username' => 'member_demo', 'role_id' => 1, 'role_name' => 'member'];
+$modAccount = ['id' => 999903, 'username' => 'mod_demo', 'role_id' => 3, 'role_name' => 'moderator'];
+$adminAccount = ['id' => 999902, 'username' => 'admin_demo', 'role_id' => 2, 'role_name' => 'admin'];
+
+assertTrue(
+    Auth::isGuest($guestVisitor) && !Auth::isMember($guestVisitor) && !Auth::canCreatePost($guestVisitor),
+    'Khách vãng lai (chưa đăng nhập) chỉ có quyền xem (isGuest = true, isMember = false)'
+);
+assertTrue(
+    Auth::isGuest($guestAccount) && !Auth::isMember($guestAccount) && !Auth::canCreatePost($guestAccount)
+    && !Auth::canManagePost(['id' => 1, 'user_id' => 999904], $guestAccount)
+    && !Auth::canDeleteComment(999904, $guestAccount),
+    'Tài khoản bị gán quyền Guest (Chỉ xem) bị chặn đăng bài, sửa/xóa bài và bình luận'
+);
+assertTrue(
+    Auth::isMember($memberAccount) && Auth::canCreatePost($memberAccount) && !Auth::canPublishDirectly($memberAccount)
+    && Auth::isModerator($modAccount) && Auth::canPublishDirectly($modAccount)
+    && Auth::isAdmin($adminAccount),
+    'Phân quyền RBAC 4 cấp (Guest -> Member -> Moderator -> Admin) hoạt động chính xác'
+);
+
 echo "\n========================================\n";
 echo "KẾT QUẢ: {$passed} PASSED, {$failed} FAILED\n";
 exit($failed > 0 ? 1 : 0);

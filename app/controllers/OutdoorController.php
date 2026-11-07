@@ -44,10 +44,10 @@ class OutdoorController extends Controller
             $this->redirect('/checklists');
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để tạo checklist.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('tạo checklist dã ngoại'));
+            $this->redirect(Auth::check() ? '/checklists' : '/login');
         }
 
         $title = trim((string) ($_POST['title'] ?? ''));
@@ -107,10 +107,10 @@ class OutdoorController extends Controller
             $this->redirect('/checklists');
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('xóa checklist'));
+            $this->redirect(Auth::check() ? '/checklists' : '/login');
         }
 
         $isAdmin = (int) ($user['role_id'] ?? 0) === 2 || ($user['role_name'] ?? '') === 'admin';
@@ -147,10 +147,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips');
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để đăng chuyến đi.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('đăng chuyến đi chung'));
+            $this->redirect(Auth::check() ? '/trips' : '/login');
         }
 
         $title = trim((string) ($_POST['title'] ?? ''));
@@ -264,10 +264,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips/' . $id);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để đăng ký tham gia.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('đăng ký tham gia chuyến đi'));
+            $this->redirect(Auth::check() ? '/trips/' . $id : '/login');
         }
 
         try {
@@ -317,10 +317,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips/' . $id);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('xóa checklist'));
+            $this->redirect(Auth::check() ? '/checklists' : '/login');
         }
 
         $success = $this->trips->leave($id, (int) $user['id']);
@@ -351,10 +351,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips/' . $id);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('xóa checklist'));
+            $this->redirect(Auth::check() ? '/checklists' : '/login');
         }
 
         $isAdmin = (int) ($user['role_id'] ?? 0) === 2 || ($user['role_name'] ?? '') === 'admin';
@@ -385,10 +385,10 @@ class OutdoorController extends Controller
             $this->redirect('/posts/' . $postId);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để gửi đánh giá.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('gửi đánh giá địa điểm'));
+            $this->redirect(Auth::check() ? '/posts/' . $postId : '/login');
         }
 
         $post = $this->posts->getById($postId);

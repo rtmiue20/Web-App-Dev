@@ -44,9 +44,9 @@ class PostController extends Controller {
      * Giao diện tạo bài viết mới
      */
     public function create(): void {
-        if (!Session::has('user')) {
-            Session::flash('error', 'Vui lòng đăng nhập để viết bài chia sẻ.');
-            $this->redirect('/login');
+        if (!Auth::isMember()) {
+            Session::flash('error', Auth::denyGuestMessage('viết bài chia sẻ'));
+            $this->redirect(Auth::check() ? '/posts' : '/login');
             return;
         }
 
@@ -66,9 +66,9 @@ class PostController extends Controller {
      * Xử lý lưu bài viết mới vào CSDL
      */
     public function store(): void {
-        if (!Session::has('user')) {
-            Session::flash('error', 'Vui lòng đăng nhập để viết bài.');
-            $this->redirect('/login');
+        if (!Auth::isMember()) {
+            Session::flash('error', Auth::denyGuestMessage('viết bài chia sẻ'));
+            $this->redirect(Auth::check() ? '/posts' : '/login');
             return;
         }
 
@@ -616,7 +616,7 @@ class PostController extends Controller {
      */
     public function like(int $id): void {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('bình chọn (Upvote / Downvote) bài viết')], Auth::denyGuestStatusCode());
             return;
         }
 

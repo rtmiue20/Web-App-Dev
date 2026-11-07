@@ -11,11 +11,11 @@ $defaultImages = [
         <i class="bi bi-compass fs-1 text-muted d-block mb-3"></i>
         <h3 class="h5 fw-normal mb-2">Chưa có bài viết nào</h3>
         <p class="text-muted small mb-3">Hãy là người đầu tiên chia sẻ hành trình của mình!</p>
-        <?php if (Session::has('user')): ?>
+        <?php if (class_exists('Auth') && Auth::isMember()): ?>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-secondary d-inline-flex">
                 <i class="bi bi-pencil-square me-1"></i> Viết bài ngay
             </a>
-        <?php else: ?>
+        <?php elseif (!Auth::check()): ?>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-secondary d-inline-flex">
                 Đăng nhập để viết bài
             </a>

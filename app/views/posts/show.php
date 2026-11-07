@@ -1208,10 +1208,10 @@ $galleryCount = count($galleryImages);
 
             <?php 
             $currentUserId = Auth::check() ? (int) Auth::id() : 0;
-            $currentUserObj = Session::get('user');
-            $isCurAdmin = is_array($currentUserObj) && (((int)($currentUserObj['role_id'] ?? 0) === 2) || (($currentUserObj['role_name'] ?? '') === 'admin'));
+            $currentUserObj = Auth::user();
+            $isCurAdmin = Auth::isAdmin($currentUserObj);
             $isAuthorOfPost = $currentUserId > 0 && $currentUserId === (int)($post['user_id'] ?? 0);
-            $canReviewPlace = $isLoggedIn && (!$isAuthorOfPost || $isCurAdmin);
+            $canReviewPlace = Auth::isMember($currentUserObj) && (!$isAuthorOfPost || $isCurAdmin);
             ?>
 
             <?php if ($canReviewPlace): ?>
@@ -1257,6 +1257,13 @@ $galleryCount = count($galleryImages);
                     </div>
 
                 </form>
+
+            <?php elseif ($isLoggedIn && Auth::isGuest()): ?>
+
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
+                    <i class="bi bi-eye-fill text-muted fs-5"></i>
+                    <span class="small text-muted">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên không thể gửi đánh giá địa điểm.</span>
+                </div>
 
             <?php elseif ($isLoggedIn && $isAuthorOfPost && !$isCurAdmin): ?>
 
@@ -1381,6 +1388,16 @@ $galleryCount = count($galleryImages);
                     </div>
 
                 </form>
+
+            </div>
+
+        <?php elseif (class_exists('Auth') && Auth::check() && Auth::isGuest()): ?>
+
+            <div class="nature-alert nature-alert-success mb-4 d-flex align-items-center gap-2">
+
+                <i class="bi bi-eye-fill fs-5"></i>
+
+                <span>Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên chỉ có thể xem nội dung thảo luận, không thể gửi bình luận mới.</span>
 
             </div>
 

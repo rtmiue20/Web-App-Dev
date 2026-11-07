@@ -134,7 +134,7 @@ class ApiController extends Controller
     public function createComment(?int $routePostId = null): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để gửi bình luận.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('gửi bình luận')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -248,8 +248,8 @@ class ApiController extends Controller
      */
     public function deleteComment(?int $routeCommentId = null): void
     {
-        if (!Session::has('user')) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để thực hiện.'], 401);
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('xóa bình luận')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -324,7 +324,7 @@ class ApiController extends Controller
     public function likeComment(?int $routeCommentId = null): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bình luận.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('thích bình luận')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -525,7 +525,7 @@ class ApiController extends Controller
     public function votePost(?int $routePostId = null): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('bình chọn (Upvote / Downvote) bài viết')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -598,7 +598,7 @@ class ApiController extends Controller
     public function toggleBookmark(): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để lưu bài viết này.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('lưu bài viết vào bộ sưu tập')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -670,7 +670,7 @@ class ApiController extends Controller
     public function toggleUserFollow(): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để theo dõi thành viên này.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('theo dõi thành viên này')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -741,7 +741,7 @@ class ApiController extends Controller
     public function toggleCategoryFollow(): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để theo dõi chuyên mục.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('theo dõi chuyên mục')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -872,8 +872,8 @@ class ApiController extends Controller
      */
     public function report(): void
     {
-        if (!Auth::check()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để gửi báo cáo vi phạm.'], 401);
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('gửi báo cáo vi phạm')], Auth::denyGuestStatusCode());
             return;
         }
 

@@ -2,7 +2,9 @@
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $hasCoordinates = !empty($trip['lat']) && !empty($trip['lng']);
-$isLoggedIn = Session::has('user');
+$isLoggedIn = Auth::check();
+$isMember = Auth::isMember();
+$isGuestAccount = $isLoggedIn && Auth::isGuest();
 $pCount = (int) $trip['participant_count'];
 $maxP = (int) $trip['max_participants'];
 $spotsLeft = max(0, $maxP - $pCount);
@@ -69,7 +71,12 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
 
         <!-- Action / Join Form -->
         <div class="pt-3 border-top">
-            <?php if ($isLoggedIn): ?>
+            <?php if ($isGuestAccount): ?>
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mb-0">
+                    <i class="bi bi-eye-fill fs-5"></i>
+                    <span>Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên chỉ có thể xem thông tin chuyến đi, không thể đăng ký tham gia.</span>
+                </div>
+            <?php elseif ($isLoggedIn): ?>
                 <?php if ($hasStarted): ?>
                     <div class="alert alert-secondary d-flex align-items-center gap-2 mb-0">
                         <i class="bi bi-info-circle-fill fs-5"></i>

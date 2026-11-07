@@ -1,5 +1,5 @@
 <?php
-$currentUser = Session::get('user');
+$currentUser = class_exists('Auth') ? Auth::user() : Session::get('user');
 $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
@@ -73,6 +73,9 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
                 <span><?= htmlspecialchars($currentUser['username'] ?? 'Cá nhân', ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if (class_exists('Auth') && Auth::isGuest($currentUser)): ?>
+                    <span class="badge rounded-pill text-bg-secondary ms-1" style="font-size: 9.5px; padding: 2px 6px;">GUEST</span>
+                <?php endif; ?>
             </a>
 
             <?php if (class_exists('Auth') && Auth::isModerator($currentUser)): ?>
