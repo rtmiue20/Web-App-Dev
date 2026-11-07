@@ -54,7 +54,11 @@ HTML;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= htmlspecialchars($title ?? 'Diễn đàn dã ngoại', ENT_QUOTES, 'UTF-8') ?> — Bước ra thiên nhiên</title>
+    <?php
+    $tabTitle = !empty($title) ? trim((string)$title) : 'Trang chủ';
+    $tabTitle = preg_replace('/\s*[-—]\s*(Bước ra thiên nhiên|Quản trị Forum Dã Ngoại|Outdoor Forum)$/ui', '', $tabTitle);
+    ?>
+    <title>Outdoor Forum - <?= htmlspecialchars($tabTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon-dark-32x32.png">
     <link rel="shortcut icon" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/favicon.ico">
