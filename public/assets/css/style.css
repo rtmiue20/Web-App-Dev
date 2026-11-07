@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500;600;700&display=swap');
 
 :root {
   color-scheme: dark;
@@ -274,7 +274,18 @@ body {
   background: transparent;
   flex-shrink: 0;
   text-decoration: none;
+  overflow: hidden;
   transition: transform 300ms ease-out;
+}
+
+.dock-logo img {
+  width: 38px;
+  height: 38px;
+  max-width: 38px;
+  max-height: 38px;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
 }
 
 .dock-logo:hover {
@@ -1776,239 +1787,169 @@ body {
 
 
 /* ==========================================================================
-   26. MOBILE & TABLET RESPONSIVE OVERHAUL (100% iOS & Android Optimized)
+   
+/* ==========================================================================
+   26. UNIFIED DOCK & RESPONSIVE DESIGN (Đồng bộ 100% UI Desktop, Tablet & Mobile)
    ========================================================================== */
 
-/* ── Mobile Top Header Bar (< 992px) ────────────────────────────── */
-.mobile-top-bar {
+/* ── Floating Dock Navigation (Cố định ở đỉnh, cuộn ngang mượt mà trên Mobile) ── */
+.dock-header {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1040;
-  height: 56px;
-  background: rgba(20, 26, 18, 0.94);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-}
-
-/* ── Mobile Bottom Navigation Bar (< 992px) ───────────────────────── */
-.mobile-bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1030;
-  height: 58px;
-  background: rgba(18, 24, 16, 0.96);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  inset-inline: 0;
+  top: 1rem;
+  z-index: 1000;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding-bottom: env(safe-area-inset-bottom, 0);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
-}
-
-.mobile-bottom-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  flex: 1;
-  height: 100%;
-  color: rgba(241, 241, 236, 0.65);
-  text-decoration: none;
-  font-size: 0.68rem;
-  font-weight: 500;
-  gap: 2px;
-  transition: all 0.2s ease;
-  border: none;
-  background: transparent;
-  padding: 0;
+  padding-inline: 1rem;
+  pointer-events: none;
 }
 
-.mobile-bottom-item:hover,
-.mobile-bottom-item.active {
-  color: #9bbd55;
-}
-
-.mobile-bottom-item i {
-  font-size: 1.15rem;
-  line-height: 1;
-}
-
-.mobile-bottom-fab {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2f5e2e 0%, #4a8c48 100%);
-  color: #ffffff !important;
+.dock-nav {
+  pointer-events: auto;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 18px rgba(47, 94, 46, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  margin-top: -16px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  text-decoration: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-  flex-shrink: 0;
+  gap: 0.35rem;
+  background: rgba(34, 40, 31, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.35rem 0.5rem;
+  border-radius: 9999px;
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
-.mobile-bottom-fab:active {
-  transform: scale(0.92);
-  box-shadow: 0 2px 8px rgba(47, 94, 46, 0.4);
+.dock-nav::-webkit-scrollbar {
+  display: none;
 }
 
-/* ── Mobile Offcanvas Drawer ───────────────────────────────────────── */
-.mobile-offcanvas {
-  background: rgba(18, 24, 18, 0.96) !important;
-  backdrop-filter: blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #f1f1ec;
-  width: min(86vw, 360px) !important;
+.dock-pill,
+.dock-user-badge,
+.dock-logo {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
-.mobile-nav-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  color: rgba(241, 241, 236, 0.85);
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 400;
-  transition: all 0.18s ease;
-  margin-bottom: 3px;
-}
-
-.mobile-nav-link:hover,
-.mobile-nav-link.active {
-  background: rgba(155, 189, 85, 0.15);
-  color: #9bbd55;
-  font-weight: 500;
-}
-
-.mobile-nav-link i {
-  font-size: 1.15rem;
-  width: 24px;
-  text-align: center;
-  color: #9bbd55;
-}
-
-/* ── Responsive Container & Content Spacing ───────────────────────── */
+/* ── Mobile / Tablet Responsive Adjustments (< 992px) ────────────────── */
 @media (max-width: 991.98px) {
-  .app-container {
-    padding-top: 4.8rem !important;
-    padding-bottom: 5.6rem !important;
-    padding-inline: 1rem !important;
+  .dock-header {
+    top: 0.75rem;
+    padding-inline: 0.75rem;
+    justify-content: center;
   }
-  .page-header {
+
+  .dock-nav {
+    padding: 0.28rem 0.45rem;
+    gap: 0.25rem;
+  }
+
+  .dock-pill {
+    font-size: 11.5px;
+    padding: 0.38rem 0.7rem;
+  }
+
+  .dock-logo img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dock-user-badge {
+    font-size: 11px;
+    padding: 0.35rem 0.75rem;
+  }
+
+  /* Hero Content trên Homepage: hiển thị mượt mà Headline rồi đến 2 Cards */
+  .hero-content {
+    min-height: auto !important;
+    padding-top: 5.5rem !important;
+    padding-bottom: 3rem !important;
+    padding-inline: 1.25rem !important;
+    gap: 2.25rem !important;
+    justify-content: flex-start !important;
+  }
+
+  .headline {
+    font-size: clamp(2rem, 6.5vw, 3.2rem) !important;
+    line-height: 1.15 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .lede {
+    font-size: 0.98rem !important;
     margin-bottom: 1.5rem !important;
   }
-  .page-title {
-    font-size: 1.75rem !important;
-    line-height: 1.25 !important;
+
+  .feature-cards-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin: 0 auto !important;
   }
-  .page-subtitle {
-    font-size: 0.95rem !important;
+
+  .paper-card {
+    border-radius: 28px !important;
   }
-  .post-detail-cover {
-    max-height: 300px !important;
-    border-radius: 20px !important;
+
+  .card-image-box {
+    height: 200px !important;
   }
-  .post-content-box {
-    padding: 1.5rem !important;
-    border-radius: 24px !important;
+
+  .card-offset-1,
+  .card-offset-2 {
+    transform: none !important;
+    margin: 0 !important;
+  }
+
+  /* Inner Pages: Container co giãn chuẩn */
+  .app-container {
+    padding-top: 5.5rem !important;
+    padding-bottom: 3.5rem !important;
+    padding-inline: 1rem !important;
   }
 }
 
-@media (max-width: 576px) {
-  .app-container {
-    padding-top: 4.5rem !important;
-    padding-bottom: 5.6rem !important;
-    padding-inline: 0.75rem !important;
-  }
-  .page-title {
-    font-size: 1.5rem !important;
-  }
-  .page-subtitle {
-    font-size: 0.88rem !important;
-  }
-  .paper-card {
-    border-radius: 22px !important;
-  }
-  .card-image-box {
-    height: 190px !important;
-  }
-  .post-content-box {
-    padding: 1.15rem !important;
-    border-radius: 20px !important;
-  }
-  /* Category Slidebar touch swipe on mobile */
-  .category-slidebar-track {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    padding-bottom: 4px !important;
-    flex-wrap: nowrap !important;
-  }
-  .category-slidebar-track::-webkit-scrollbar {
-    display: none !important;
-  }
-  .category-slidebar-track .dock-pill {
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
-    font-size: 0.82rem !important;
-    padding: 5px 13px !important;
-  }
-  /* Forms on iOS prevent zoom */
-  input, select, textarea {
-    font-size: 16px !important;
-  }
-  /* Notifications dropdown on mobile */
-  .notifications-dropdown-menu {
-    position: fixed !important;
-    top: 56px !important;
-    right: 8px !important;
-    left: 8px !important;
-    width: auto !important;
+@media (min-width: 640px) and (max-width: 991.98px) {
+  .feature-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
     max-width: none !important;
   }
 }
 
-/* ── Admin Nav Bar on Mobile ───────────────────────────────────────── */
-@media (max-width: 991.98px) {
-  .admin-nav-bar {
-    top: 0.5rem !important;
-    width: calc(100vw - 1rem) !important;
-    border-radius: 18px !important;
-    padding: 0.5rem 0.75rem !important;
+@media (max-width: 576px) {
+  .headline {
+    font-size: 1.85rem !important;
   }
-  .admin-nav-bar nav {
+
+  .stats-group {
+    gap: 1rem !important;
+  }
+
+  .post-content-box {
+    padding: 1.25rem !important;
+    border-radius: 24px !important;
+  }
+
+  /* Category slidebar touch swipe */
+  .category-slidebar-track {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    width: 100% !important;
-    padding-top: 4px !important;
+    flex-wrap: nowrap !important;
   }
-  .admin-nav-bar nav::-webkit-scrollbar {
+
+  .category-slidebar-track::-webkit-scrollbar {
     display: none !important;
   }
-  .admin-nav-bar nav .dock-pill {
+
+  .category-slidebar-track .dock-pill {
     flex-shrink: 0 !important;
     white-space: nowrap !important;
-    font-size: 0.8rem !important;
-    padding: 4px 10px !important;
-  }
-  .table-responsive {
-    border-radius: 20px;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
   }
 }
