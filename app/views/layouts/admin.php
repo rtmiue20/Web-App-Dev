@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $currentUser = Session::get('user');
 $successMessage = $success ?? Session::flash('success');
 $errorMessage = $message ?? Session::flash('error');

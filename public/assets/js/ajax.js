@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AJAX & Web Service Helper for Forum Dã Ngoại (Vương - FR06, FR07, FR08)
  * - FR08: Thích / Bỏ thích bài viết qua AJAX (JSON + CSRF)
  * - FR07: Gửi bình luận & Xóa bình luận của mình qua AJAX (JSON + CSRF)

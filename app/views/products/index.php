@@ -283,7 +283,7 @@ $csrfToken = Csrf::token();
                     <h5 class="modal-title fw-bold fs-4" id="modalAddProductLabel" style="color: #23261f;">Thêm dụng cụ vào kho cộng đồng</h5>
                     <p class="small mb-0 text-muted">Chia sẻ các trang bị hữu ích bạn từng sử dụng để mọi người cùng tham khảo.</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
             <form action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products/store" method="POST" enctype="multipart/form-data">
@@ -409,7 +409,7 @@ $csrfToken = Csrf::token();
                     <h5 class="modal-title fw-bold fs-4" id="modalEditProductLabel" style="color: #23261f;">Chỉnh sửa dụng cụ dã ngoại</h5>
                     <p class="small mb-0 text-muted">Cập nhật hình ảnh, giá bán, link mua sắm và nhận xét kinh nghiệm sử dụng.</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
             <form action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products/update" method="POST" enctype="multipart/form-data">
@@ -537,7 +537,7 @@ $csrfToken = Csrf::token();
                     </span>
                     <h5 class="modal-title fw-bold fs-5" id="modalDeleteProductLabel" style="color: #23261f;">Xóa dụng cụ khỏi kho?</h5>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
             <form action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/products/delete" method="POST">
