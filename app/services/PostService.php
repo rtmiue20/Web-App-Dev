@@ -205,6 +205,37 @@ class PostService extends BaseService
         $label = $statusLabels[$newStatus] ?? $newStatus;
         $msg = 'Đã chuyển trạng thái bài viết "' . $post['title'] . '" sang "' . $label . '" thành công.';
 
+        if (class_exists('Notification')) {
+            $adminId = class_exists('Auth') ? (int)Auth::id() : 0;
+            $authorId = (int)($post['user_id'] ?? 0);
+            $shortTitle = mb_substr((string)($post['title'] ?? ''), 0, 38);
+
+            if ($authorId > 0 && $authorId !== $adminId) {
+                $notifType = $newStatus === 'published' ? 'post_approved' : ($newStatus === 'rejected' ? 'post_rejected' : 'system');
+                Notification::send(
+                    $authorId,
+                    $adminId > 0 ? $adminId : $authorId,
+                    $notifType,
+                    $postId,
+                    "Ban quản trị đã cập nhật trạng thái bài viết '{$shortTitle}' sang: {$label}."
+                );
+            }
+            if ($adminId > 0) {
+                Notification::send(
+                    $adminId,
+                    $adminId,
+                    'admin_action',
+                    $postId,
+                    "Bạn đã kiểm duyệt bài viết '{$shortTitle}' sang trạng thái: {$label}."
+                );
+            }
+            if ($newStatus === 'published' && ($post['status'] ?? '') !== 'published') {
+                $authorName = (string)($post['username'] ?? 'Thành viên');
+                $categoryId = (int)($post['category_id'] ?? 0);
+                Notification::notifyFollowersOnNewPost($authorId, $authorName, $categoryId, $postId, (string)($post['title'] ?? ''));
+            }
+        }
+
         return $this->success([
             'post'       => $post,
             'post_id'    => $postId,

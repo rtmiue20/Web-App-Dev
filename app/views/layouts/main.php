@@ -1,9 +1,24 @@
-﻿<?php
+<?php
 $successMessage = $success  ?? Session::flash('success');
 $errorMessage   = $message  ?? Session::flash('error');
 $warningMessage = Session::flash('warning');
 $infoMessage    = Session::flash('info');
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+
+// Đồng bộ thông báo Toast vào Chuông thông báo "Thông báo của bạn"
+$currentLoggedUser = Session::get('user');
+$currentLoggedUserId = is_array($currentLoggedUser) ? (int)($currentLoggedUser['id'] ?? 0) : 0;
+if ($currentLoggedUserId > 0 && class_exists('Notification')) {
+    if (!empty($successMessage)) {
+        Notification::recordFlashMessage($currentLoggedUserId, 'success', (string)$successMessage);
+    }
+    if (!empty($warningMessage)) {
+        Notification::recordFlashMessage($currentLoggedUserId, 'warning', (string)$warningMessage);
+    }
+    if (!empty($infoMessage)) {
+        Notification::recordFlashMessage($currentLoggedUserId, 'info', (string)$infoMessage);
+    }
+}
 
 // Helper: render 1 toast (guard chống redeclare khi layout được include nhiều lần)
 if (!function_exists('renderToast')) {

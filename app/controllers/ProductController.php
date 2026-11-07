@@ -295,6 +295,13 @@ class ProductController extends Controller
      */
     private function respondOrRedirect(bool $success, string $message, string $redirectUrl): void
     {
+        if ($success && class_exists('Notification')) {
+            $uid = (int)Auth::id();
+            if ($uid > 0) {
+                Notification::send($uid, $uid, 'activity', 0, $message);
+            }
+        }
+
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([

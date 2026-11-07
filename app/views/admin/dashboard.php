@@ -5,7 +5,6 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
 ?>
 <div class="app-container" style="max-width: 1080px;">
     <!-- Welcome Header -->
-    <!-- Welcome Header -->
     <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <span class="nature-badge mb-2" style="background: rgba(155, 189, 85, 0.15); color: #c4e482; border-color: rgba(155, 189, 85, 0.3);">
@@ -14,11 +13,11 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
             <h1 class="page-title fs-2 fs-md-1">Bảng điều khiển</h1>
             <p class="page-subtitle mb-0">Xin chào <strong><?= htmlspecialchars($user['username'] ?? 'Quản trị viên', ENT_QUOTES, 'UTF-8') ?></strong>! Theo dõi tổng quan hiệu suất và chỉ số hoạt động của cộng đồng dã ngoại.</p>
         </div>
-        <div class="d-flex gap-2 w-100 w-sm-auto">
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories/create" class="nature-btn-primary px-3 px-md-4 py-2 flex-fill flex-sm-grow-0 d-inline-flex align-items-center justify-content-center text-center" style="height: 44px;">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories/create" class="nature-btn-primary px-4 py-2 d-inline-flex align-items-center justify-content-center text-nowrap" style="width: auto; height: 44px;">
                 <i class="bi bi-plus-circle me-1"></i> Thêm chuyên mục
             </a>
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" class="nature-btn-secondary px-3 py-2 text-white border-white-20 flex-fill flex-sm-grow-0 d-inline-flex align-items-center justify-content-center text-center" style="height: 44px;" target="_blank">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" class="nature-btn-secondary px-3 py-2 text-white border-white-20 d-inline-flex align-items-center justify-content-center text-nowrap" style="width: auto; height: 44px;" target="_blank">
                 <i class="bi bi-box-arrow-up-right me-1"></i> Xem diễn đàn
             </a>
         </div>

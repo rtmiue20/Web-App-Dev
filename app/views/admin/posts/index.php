@@ -579,6 +579,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (elRej) elRej.textContent = res.counts.rejected;
                         if (elHid) elHid.textContent = res.counts.hidden;
                     }
+
+                    if (typeof window.showToast === 'function' && res.message) {
+                        window.showToast(res.message, 'success');
+                    }
+                    if (window.ForumAjax && typeof window.ForumAjax.fetchNotifications === 'function') {
+                        window.ForumAjax.fetchNotifications();
+                    }
                 } else {
                     alert(res.message || 'Có lỗi xảy ra khi cập nhật trạng thái.');
                 }

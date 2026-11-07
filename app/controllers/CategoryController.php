@@ -82,6 +82,12 @@ class CategoryController extends Controller
         $result = $this->categoryService->createCategory($name, $description);
 
         if ($result['success']) {
+            if (class_exists('Notification')) {
+                $adminId = (int)Auth::id();
+                if ($adminId > 0) {
+                    Notification::send($adminId, $adminId, 'admin_action', 0, $result['message']);
+                }
+            }
             if ($isAjax) {
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode(['status' => 'success', 'message' => 'Đã thêm chuyên mục thành công!']);

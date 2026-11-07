@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AJAX & Web Service Helper for Forum Dã Ngoại (Vương - FR06, FR07, FR08)
  * - FR08: Thích / Bỏ thích bài viết qua AJAX (JSON + CSRF)
  * - FR07: Gửi bình luận & Xóa bình luận của mình qua AJAX (JSON + CSRF)
@@ -83,6 +83,8 @@ const ForumAjax = {
           downBtn.style.background = isDown ? '#b02a37' : '';
           downBtn.style.color = isDown ? '#ffffff' : '#8c3b2b';
         });
+
+        this.fetchNotifications();
       } else {
         if (typeof window.showToast === 'function') { window.showToast((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.', 'error'); } else { alert((data && data.message) ? data.message : 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn bài viết.'); }
       }
@@ -145,6 +147,8 @@ const ForumAjax = {
             countSpan.textContent = count > 0 ? count : '';
           }
         });
+
+        this.fetchNotifications();
       } else {
         if (typeof window.showToast === 'function') { window.showToast((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.', 'error'); } else { alert((data && data.message) ? data.message : 'Vui lòng đăng nhập để thích bình luận.'); }
       }
@@ -206,6 +210,7 @@ const ForumAjax = {
         if (countBadge && typeof cm.total_comments !== 'undefined') {
           countBadge.textContent = cm.total_comments;
         }
+        this.fetchNotifications();
         return true;
       } else {
         if (typeof window.showToast === 'function') { window.showToast((data && data.message) || 'Không thể gửi bình luận.', 'error'); } else { alert((data && data.message) || 'Không thể gửi bình luận.'); }
@@ -423,6 +428,7 @@ const ForumAjax = {
         if (countBadge && data.data && typeof data.data.total_comments !== 'undefined') {
           countBadge.textContent = data.data.total_comments;
         }
+        this.fetchNotifications();
       } else {
         if (typeof window.showToast === 'function') { window.showToast((data && data.message) || 'Không thể xóa bình luận.', 'error'); } else { alert((data && data.message) || 'Không thể xóa bình luận.'); }
         if (btnElement) btnElement.disabled = false;
@@ -1139,6 +1145,7 @@ const ForumAjax = {
       if (typeof window.showToast === 'function') {
         window.showToast(json.message || (json.data && json.data.bookmarked ? 'Đã lưu bài viết vào bộ sưu tập.' : 'Đã bỏ lưu bài viết.'), 'success');
       }
+      this.fetchNotifications();
       return true;
     } catch (err) {
       console.error('Lỗi lưu bài viết:', err);
@@ -1204,6 +1211,7 @@ const ForumAjax = {
         counter2.innerHTML = '<i class="bi bi-people me-1"></i>' + followersCount + ' người theo dõi';
       }
 
+      this.fetchNotifications();
       return true;
     } catch (err) {
       console.error('Lỗi theo dõi người dùng:', err);
@@ -1236,6 +1244,7 @@ const ForumAjax = {
         if (typeof window.showToast === 'function') { window.showToast((json && json.message) || 'Không thể thực hiện thao tác.', 'error'); } else { alert((json && json.message) || 'Không thể thực hiện thao tác.'); }
         return false;
       }
+      this.fetchNotifications();
       return true;
     } catch (err) {
       console.error('Lỗi theo dõi chuyên mục:', err);
@@ -1292,6 +1301,7 @@ const ForumAjax = {
         if (m) m.hide();
       }
       form.reset();
+      this.fetchNotifications();
       return true;
     } catch (err) {
       console.error('Lỗi gửi báo cáo:', err);
@@ -1331,8 +1341,14 @@ const ForumAjax = {
     const self = this;
 
     try {
-      const res = await fetch(`${baseUrl}/api/notifications.php`);
-      const json = await res.json();
+      let res = await fetch(`${baseUrl}/api/notifications.php`, { credentials: 'same-origin' });
+      let json = null;
+      try {
+        json = await res.json();
+      } catch (parseErr) {
+        const resFallback = await fetch(`${baseUrl}/api/notifications`, { credentials: 'same-origin' });
+        json = await resFallback.json();
+      }
 
       if (!json || !json.success || !json.data) return;
 
@@ -1351,7 +1367,7 @@ const ForumAjax = {
 
       const items = json.data.notifications || [];
       if (items.length === 0) {
-        container.innerHTML = '<div class="text-center py-4 text-white-50 small"><i class="bi bi-bell-slash d-block fs-3 mb-1 opacity-50"></i>Bạn chưa có thông báo mới nào.</div>';
+        container.innerHTML = '<div class="text-center py-4 text-muted small"><i class="bi bi-bell-slash d-block fs-3 mb-1 opacity-50"></i>Bạn chưa có thông báo mới nào.</div>';
         return;
       }
 
@@ -1361,43 +1377,61 @@ const ForumAjax = {
 
         // Icon & màu sắc theo loại thông báo
         const typeConfig = {
-          'like_post':        { icon: 'bi-heart-fill',         color: '#e63946' },
-          'like_comment':     { icon: 'bi-heart-fill',         color: '#e63946' },
-          'comment_post':     { icon: 'bi-chat-dots-fill',     color: '#3498db' },
-          'reply_comment':    { icon: 'bi-chat-quote-fill',    color: '#1d6fa4' },
-          'follow_user':      { icon: 'bi-person-plus-fill',   color: '#2ecc71' },
-          'create_post':      { icon: 'bi-pencil-square',      color: '#9bbd55' },
-          'create_trip':      { icon: 'bi-compass-fill',       color: '#4a7c59' },
-          'join_trip':        { icon: 'bi-people-fill',        color: '#2ecc71' },
-          'leave_trip':       { icon: 'bi-person-dash-fill',   color: '#8c9185' },
-          'trip_new_member':  { icon: 'bi-person-check-fill',  color: '#20c997' },
-          'create_checklist': { icon: 'bi-check2-square',      color: '#6f9e38' },
-          'bookmark_post':    { icon: 'bi-bookmark-fill',      color: '#f4a261' },
-          'review_place':     { icon: 'bi-star-fill',          color: '#f9c74f' },
-          'update_profile':   { icon: 'bi-person-gear',        color: '#6c757d' },
-          'system':           { icon: 'bi-info-circle-fill',   color: '#0dcaf0' },
-          'activity':         { icon: 'bi-activity',           color: '#9bbd55' },
+          'like_post':          { icon: 'bi-heart-fill',           color: '#e63946' },
+          'like_comment':       { icon: 'bi-heart-fill',           color: '#e63946' },
+          'comment_post':       { icon: 'bi-chat-dots-fill',       color: '#3498db' },
+          'reply_comment':      { icon: 'bi-chat-quote-fill',      color: '#1d6fa4' },
+          'follow_user':        { icon: 'bi-person-plus-fill',     color: '#2ecc71' },
+          'follow_category':    { icon: 'bi-tags-fill',            color: '#6f9e38' },
+          'new_post_followed':  { icon: 'bi-bell-fill',            color: '#9bbd55' },
+          'create_post':        { icon: 'bi-pencil-square',        color: '#9bbd55' },
+          'update_post':        { icon: 'bi-journal-check',        color: '#4a7c59' },
+          'delete_post':        { icon: 'bi-trash3-fill',          color: '#e63946' },
+          'create_trip':        { icon: 'bi-compass-fill',         color: '#4a7c59' },
+          'join_trip':          { icon: 'bi-people-fill',          color: '#2ecc71' },
+          'leave_trip':         { icon: 'bi-person-dash-fill',     color: '#8c9185' },
+          'trip_new_member':    { icon: 'bi-person-check-fill',    color: '#20c997' },
+          'create_checklist':   { icon: 'bi-check2-square',        color: '#6f9e38' },
+          'bookmark_post':      { icon: 'bi-bookmark-fill',        color: '#f4a261' },
+          'review_place':       { icon: 'bi-star-fill',            color: '#f9c74f' },
+          'update_profile':     { icon: 'bi-person-gear',          color: '#6c757d' },
+          'admin_pending_post': { icon: 'bi-hourglass-split',      color: '#f4a261' },
+          'admin_report':       { icon: 'bi-flag-fill',            color: '#e63946' },
+          'post_approved':      { icon: 'bi-check-circle-fill',    color: '#2ecc71' },
+          'post_rejected':      { icon: 'bi-x-circle-fill',        color: '#e63946' },
+          'admin_action':       { icon: 'bi-shield-check',         color: '#4a7c59' },
+          'system':             { icon: 'bi-info-circle-fill',     color: '#0dcaf0' },
+          'activity':           { icon: 'bi-activity',             color: '#9bbd55' },
         };
         const cfg = typeConfig[n.type] || { icon: 'bi-bell-fill', color: '#9bbd55' };
+        const targetId = Number(n.target_id || 0);
 
         // URL đích theo loại thông báo
         let linkUrl;
         if (n.type === 'follow_user') {
-          linkUrl = `${baseUrl}/users/${n.actor_id}`;
+          linkUrl = `${baseUrl}/users/${targetId > 0 ? targetId : n.actor_id}`;
+        } else if (n.type === 'follow_category') {
+          linkUrl = targetId > 0 ? `${baseUrl}/posts?category=${targetId}` : `${baseUrl}/categories`;
+        } else if (n.type === 'delete_post') {
+          linkUrl = `${baseUrl}/posts`;
+        } else if (n.type === 'admin_pending_post') {
+          linkUrl = `${baseUrl}/admin/posts?status=pending`;
+        } else if (n.type === 'admin_report' || n.type === 'admin_action') {
+          linkUrl = targetId > 0 ? `${baseUrl}/posts/${targetId}` : `${baseUrl}/admin/posts`;
         } else if (['create_trip', 'join_trip', 'leave_trip', 'trip_new_member'].includes(n.type)) {
-          linkUrl = `${baseUrl}/trips/${n.target_id}`;
+          linkUrl = targetId > 0 ? `${baseUrl}/trips/${targetId}` : `${baseUrl}/trips`;
         } else if (n.type === 'create_checklist') {
           linkUrl = `${baseUrl}/checklists`;
         } else if (n.type === 'update_profile') {
           linkUrl = `${baseUrl}/profile`;
-        } else if (n.target_id) {
-          linkUrl = `${baseUrl}/posts/${n.target_id}`;
+        } else if (targetId > 0) {
+          linkUrl = `${baseUrl}/posts/${targetId}`;
         } else {
-          linkUrl = `${baseUrl}/`;
+          linkUrl = `${baseUrl}/profile`;
         }
 
         html += `
-          <a href="${linkUrl}" class="notification-item ${isUnread ? 'unread' : ''}">
+          <a href="${linkUrl}" class="notification-item ${isUnread ? 'unread' : ''}" onclick="ForumAjax.markNotificationRead(${Number(n.id || 0)})">
             <div class="notification-icon" style="background: ${cfg.color}22; color: ${cfg.color};">
               <i class="bi ${cfg.icon}"></i>
             </div>
@@ -1412,6 +1446,24 @@ const ForumAjax = {
       container.innerHTML = html;
     } catch (err) {
       console.error('Lỗi tải thông báo:', err);
+    }
+  },
+
+  markNotificationRead: function (id) {
+    if (!id) return;
+    const baseUrl = this.getBaseUrl();
+    const csrfToken = this.getCsrfToken();
+    try {
+      fetch(`${baseUrl}/api/notifications.php?action=read`, {
+        method: 'POST',
+        keepalive: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({ id: Number(id), _csrf: csrfToken }),
+      });
+    } catch (err) {
     }
   },
 

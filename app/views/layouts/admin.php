@@ -5,6 +5,20 @@ $errorMessage = $message ?? Session::flash('error');
 $warningMessage = Session::flash('warning');
 $infoMessage    = Session::flash('info');
 
+// Đồng bộ thông báo Toast quản trị vào Chuông thông báo "Thông báo của bạn"
+$currentAdminId = is_array($currentUser) ? (int)($currentUser['id'] ?? 0) : 0;
+if ($currentAdminId > 0 && class_exists('Notification')) {
+    if (!empty($successMessage)) {
+        Notification::recordFlashMessage($currentAdminId, 'success', (string)$successMessage);
+    }
+    if (!empty($warningMessage)) {
+        Notification::recordFlashMessage($currentAdminId, 'warning', (string)$warningMessage);
+    }
+    if (!empty($infoMessage)) {
+        Notification::recordFlashMessage($currentAdminId, 'info', (string)$infoMessage);
+    }
+}
+
 if (!function_exists('renderToast')) {
 function renderToast(string $type, string $title, string $icon, string $message): string {
     $safeMsg = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
@@ -60,6 +74,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?: time() ?>" rel="stylesheet">
+    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/liquid-glass.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/liquid-glass.css') ?: time() ?>" rel="stylesheet">
 
     <style>
         .admin-nav-bar {
@@ -67,8 +82,8 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             top: 1rem;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
-            width: min(94vw, 1200px);
+            z-index: 1050;
+            width: min(calc(100vw - 8.5rem), 1120px);
             background: rgba(34, 40, 31, 0.88);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -295,6 +310,47 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         </div>
     </header>
 
+    <?php if (is_array($currentUser)): ?>
+    <!-- ===================================================================== -->
+    <!-- FLOATING NOTIFICATION WIDGET (Đồng bộ Desktop góc trên phải & Mobile FAB góc dưới phải) -->
+    <!-- ===================================================================== -->
+    <aside class="floating-notification-widget" id="floatingNotifWidget" aria-label="Thông báo hệ thống">
+        <button type="button" 
+                class="floating-bell-btn" 
+                id="btnNotificationToggle" 
+                onclick="event.stopPropagation(); ForumAjax.toggleNotificationsDropdown(event);" 
+                aria-label="Thông báo"
+                title="Thông báo của bạn">
+            <i class="bi bi-bell-fill"></i>
+            <span class="bell-badge-pulse" id="navUnreadBadge" style="display: none;">0</span>
+        </button>
+
+        <div id="notificationsDropdownMenu" class="floating-notifications-panel shadow-lg" style="display: none;">
+            <div class="floating-notif-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="floating-notif-icon-badge">
+                        <i class="bi bi-bell-fill"></i>
+                    </span>
+                    <span class="floating-notif-title">Thông báo của bạn</span>
+                </div>
+                <button type="button" class="floating-notif-markall" onclick="ForumAjax.markAllNotificationsRead()" title="Đánh dấu đã đọc tất cả">
+                    <i class="bi bi-check2-all me-1"></i>Đã đọc tất cả
+                </button>
+            </div>
+            <div id="notificationsListContainer" class="notifications-list-scroll">
+                <div class="text-center py-4 text-muted small">
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang tải thông báo...
+                </div>
+            </div>
+            <div class="floating-notif-footer">
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" class="floating-notif-link">
+                    <i class="bi bi-clock-history me-1"></i>Xem hoạt động cá nhân
+                </a>
+            </div>
+        </div>
+    </aside>
+    <?php endif; ?>
+
     <!-- Flash Toast Messages Container -->
     <?php if ($successMessage || $errorMessage || $warningMessage || $infoMessage): ?>
         <div id="flash-toast-container">
@@ -325,8 +381,9 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
         </div>
     </footer>
 
-    <!-- Bootstrap Bundle -->
+    <!-- Bootstrap Bundle & App Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/main.js?v=<?= @filemtime(__DIR__ . '/../../../public/assets/js/main.js') ?: time() ?>"></script>
+    <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/ajax.js?v=<?= @filemtime(__DIR__ . '/../../../public/assets/js/ajax.js') ?: time() ?>"></script>
 </body>
 </html>

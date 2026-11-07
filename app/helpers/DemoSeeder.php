@@ -63,6 +63,67 @@ class DemoSeeder
                 Database::execute("ALTER TABLE post_likes ADD COLUMN vote TINYINT NOT NULL DEFAULT 1");
             }
 
+            // 1d. Đảm bảo bảng users có cột bio và avatar_path (Migration 003)
+            $bioCol = Database::query("SHOW COLUMNS FROM users LIKE 'bio'");
+            if (empty($bioCol)) {
+                Database::execute("ALTER TABLE users ADD COLUMN bio VARCHAR(500) NULL AFTER role_id");
+            }
+            $avatarCol = Database::query("SHOW COLUMNS FROM users LIKE 'avatar_path'");
+            if (empty($avatarCol)) {
+                Database::execute("ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL AFTER bio");
+            }
+
+            // 1e. Đảm bảo bảng notifications, post_bookmarks, user_follows, category_follows, comment_likes, reports luôn tồn tại
+            if (class_exists('Notification')) {
+                Notification::ensureTable();
+            }
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS post_bookmarks (
+                  user_id    INT UNSIGNED NOT NULL,
+                  post_id    INT UNSIGNED NOT NULL,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (user_id, post_id)
+                ) ENGINE=InnoDB
+            ");
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS user_follows (
+                  follower_id  INT UNSIGNED NOT NULL,
+                  following_id INT UNSIGNED NOT NULL,
+                  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (follower_id, following_id)
+                ) ENGINE=InnoDB
+            ");
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS category_follows (
+                  user_id     INT UNSIGNED NOT NULL,
+                  category_id INT UNSIGNED NOT NULL,
+                  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (user_id, category_id)
+                ) ENGINE=InnoDB
+            ");
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS comment_likes (
+                  comment_id INT UNSIGNED NOT NULL,
+                  user_id    INT UNSIGNED NOT NULL,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (comment_id, user_id)
+                ) ENGINE=InnoDB
+            ");
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS reports (
+                  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  reporter_id INT UNSIGNED NOT NULL,
+                  target_type ENUM('post', 'comment', 'user') NOT NULL,
+                  target_id   INT UNSIGNED NOT NULL,
+                  reason      VARCHAR(100) NOT NULL,
+                  details     TEXT NULL,
+                  status      ENUM('pending', 'resolved', 'dismissed') NOT NULL DEFAULT 'pending',
+                  resolved_by INT UNSIGNED NULL,
+                  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at  DATETIME NULL
+                ) ENGINE=InnoDB
+            ");
+
             // 2. Đảm bảo bảng roles có đầy đủ 4 vai trò RBAC (member, admin, moderator, guest)
             Database::execute("INSERT IGNORE INTO roles (id, name) VALUES (1, 'member'), (2, 'admin'), (3, 'moderator'), (4, 'guest')");
 
