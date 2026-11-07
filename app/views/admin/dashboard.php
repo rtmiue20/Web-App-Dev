@@ -510,11 +510,24 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
                                     <th>Thành viên</th>
                                     <th class="text-center">Số bài</th>
                                     <th class="text-center">Bình luận</th>
-                                    <th class="text-center">Karma</th>
+                                    <th class="text-center" title="Điểm uy tín tích lũy từ lượt bình chọn (upvote) của cộng đồng">Điểm uy tín</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($topUsers as $uRow): ?>
+                                    <?php
+                                    $karma = (int)($uRow['total_karma'] ?? 0);
+                                    if ($karma > 0) {
+                                        $badgeClass = 'text-bg-success-subtle text-success-emphasis border border-success-subtle';
+                                        $badgeText = '+' . $karma;
+                                    } elseif ($karma < 0) {
+                                        $badgeClass = 'text-bg-danger-subtle text-danger-emphasis border border-danger-subtle';
+                                        $badgeText = (string)$karma;
+                                    } else {
+                                        $badgeClass = 'text-bg-light border text-muted';
+                                        $badgeText = '0';
+                                    }
+                                    ?>
                                     <tr>
                                         <td>
                                             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/users/<?= (int)$uRow['id'] ?>" class="fw-medium text-dark text-decoration-none d-block">
@@ -531,8 +544,8 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
                                             <?= (int)($uRow['total_comments'] ?? 0) ?>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle">
-                                                +<?= (int)($uRow['total_karma'] ?? 0) ?>
+                                            <span class="badge <?= $badgeClass ?>" title="Điểm uy tín bình chọn: <?= $karma ?>">
+                                                <i class="bi bi-star-fill text-warning me-1"></i><?= $badgeText ?>
                                             </span>
                                         </td>
                                     </tr>
