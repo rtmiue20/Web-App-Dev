@@ -1,12 +1,17 @@
 <?php
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+$isGuestAccount = class_exists('Auth') && Auth::check() && Auth::isGuest();
+$headingLabel = $title ?? ($isGuestAccount ? 'Tài khoản Khách (Chỉ xem) — Quyền thao tác bị giới hạn' : 'Khu vực giới hạn — Quyền truy cập bị từ chối');
+$bodyMessage = $message ?? ($isGuestAccount
+    ? 'Tài khoản của bạn hiện đang được phân quyền ở chế độ Khách (Guest — Chỉ xem). Bạn có thể tự do khám phá bài viết, chuyên mục, bản đồ, dụng cụ và chuyến đi chung, nhưng không thể đăng bài, bình luận hoặc tạo dữ liệu mới.'
+    : 'Bạn không có quyền truy cập vào khu vực hoặc thực hiện thao tác này. Nếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng liên hệ Ban quản trị hệ thống.');
 ?>
 <!doctype html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>403 — Không có quyền truy cập</title>
+    <title>Outdoor Forum - 403 <?= htmlspecialchars($headingLabel, ENT_QUOTES, 'UTF-8') ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -16,13 +21,13 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     <div class="nature-card text-center frame-in" style="max-width: 520px; padding: 3rem 2rem; border-radius: 36px; box-shadow: 0 24px 60px rgba(0,0,0,0.4);">
         <div class="mb-3">
             <span class="d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(220, 53, 69, 0.12); color: #ff6b6b; font-size: 2.25rem;">
-                <i class="bi bi-shield-lock-fill"></i>
+                <i class="bi <?= $isGuestAccount ? 'bi-eye-fill' : 'bi-shield-lock-fill' ?>"></i>
             </span>
         </div>
         <h1 class="display-4 fw-light mb-2" style="color: var(--color-ink, #23261f);">403</h1>
-        <p class="nature-label mb-3" style="color: #dc3545;">Khu vực giới hạn — Quyền truy cập bị từ chối</p>
+        <p class="nature-label mb-3" style="color: #dc3545;"><?= htmlspecialchars($headingLabel, ENT_QUOTES, 'UTF-8') ?></p>
         <p class="text-muted small mb-4" style="line-height: 1.6;">
-            Bạn không có quyền quản trị viên (Admin) để truy cập vào khu vực này. Nếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng liên hệ ban quản trị hệ thống.
+            <?= htmlspecialchars($bodyMessage, ENT_QUOTES, 'UTF-8') ?>
         </p>
         <div class="d-flex flex-wrap justify-content-center gap-2">
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" class="nature-btn-primary px-4 py-2 d-inline-flex" style="width: auto; height: 46px;">

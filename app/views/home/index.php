@@ -1,7 +1,9 @@
 <?php
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$isLoggedIn = Session::has('user');
-$writeUrl = $isLoggedIn ? $baseUrl . '/posts/create' : $baseUrl . '/login';
+$currentUser = class_exists('Auth') ? Auth::user() : Session::get('user');
+$isLoggedIn = is_array($currentUser);
+$isGuestAccount = $isLoggedIn && class_exists('Auth') && Auth::isGuest($currentUser);
+$writeUrl = !$isLoggedIn ? ($baseUrl . '/login') : ($isGuestAccount ? ($baseUrl . '/posts') : ($baseUrl . '/posts/create'));
 
 $spores = [
     ['left' => '58%', 'top' => '62%', 'size' => 3, 'duration' => 16, 'delay' => 0,  'x' => 24,  'opacity' => 0.55],
@@ -83,14 +85,12 @@ $featureCards = [
     <main class="hero-content frame-in">
         <!-- Left: Headline, Description, CTA, Stats -->
         <section class="parallax" style="--depth: 6px; max-width: 580px;">
-            <?php 
-            $currentUser = Session::get('user');
-            $isLoggedIn = is_array($currentUser);
-            ?>
             <?php if ($isLoggedIn): ?>
                 <div class="rise-in mb-2" style="--delay: 50ms; display: inline-flex; align-items: center; gap: 8px; background: rgba(241,241,236,0.12); padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #9bbd55; box-shadow: 0 0 6px #9bbd55; display: inline-block;"></span>
-                    <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.85); font-weight: 500;">Đã đăng nhập</span>
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: <?= $isGuestAccount ? '#adb5bd' : '#9bbd55' ?>; box-shadow: 0 0 6px <?= $isGuestAccount ? '#adb5bd' : '#9bbd55' ?>; display: inline-block;"></span>
+                    <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.85); font-weight: 500;">
+                        <?= $isGuestAccount ? 'Chế độ Khách (Chỉ xem)' : 'Đã đăng nhập' ?>
+                    </span>
                 </div>
                 <h1 class="headline">
                     <span class="rise-in" style="--delay: 100ms;">Chào mừng trở lại,</span>
@@ -110,11 +110,16 @@ $featureCards = [
 
             <div class="rise-in" style="--delay: 500ms; margin-bottom: 2rem;">
                 <a href="<?= htmlspecialchars($writeUrl, ENT_QUOTES, 'UTF-8') ?>" class="btn-write iridescent-border">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
-                        <path d="m15 5 4 4"/>
-                    </svg>
-                    <span>Viết bài chia sẻ</span>
+                    <?php if ($isGuestAccount): ?>
+                        <i class="bi bi-compass"></i>
+                        <span>Khám phá bài viết</span>
+                    <?php else: ?>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+                            <path d="m15 5 4 4"/>
+                        </svg>
+                        <span>Viết bài chia sẻ</span>
+                    <?php endif; ?>
                 </a>
             </div>
 

@@ -1042,11 +1042,36 @@ select option {
   color: #2f5e2e;
 }
 
-/* ─── Mobile: ẩn floating widget, giữ bell ở thanh top bar ─────────────── */
+/* ─── Mobile: Floating Notification FAB góc dưới bên phải (Chuẩn Thumb Zone UX) ─── */
 @media (max-width: 991.98px) {
   .floating-notification-widget {
-    display: none !important;
+    top: auto !important;
+    bottom: 1.5rem !important;
+    right: 1.25rem !important;
+    display: flex !important;
+    z-index: 1060 !important;
   }
+  .floating-bell-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.15rem !important;
+    background: rgba(34, 40, 31, 0.92) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  }
+  .floating-notifications-panel {
+    top: auto !important;
+    bottom: calc(100% + 0.75rem) !important;
+    right: 0 !important;
+    width: min(350px, calc(100vw - 2rem)) !important;
+    max-height: min(480px, calc(100vh - 120px)) !important;
+    transform-origin: bottom right !important;
+    animation: notifPanelSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+}
+
+@keyframes notifPanelSlideUp {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ─── Badge trên mobile bell (mobileNavUnreadBadge) dùng lại bell-badge-pulse */
@@ -1138,4 +1163,14 @@ input[type="file"].nature-input::file-selector-button {
 input[type="file"].nature-input::file-selector-button:hover {
   background: #2e3529;
   color: #c4e482;
+}
+
+.dock-logo img {
+  width: 38px !important;
+  height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  object-fit: contain !important;
+  border-radius: 50% !important;
+  display: block !important;
 }

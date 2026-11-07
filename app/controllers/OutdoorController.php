@@ -44,10 +44,10 @@ class OutdoorController extends Controller
             $this->redirect('/checklists');
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để tạo checklist.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('tạo checklist dã ngoại'));
+            $this->redirect(Auth::check() ? '/checklists' : '/login');
         }
 
         $title = trim((string) ($_POST['title'] ?? ''));
@@ -80,15 +80,15 @@ class OutdoorController extends Controller
         }
 
         try {
-            $this->checklists->create(
+            $checklistId = $this->checklists->create(
                 (int) $user['id'],
                 $title,
                 $tripType,
                 isset($_POST['is_public']),
                 $items
             );
-                        if (class_exists('Notification') && isset($user['id'])) {
-                Notification::send((int)$user['id'], (int)$user['id'], 'create_checklist', 0, "Bạn đã tạo checklist dã ngoại mới: '" . mb_substr($title, 0, 35) . "'.");
+            if (class_exists('Notification') && isset($user['id'])) {
+                Notification::send((int)$user['id'], (int)$user['id'], 'create_checklist', $checklistId, "Bạn đã tạo checklist dã ngoại: '" . mb_substr($title, 0, 38) . "'.");
             }
             Session::flash('success', 'Đã tạo checklist dã ngoại thành công.');
             $this->redirect('/checklists');
@@ -107,13 +107,13 @@ class OutdoorController extends Controller
             $this->redirect('/checklists');
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('xóa checklist'));
+            $this->redirect(Auth::check() ? '/checklists' : '/login');
         }
 
-        $isAdmin = (int) ($user['role_id'] ?? 0) === 2 || ($user['role_name'] ?? '') === 'admin';
+        $isAdmin = Auth::isModerator($user);
         $success = $this->checklists->delete($id, (int) $user['id'], $isAdmin);
 
         if ($success) {
@@ -147,10 +147,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips');
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để đăng chuyến đi.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('đăng chuyến đi chung'));
+            $this->redirect(Auth::check() ? '/trips' : '/login');
         }
 
         $title = trim((string) ($_POST['title'] ?? ''));
@@ -264,10 +264,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips/' . $id);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để đăng ký tham gia.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('đăng ký tham gia chuyến đi'));
+            $this->redirect(Auth::check() ? '/trips/' . $id : '/login');
         }
 
         try {
@@ -317,10 +317,10 @@ class OutdoorController extends Controller
             $this->redirect('/trips/' . $id);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('hủy tham gia chuyến đi'));
+            $this->redirect(Auth::check() ? '/trips/' . $id : '/login');
         }
 
         $success = $this->trips->leave($id, (int) $user['id']);
@@ -351,13 +351,13 @@ class OutdoorController extends Controller
             $this->redirect('/trips/' . $id);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('hủy chuyến đi'));
+            $this->redirect(Auth::check() ? '/trips/' . $id : '/login');
         }
 
-        $isAdmin = (int) ($user['role_id'] ?? 0) === 2 || ($user['role_name'] ?? '') === 'admin';
+        $isAdmin = Auth::isModerator($user);
         $success = $this->trips->delete($id, (int) $user['id'], $isAdmin);
 
         if ($success) {
@@ -385,10 +385,10 @@ class OutdoorController extends Controller
             $this->redirect('/posts/' . $postId);
         }
 
-        $user = Session::get('user');
-        if (!is_array($user)) {
-            Session::flash('error', 'Vui lòng đăng nhập để gửi đánh giá.');
-            $this->redirect('/login');
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::isMember($user)) {
+            Session::flash('error', Auth::denyGuestMessage('gửi đánh giá địa điểm'));
+            $this->redirect(Auth::check() ? '/posts/' . $postId : '/login');
         }
 
         $post = $this->posts->getById($postId);

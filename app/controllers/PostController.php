@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/Category.php';
@@ -44,9 +44,9 @@ class PostController extends Controller {
      * Giao diện tạo bài viết mới
      */
     public function create(): void {
-        if (!Session::has('user')) {
-            Session::flash('error', 'Vui lòng đăng nhập để viết bài chia sẻ.');
-            $this->redirect('/login');
+        if (!Auth::isMember()) {
+            Session::flash('error', Auth::denyGuestMessage('viết bài chia sẻ'));
+            $this->redirect(Auth::check() ? '/posts' : '/login');
             return;
         }
 
@@ -66,9 +66,9 @@ class PostController extends Controller {
      * Xử lý lưu bài viết mới vào CSDL
      */
     public function store(): void {
-        if (!Session::has('user')) {
-            Session::flash('error', 'Vui lòng đăng nhập để viết bài.');
-            $this->redirect('/login');
+        if (!Auth::isMember()) {
+            Session::flash('error', Auth::denyGuestMessage('viết bài chia sẻ'));
+            $this->redirect(Auth::check() ? '/posts' : '/login');
             return;
         }
 
@@ -207,18 +207,30 @@ class PostController extends Controller {
                 $this->products->syncPostProducts($postId, $selectedProductIds);
             }
 
-                        if (class_exists('Notification')) {
+            if (class_exists('Notification')) {
+                $shortTitle = mb_substr($title, 0, 35);
+                $authorName = (string)($user['username'] ?? 'Thành viên');
                 Notification::send(
                     $userId,
                     $userId,
                     'create_post',
                     $postId,
                     $status === 'pending'
-                        ? "Bài viết '" . mb_substr($title, 0, 35) . "...' đã được gửi và đang chờ duyệt."
-                        : "Bạn đã đăng bài viết mới: '" . mb_substr($title, 0, 35) . "'."
+                        ? "Bài viết '{$shortTitle}' đã được gửi và đang chờ duyệt."
+                        : "Bạn đã đăng bài viết mới: '{$shortTitle}'."
                 );
+                if ($status === 'pending') {
+                    Notification::notifyAdmins(
+                        $userId,
+                        'admin_pending_post',
+                        $postId,
+                        "{$authorName} vừa gửi bài viết mới chờ duyệt: '{$shortTitle}'."
+                    );
+                } else {
+                    Notification::notifyFollowersOnNewPost($userId, $authorName, $categoryId, $postId, $title);
+                }
             }
-if ($status === 'pending') {
+            if ($status === 'pending') {
                 Session::flash('success', 'Đăng bài viết thành công! Bài viết của bạn đang ở trạng thái Chờ duyệt (Pending) và sẽ được hiển thị công khai sau khi Quản trị viên phê duyệt.');
             } else {
                 Session::flash('success', 'Đăng bài viết thành công!');
@@ -494,6 +506,30 @@ if ($status === 'pending') {
             // Cập nhật danh sách dụng cụ của bài viết trong post_products
             $this->products->syncPostProducts($id, $selectedProductIds);
 
+            if (class_exists('Notification')) {
+                $currentUserId = (int)Auth::id();
+                $postAuthorId = (int)($post['user_id'] ?? 0);
+                $shortTitle = mb_substr($title, 0, 38);
+                if ($currentUserId > 0) {
+                    Notification::send(
+                        $currentUserId,
+                        $currentUserId,
+                        'update_post',
+                        $id,
+                        "Bạn đã cập nhật bài viết: '{$shortTitle}'."
+                    );
+                }
+                if ($postAuthorId > 0 && $postAuthorId !== $currentUserId) {
+                    Notification::send(
+                        $postAuthorId,
+                        $currentUserId > 0 ? $currentUserId : $postAuthorId,
+                        'system',
+                        $id,
+                        "Ban quản trị đã cập nhật nội dung bài viết '{$shortTitle}' của bạn."
+                    );
+                }
+            }
+
             Session::flash('success', 'Cập nhật bài viết thành công!');
             $this->redirect('/posts/' . $id);
         } else {
@@ -544,6 +580,29 @@ if ($status === 'pending') {
 
         $deleted = $this->posts->delete($id);
         if ($deleted) {
+            if (class_exists('Notification')) {
+                $currentUserId = (int)Auth::id();
+                $postAuthorId = (int)($post['user_id'] ?? 0);
+                $shortTitle = mb_substr((string)($post['title'] ?? 'bài viết'), 0, 38);
+                if ($currentUserId > 0) {
+                    Notification::send(
+                        $currentUserId,
+                        $currentUserId,
+                        'delete_post',
+                        0,
+                        "Bạn đã xóa bài viết: '{$shortTitle}'."
+                    );
+                }
+                if ($postAuthorId > 0 && $postAuthorId !== $currentUserId) {
+                    Notification::send(
+                        $postAuthorId,
+                        $currentUserId > 0 ? $currentUserId : $postAuthorId,
+                        'post_rejected',
+                        0,
+                        "Ban quản trị đã xóa bài viết '{$shortTitle}' của bạn."
+                    );
+                }
+            }
             Session::flash('success', 'Đã xóa bài viết thành công!');
             $this->redirect('/posts');
         } else {
@@ -557,7 +616,7 @@ if ($status === 'pending') {
      */
     public function like(int $id): void {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('bình chọn (Upvote / Downvote) bài viết')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -579,6 +638,35 @@ if ($status === 'pending') {
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
         $voteData = $this->posts->vote($id, $userId, $voteType);
+
+        if (class_exists('Notification') && (int)($voteData['user_vote'] ?? 0) !== 0) {
+            $post = $this->posts->getById($id);
+            if ($post) {
+                $shortTitle = mb_substr((string)($post['title'] ?? 'bài viết'), 0, 35);
+                $postAuthorId = (int)($post['user_id'] ?? 0);
+                $isUpvote = (int)($voteData['user_vote'] ?? 0) === 1;
+
+                Notification::send(
+                    $userId,
+                    $userId,
+                    'like_post',
+                    $id,
+                    $isUpvote
+                        ? "Bạn đã thích (Upvote) bài viết: '{$shortTitle}'."
+                        : "Bạn đã đánh giá (Downvote) bài viết: '{$shortTitle}'."
+                );
+
+                if ($postAuthorId > 0 && $postAuthorId !== $userId) {
+                    Notification::send(
+                        $postAuthorId,
+                        $userId,
+                        'like_post',
+                        $id,
+                        ($user['username'] ?? 'Một thành viên') . ($isUpvote ? " đã thích bài viết '{$shortTitle}' của bạn." : " đã bình chọn bài viết '{$shortTitle}' của bạn.")
+                    );
+                }
+            }
+        }
 
         Response::json([
             'success' => true,

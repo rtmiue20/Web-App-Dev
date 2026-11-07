@@ -381,35 +381,34 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
 <!-- Modal Xác Nhận Xóa Bài Viết (FR13) -->
 <div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden;">
-            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(220, 53, 69, 0.12); color: #dc3545;">
-                        <i class="bi bi-trash3-fill fs-5"></i>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4" style="background: transparent;">
+                <div>
+                    <span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 600;">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Xác nhận xóa
                     </span>
-                    <h5 class="modal-title fw-normal mb-0" id="deletePostModalLabel" style="color: var(--color-ink);">Xác nhận xóa bài viết</h5>
+                    <h5 class="modal-title fw-bold fs-5" id="deletePostModalLabel" style="color: #23261f;">Xóa bài viết khỏi diễn đàn?</h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             
-            <div class="modal-body px-4 py-3">
-                <p class="text-secondary mb-3">
-                    Bạn có chắc chắn muốn xóa bài viết: <strong id="modalPostTitle" class="text-dark"></strong> (ID: #<span id="modalPostId"></span>)?
+            <div class="modal-body p-4" style="color: #4a4f44; background: #ffffff;">
+                <p class="mb-2">
+                    Bạn có chắc chắn muốn xóa bài viết <strong id="modalPostTitle" style="color: #23261f;"></strong> (ID: #<span id="modalPostId"></span>) khỏi diễn đàn không?
                 </p>
-                <div class="alert alert-danger border-0 rounded-4 small mb-0">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    <strong>Cảnh báo:</strong> Thao tác này sẽ xóa vĩnh viễn bài viết cùng toàn bộ ảnh bìa, bình luận và lượt thích liên quan. Hành động này không thể hoàn tác!
+                <div class="text-muted small">
+                    Hành động này sẽ xóa vĩnh viễn bài viết cùng toàn bộ ảnh bìa, bình luận và lượt thích liên quan.
                 </div>
             </div>
 
-            <div class="modal-footer border-0 px-4 pb-4 pt-2">
-                <button type="button" class="nature-btn-secondary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px;">
-                    Hủy bỏ
+            <div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                    Hủy
                 </button>
                 <form id="deletePostForm" method="post" action="" class="m-0">
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" class="btn btn-danger rounded-pill px-4" style="height: 42px; font-weight: 500;">
-                        <i class="bi bi-trash3 me-1"></i> Xóa vĩnh viễn
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                        <i class="bi bi-trash-fill me-1"></i> Xác nhận xóa
                     </button>
                 </form>
             </div>
@@ -579,8 +578,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (elRej) elRej.textContent = res.counts.rejected;
                         if (elHid) elHid.textContent = res.counts.hidden;
                     }
+
+                    if (typeof window.showToast === 'function' && res.message) {
+                        window.showToast(res.message, 'success');
+                    }
+                    if (window.ForumAjax && typeof window.ForumAjax.fetchNotifications === 'function') {
+                        window.ForumAjax.fetchNotifications();
+                    }
                 } else {
-                    alert(res.message || 'Có lỗi xảy ra khi cập nhật trạng thái.');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(res.message || 'Có lỗi xảy ra khi cập nhật trạng thái.', 'error');
+                    }
                 }
             })
             .catch(function (err) {

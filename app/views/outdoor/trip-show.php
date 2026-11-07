@@ -2,7 +2,9 @@
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $hasCoordinates = !empty($trip['lat']) && !empty($trip['lng']);
-$isLoggedIn = Session::has('user');
+$isLoggedIn = Auth::check();
+$isMember = Auth::isMember();
+$isGuestAccount = $isLoggedIn && Auth::isGuest();
 $pCount = (int) $trip['participant_count'];
 $maxP = (int) $trip['max_participants'];
 $spotsLeft = max(0, $maxP - $pCount);
@@ -69,7 +71,12 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
 
         <!-- Action / Join Form -->
         <div class="pt-3 border-top">
-            <?php if ($isLoggedIn): ?>
+            <?php if ($isGuestAccount): ?>
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mb-0">
+                    <i class="bi bi-eye-fill fs-5"></i>
+                    <span>Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên chỉ có thể xem thông tin chuyến đi, không thể đăng ký tham gia.</span>
+                </div>
+            <?php elseif ($isLoggedIn): ?>
                 <?php if ($hasStarted): ?>
                     <div class="alert alert-secondary d-flex align-items-center gap-2 mb-0">
                         <i class="bi bi-info-circle-fill fs-5"></i>
@@ -82,7 +89,7 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
                             <span>Bạn là người khởi tạo và tổ chức chuyến đi này.</span>
                         </div>
                         <form method="post" action="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>/delete"
-                              onsubmit="return confirm('Bạn có chắc chắn muốn hủy chuyến đi này?');" class="m-0">
+                              onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn hủy chuyến đi “<?= $escape(addslashes($trip['title'])) ?>” khỏi danh sách đi chung không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', 'Hủy chuyến đi chung?');" class="m-0">
                             <input type="hidden" name="_csrf" value="<?= $escape(Csrf::token()) ?>">
                             <button class="btn btn-outline-danger px-3 py-2" type="submit">
                                 <i class="bi bi-trash3 me-1"></i> Hủy chuyến đi
@@ -96,7 +103,7 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
                             <span>Bạn đã đăng ký tham gia chuyến đi này. Hãy giữ liên lạc với người tổ chức!</span>
                         </div>
                         <form method="post" action="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>/leave"
-                              onsubmit="return confirm('Bạn có chắc chắn muốn hủy đăng ký tham gia?');" class="m-0">
+                              onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn hủy đăng ký tham gia chuyến đi “<?= $escape(addslashes($trip['title'])) ?>” không?', 'Xác nhận rời nhóm', 'Rời khỏi nhóm đi chung?', 'Xác nhận hủy');" class="m-0">
                             <input type="hidden" name="_csrf" value="<?= $escape(Csrf::token()) ?>">
                             <button class="btn btn-outline-danger px-3 py-2" type="submit">
                                 <i class="bi bi-box-arrow-left me-1"></i> Hủy đăng ký (Rời nhóm)

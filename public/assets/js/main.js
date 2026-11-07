@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Main JavaScript for Dã Ngoại Forum
  * Handles mouse parallax, password visibility, and interactions
  */
@@ -68,7 +68,7 @@ window.showToast = function(message, type, durationMs) {
       '</button>' +
       '<div class="toast-progress-bar" style="animation-duration:' + (durationMs/1000) + 's"></div>';
 
-  // toast.querySelector('.toast-desc').textContent = String(message || '');
+  toast.querySelector('.toast-desc').textContent = String(message || '');
 
   container.appendChild(toast);
 
@@ -83,6 +83,121 @@ window.showToast = function(message, type, durationMs) {
 
   // Auto-dismiss
   setTimeout(function() { window.dismissToast(toast); }, durationMs + 200);
+};
+
+// Hiển thị Hộp thoại Modal xác nhận đồng bộ giao diện (thay thế hoàn toàn confirm() mặc định của trình duyệt)
+window.showConfirmToast = function(message, onConfirm, options) {
+  options = options || {};
+  var badgeText = options.badgeText || 'Xác nhận xóa';
+  var title = options.title || 'Xác nhận xóa?';
+  var confirmLabel = options.confirmLabel || 'Xác nhận xóa';
+  var cancelLabel = options.cancelLabel || 'Hủy';
+  var confirmIcon = options.icon || 'bi-trash-fill';
+
+  var modalEl = document.getElementById('globalConfirmModal');
+  if (!modalEl) {
+    modalEl = document.createElement('div');
+    modalEl.className = 'modal fade';
+    modalEl.id = 'globalConfirmModal';
+    modalEl.tabIndex = -1;
+    modalEl.setAttribute('aria-labelledby', 'globalConfirmModalLabel');
+    modalEl.setAttribute('aria-hidden', 'true');
+    modalEl.innerHTML =
+      '<div class="modal-dialog modal-dialog-centered">' +
+        '<div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden; background: #ffffff;">' +
+          '<div class="modal-header border-0 pb-0 pt-4 px-4" style="background: transparent;">' +
+            '<div>' +
+              '<span class="badge rounded-pill px-3 py-1 mb-2" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 600;">' +
+                '<i class="bi bi-exclamation-triangle me-1"></i><span id="globalConfirmBadgeText">Xác nhận xóa</span>' +
+              '</span>' +
+              '<h5 class="modal-title fw-bold fs-5" id="globalConfirmModalLabel" style="color: #23261f;">Xác nhận xóa?</h5>' +
+            '</div>' +
+            '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>' +
+          '</div>' +
+          '<div class="modal-body p-4" id="globalConfirmModalBody" style="color: #4a4f44; background: #ffffff;">' +
+          '</div>' +
+          '<div class="modal-footer border-0 pt-0 pb-4 px-4" style="background: transparent;">' +
+            '<button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal" id="globalConfirmCancelBtn">Hủy</button>' +
+            '<button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm" id="globalConfirmOkBtn">' +
+              '<i class="bi bi-trash-fill me-1" id="globalConfirmOkIcon"></i> <span id="globalConfirmOkText">Xác nhận xóa</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modalEl);
+  }
+
+  var badgeEl = document.getElementById('globalConfirmBadgeText');
+  var titleEl = document.getElementById('globalConfirmModalLabel');
+  var bodyEl = document.getElementById('globalConfirmModalBody');
+  var cancelBtn = document.getElementById('globalConfirmCancelBtn');
+  var okBtn = document.getElementById('globalConfirmOkBtn');
+  var okText = document.getElementById('globalConfirmOkText');
+  var okIcon = document.getElementById('globalConfirmOkIcon');
+
+  if (badgeEl) badgeEl.textContent = badgeText;
+  if (titleEl) titleEl.textContent = title;
+  if (cancelBtn) cancelBtn.textContent = cancelLabel;
+  if (okText) okText.textContent = confirmLabel;
+  if (okIcon) okIcon.className = 'bi ' + confirmIcon + ' me-1';
+
+  if (bodyEl) {
+    var safeText = String(message || 'Bạn có chắc chắn muốn thực hiện thao tác này?')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    // In đậm phần tên đối tượng nằm trong dấu ngoặc kép "..." hoặc “...” giống #modalDeleteProduct
+    safeText = safeText.replace(/(“[^”]+”|"[^"]+")/g, '<strong style="color: #23261f;">$1</strong>');
+    bodyEl.innerHTML = safeText;
+  }
+
+  if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (okBtn) {
+      okBtn.onclick = function(e) {
+        e.preventDefault();
+        modalInstance.hide();
+        if (typeof onConfirm === 'function') {
+          onConfirm();
+        }
+      };
+    }
+    modalInstance.show();
+  } else if (typeof onConfirm === 'function') {
+    onConfirm();
+  }
+};
+
+// Hàm hỗ trợ xác nhận form submit qua Hộp thoại Modal đồng bộ
+window.confirmFormSubmit = function(event, form, message, confirmLabel, title, badgeText) {
+  if (form && form._confirmedByModal) {
+    form._confirmedByModal = false;
+    return true;
+  }
+  if (event && event.preventDefault) {
+    event.preventDefault();
+  }
+  window.showConfirmToast(
+    message || 'Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.',
+    function() {
+      if (form) {
+        form._confirmedByModal = true;
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
+      }
+    },
+    {
+      badgeText: badgeText || 'Xác nhận xóa',
+      title: title || 'Xác nhận xóa?',
+      confirmLabel: confirmLabel || 'Xác nhận xóa',
+      cancelLabel: 'Hủy',
+      icon: 'bi-trash-fill'
+    }
+  );
+  return false;
 };
 // Global function to toggle password visibility
 window.togglePasswordVisibility = function(targetId, btn) {

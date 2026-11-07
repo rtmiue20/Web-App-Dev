@@ -5,41 +5,41 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
 ?>
 <div class="app-container" style="max-width: 1080px;">
     <!-- Welcome Header -->
-    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <span class="nature-badge mb-2" style="background: rgba(155, 189, 85, 0.15); color: #c4e482; border-color: rgba(155, 189, 85, 0.3);">
-                <i class="bi bi-shield-check me-1"></i>Khu vực Quản trị · Stored Procedures &amp; SQL Views
+                <i class="bi bi-shield-check me-1"></i>Trung tâm Quản trị &amp; Kiểm duyệt
             </span>
-            <h1 class="page-title">Bảng điều khiển</h1>
-            <p class="page-subtitle">Xin chào <strong><?= htmlspecialchars($user['username'] ?? 'Quản trị viên', ENT_QUOTES, 'UTF-8') ?></strong>! Dữ liệu thống kê bên dưới được tổng hợp thời gian thực qua các Stored Procedures &amp; SQL Views.</p>
+            <h1 class="page-title fs-2 fs-md-1">Bảng điều khiển</h1>
+            <p class="page-subtitle mb-0">Xin chào <strong><?= htmlspecialchars($user['username'] ?? 'Quản trị viên', ENT_QUOTES, 'UTF-8') ?></strong>! Theo dõi tổng quan hiệu suất và chỉ số hoạt động của cộng đồng dã ngoại.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories/create" class="nature-btn-primary px-4 py-2" style="width: auto; height: 44px;">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories/create" class="nature-btn-primary px-4 py-2 d-inline-flex align-items-center justify-content-center text-nowrap" style="width: auto; height: 44px;">
                 <i class="bi bi-plus-circle me-1"></i> Thêm chuyên mục
             </a>
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" class="nature-btn-secondary px-3 py-2 text-white border-white-20" style="height: 44px;" target="_blank">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/" class="nature-btn-secondary px-3 py-2 text-white border-white-20 d-inline-flex align-items-center justify-content-center text-nowrap" style="width: auto; height: 44px;" target="_blank">
                 <i class="bi bi-box-arrow-up-right me-1"></i> Xem diễn đàn
             </a>
         </div>
     </div>
 
-    <!-- Quick Stats Cards (từ sp_dashboard_stats) -->
-    <div class="row g-4 mb-4">
+    <!-- Quick Stats Cards (2x2 trên mobile, 4 cột trên desktop) -->
+    <div class="row g-3 g-md-4 mb-4">
         <!-- Chuyên mục -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <div class="nature-card h-100" style="border-radius: 28px; padding: 1.5rem;">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="nature-label mb-0">Chuyên mục</span>
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(155, 189, 85, 0.15); color: var(--color-moss);">
-                        <i class="bi bi-tags-fill fs-5"></i>
+        <div class="col-6 col-lg-3">
+            <div class="nature-card h-100 p-3 p-md-4" style="border-radius: 24px;">
+                <div class="d-flex align-items-center justify-content-between mb-2 mb-md-3">
+                    <span class="nature-label mb-0 small">Chuyên mục</span>
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; background: rgba(155, 189, 85, 0.15); color: var(--color-moss);">
+                        <i class="bi bi-tags-fill fs-6 fs-md-5"></i>
                     </span>
                 </div>
-                <div class="d-flex align-items-baseline gap-2 mb-3">
-                    <span class="display-6 fw-normal" style="color: var(--color-ink);"><?= (int)($categoryCount ?? 0) ?></span>
+                <div class="d-flex align-items-baseline gap-1 gap-md-2 mb-2 mb-md-3">
+                    <span class="fs-2 fs-md-1 fw-normal" style="color: var(--color-ink); line-height: 1.1;"><?= (int)($categoryCount ?? 0) ?></span>
                     <span class="text-muted small">danh mục</span>
                 </div>
                 <div class="pt-2 border-top">
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" class="text-decoration-none small fw-medium d-inline-block text-truncate w-100" style="color: var(--color-ink); font-size: 12px;">
                         Quản lý chuyên mục &rarr;
                     </a>
                 </div>
@@ -47,30 +47,30 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
         </div>
 
         <!-- Bài viết -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <div class="nature-card h-100" style="border-radius: 28px; padding: 1.5rem;">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="nature-label mb-0">Bài viết</span>
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(13, 110, 253, 0.12); color: #0d6efd;">
-                        <i class="bi bi-file-earmark-text-fill fs-5"></i>
+        <div class="col-6 col-lg-3">
+            <div class="nature-card h-100 p-3 p-md-4" style="border-radius: 24px;">
+                <div class="d-flex align-items-center justify-content-between mb-2 mb-md-3">
+                    <span class="nature-label mb-0 small">Bài viết</span>
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; background: rgba(13, 110, 253, 0.12); color: #0d6efd;">
+                        <i class="bi bi-file-earmark-text-fill fs-6 fs-md-5"></i>
                     </span>
                 </div>
-                <div class="d-flex align-items-baseline gap-2 mb-2">
-                    <span class="display-6 fw-normal" style="color: var(--color-ink);"><?= (int)($postCount ?? 0) ?></span>
+                <div class="d-flex align-items-baseline gap-1 gap-md-2 mb-2">
+                    <span class="fs-2 fs-md-1 fw-normal" style="color: var(--color-ink); line-height: 1.1;"><?= (int)($postCount ?? 0) ?></span>
                     <span class="text-muted small">bài đăng</span>
                 </div>
-                <div class="d-flex gap-1 mb-2">
-                    <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size: 10.5px;">
-                        <?= (int)($publishedPosts ?? 0) ?> đã duyệt
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                    <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size: 10px; padding: 2px 5px;">
+                        <?= (int)($publishedPosts ?? 0) ?> duyệt
                     </span>
                     <?php if (!empty($pendingPosts)): ?>
-                        <span class="badge text-bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 10.5px;">
-                            <?= (int)$pendingPosts ?> chờ duyệt
+                        <span class="badge text-bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 10px; padding: 2px 5px;">
+                            <?= (int)$pendingPosts ?> chờ
                         </span>
                     <?php endif; ?>
                 </div>
                 <div class="pt-2 border-top">
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" class="text-decoration-none small fw-medium d-inline-block text-truncate w-100" style="color: var(--color-ink); font-size: 12px;">
                         Kiểm duyệt bài viết &rarr;
                     </a>
                 </div>
@@ -78,20 +78,20 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
         </div>
 
         <!-- Bình luận & Thảo luận -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <div class="nature-card h-100" style="border-radius: 28px; padding: 1.5rem;">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="nature-label mb-0">Bình luận</span>
-                    <span class="d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(32, 201, 151, 0.15); color: #198754;">
-                        <i class="bi bi-chat-dots-fill fs-5"></i>
+        <div class="col-6 col-lg-3">
+            <div class="nature-card h-100 p-3 p-md-4" style="border-radius: 24px;">
+                <div class="d-flex align-items-center justify-content-between mb-2 mb-md-3">
+                    <span class="nature-label mb-0 small">Bình luận</span>
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; background: rgba(32, 201, 151, 0.15); color: #198754;">
+                        <i class="bi bi-chat-dots-fill fs-6 fs-md-5"></i>
                     </span>
                 </div>
-                <div class="d-flex align-items-baseline gap-2 mb-3">
-                    <span class="display-6 fw-normal" style="color: var(--color-ink);"><?= (int)($commentCount ?? 0) ?></span>
-                    <span class="text-muted small">lượt thảo luận</span>
+                <div class="d-flex align-items-baseline gap-1 gap-md-2 mb-2 mb-md-3">
+                    <span class="fs-2 fs-md-1 fw-normal" style="color: var(--color-ink); line-height: 1.1;"><?= (int)($commentCount ?? 0) ?></span>
+                    <span class="text-muted small">thảo luận</span>
                 </div>
                 <div class="pt-2 border-top">
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts" class="text-decoration-none small fw-medium d-inline-block text-truncate w-100" style="color: var(--color-ink); font-size: 12px;">
                         Xem luồng thảo luận &rarr;
                     </a>
                 </div>
@@ -99,24 +99,24 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
         </div>
 
         <!-- Thành viên -->
-        <div class="col-12 col-sm-6 col-lg-3">
-            <div class="nature-card h-100 position-relative" style="border-radius: 28px; padding: 1.5rem;">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="nature-label mb-0">Thành viên</span>
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="d-inline-flex align-items-center justify-content-center text-decoration-none" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(255, 193, 7, 0.15); color: #ffb703;" title="Xem danh sách thành viên">
-                        <i class="bi bi-people-fill fs-5"></i>
+        <div class="col-6 col-lg-3">
+            <div class="nature-card h-100 p-3 p-md-4 position-relative" style="border-radius: 24px;">
+                <div class="d-flex align-items-center justify-content-between mb-2 mb-md-3">
+                    <span class="nature-label mb-0 small">Thành viên</span>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="d-inline-flex align-items-center justify-content-center rounded-circle text-decoration-none flex-shrink-0" style="width: 36px; height: 36px; background: rgba(255, 193, 7, 0.15); color: #ffb703;" title="Xem danh sách thành viên">
+                        <i class="bi bi-people-fill fs-6 fs-md-5"></i>
                     </a>
                 </div>
-                <div class="d-flex align-items-baseline gap-2 mb-3">
-                    <span class="display-6 fw-normal" style="color: var(--color-ink);"><?= (int)($userCount ?? 0) ?></span>
+                <div class="d-flex align-items-baseline gap-1 gap-md-2 mb-2 mb-md-3">
+                    <span class="fs-2 fs-md-1 fw-normal" style="color: var(--color-ink); line-height: 1.1;"><?= (int)($userCount ?? 0) ?></span>
                     <span class="text-muted small">tài khoản</span>
                 </div>
                 <div class="pt-2 border-top d-flex justify-content-between align-items-center">
-                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="text-decoration-none small fw-medium" style="color: var(--color-ink);">
-                        Quản lý thành viên &rarr;
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="text-decoration-none small fw-medium d-inline-block text-truncate" style="color: var(--color-ink); font-size: 12px;">
+                        Quản lý &rarr;
                     </a>
-                    <span class="badge text-bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 10.5px;">
-                        <i class="bi bi-key me-1"></i>RBAC
+                    <span class="badge text-bg-warning-subtle text-warning-emphasis border border-warning-subtle d-none d-sm-inline" style="font-size: 10px;">
+                        <i class="bi bi-shield-lock-fill me-1"></i>Phân quyền
                     </span>
                 </div>
             </div>
@@ -134,39 +134,39 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
         ];
         $jsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
     ?>
-    <div class="nature-card mb-4" style="border-radius: 32px; padding: 2rem;">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div class="nature-card mb-4 p-3 p-md-4" style="border-radius: 28px;">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                     <h2 class="h5 fw-normal mb-0" style="color: var(--color-ink);">
                         <i class="bi bi-graph-up-arrow text-success me-1"></i>Hoạt động theo ngày
                     </h2>
-                    <span class="badge rounded-pill text-bg-light border text-muted" style="font-size: 11px;">
-                        <code>CALL sp_stats_daily_activity(<span id="chartDaysLabel"><?= (int)$chartInitial['days'] ?></span>)</code>
+                    <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis border border-success-subtle" style="font-size: 11px;">
+                        <i class="bi bi-broadcast me-1"></i>Trực tiếp (<span id="chartDaysLabel"><?= (int)$chartInitial['days'] ?></span> ngày)
                     </span>
                 </div>
-                <p class="small text-muted mb-0">Số người dùng đăng ký mới và bài viết mới mỗi ngày — Chart.js, dữ liệu JSON từ <code>/api/stats/daily</code> (AJAX).</p>
+                <p class="small text-muted mb-0">Biểu đồ trực quan theo dõi lượng thành viên mới tham gia, bài viết chia sẻ và bình luận tương tác mỗi ngày.</p>
             </div>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Khoảng thời gian thống kê" id="chartRangeGroup">
+            <div class="btn-group btn-group-sm mt-1 mt-sm-0" role="group" aria-label="Khoảng thời gian thống kê" id="chartRangeGroup">
                 <button type="button" class="btn btn-outline-success active" data-days="7">7 ngày</button>
                 <button type="button" class="btn btn-outline-success" data-days="14">14 ngày</button>
                 <button type="button" class="btn btn-outline-success" data-days="30">30 ngày</button>
             </div>
         </div>
 
-        <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="badge text-bg-primary-subtle text-primary-emphasis border border-primary-subtle px-3 py-2">
-                <i class="bi bi-person-plus-fill me-1"></i>Người dùng mới: <strong id="chartTotalUsers">0</strong>
+        <div class="d-flex flex-wrap gap-1 gap-md-2 mb-3">
+            <span class="badge text-bg-primary-subtle text-primary-emphasis border border-primary-subtle px-2 px-md-3 py-1 py-md-2" style="font-size: 11px;">
+                <i class="bi bi-person-plus-fill me-1"></i>Người dùng: <strong id="chartTotalUsers">0</strong>
             </span>
-            <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-2">
-                <i class="bi bi-file-earmark-plus-fill me-1"></i>Bài viết mới: <strong id="chartTotalPosts">0</strong>
+            <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle px-2 px-md-3 py-1 py-md-2" style="font-size: 11px;">
+                <i class="bi bi-file-earmark-plus-fill me-1"></i>Bài viết: <strong id="chartTotalPosts">0</strong>
             </span>
-            <span class="badge text-bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2">
-                <i class="bi bi-chat-dots-fill me-1"></i>Bình luận mới: <strong id="chartTotalComments">0</strong>
+            <span class="badge text-bg-info-subtle text-info-emphasis border border-info-subtle px-2 px-md-3 py-1 py-md-2" style="font-size: 11px;">
+                <i class="bi bi-chat-dots-fill me-1"></i>Bình luận: <strong id="chartTotalComments">0</strong>
             </span>
         </div>
 
-        <div class="position-relative" style="height: 320px;">
+        <div class="position-relative chart-canvas-wrap" style="height: 250px;">
             <canvas id="dailyActivityChart" role="img" aria-label="Biểu đồ người dùng mới và bài viết mới theo ngày"></canvas>
             <div id="chartMessage" class="position-absolute top-50 start-50 translate-middle text-muted small text-center" style="display: none;"></div>
         </div>
@@ -274,18 +274,35 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
         }
 
         function loadRange(days) {
-            fetch(BASE_URL + '/api/stats/daily?days=' + encodeURIComponent(days), {
+            var url = BASE_URL + '/api/stats/daily?days=' + encodeURIComponent(days);
+            fetch(url, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 credentials: 'same-origin'
             })
-                .then(function (res) { return res.json().then(function (json) { return { ok: res.ok, json: json }; }); })
+                .then(function (res) {
+                    return res.text().then(function (text) {
+                        try {
+                            var json = JSON.parse(text);
+                            return { ok: res.ok, json: json };
+                        } catch (e) {
+                            return fetch(BASE_URL + '/api/stats/daily.php?days=' + encodeURIComponent(days), {
+                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                                credentials: 'same-origin'
+                            }).then(function (res2) {
+                                return res2.json().then(function (json2) { return { ok: res2.ok, json: json2 }; });
+                            });
+                        }
+                    });
+                })
                 .then(function (r) {
                     if (!r.ok || !r.json || !r.json.success) {
                         throw new Error((r.json && r.json.message) || 'Không tải được dữ liệu thống kê.');
                     }
                     applyData(r.json.data);
                 })
-                .catch(function (err) { showMessage(err.message); });
+                .catch(function (err) {
+                    showMessage(err.message || 'Không tải được dữ liệu thống kê.');
+                });
         }
 
         if (rangeGroup) {
@@ -303,16 +320,18 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
     </script>
 
     <!-- KHỐI 1: THỐNG KÊ SỐ BÀI VIẾT THEO DANH MỤC (sp_stats_posts_by_category & vw_category_summary) -->
-    <div class="nature-card mb-4" style="border-radius: 32px; padding: 2rem;">
+    <div class="nature-card mb-4 p-3 p-md-4" style="border-radius: 28px;">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <h2 class="h5 fw-normal mb-0" style="color: var(--color-ink);">Thống kê Số bài viết theo Danh mục</h2>
-                    <span class="badge rounded-pill text-bg-light border text-muted" style="font-size: 11px;">
-                        <code>CALL sp_stats_posts_by_category()</code>
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    <h2 class="h5 fw-normal mb-0" style="color: var(--color-ink);">
+                        <i class="bi bi-pie-chart-fill text-success me-1"></i>Phân bố Bài viết theo Chuyên mục
+                    </h2>
+                    <span class="badge rounded-pill text-bg-primary-subtle text-primary-emphasis border border-primary-subtle" style="font-size: 11px;">
+                        <i class="bi bi-bar-chart-steps me-1"></i>Tỷ trọng nội dung
                     </span>
                 </div>
-                <p class="small text-muted mb-0">Tổng hợp từ SQL View <code>vw_category_summary</code> — phân bổ số bài đã duyệt, chờ duyệt và tỷ trọng từng chuyên mục.</p>
+                <p class="small text-muted mb-0">Phân bổ chi tiết số lượng bài viết đã xuất bản và đang chờ duyệt theo từng chuyên mục.</p>
             </div>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/categories" class="nature-btn-secondary py-1 px-3 text-dark border-dark-subtle" style="font-size: 13px;">
                 Quản lý toàn bộ <i class="bi bi-arrow-right ms-1"></i>
@@ -323,7 +342,7 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
             <p class="text-muted text-center py-4 mb-0">Chưa có chuyên mục nào trong hệ thống.</p>
         <?php else: ?>
             <div class="table-responsive">
-                <table class="table align-middle mb-0">
+                <table class="table align-middle mb-0" style="min-width: 520px;">
                     <thead class="table-light">
                         <tr>
                             <th scope="col" style="width: 60px;">ID</th>
@@ -389,18 +408,18 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
     <div class="row g-4 mb-4">
         <!-- Top Bài viết nổi bật nhất -->
         <div class="col-12 col-lg-7">
-            <div class="nature-card h-100" style="border-radius: 32px; padding: 1.75rem;">
+            <div class="nature-card h-100 p-3 p-md-4" style="border-radius: 28px;">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                             <h2 class="h5 fw-normal mb-0" style="color: var(--color-ink);">
-                                <i class="bi bi-trophy-fill text-warning me-1"></i>Top Bài viết nổi bật
+                                <i class="bi bi-fire text-danger me-1"></i>Top Bài viết Nổi bật
                             </h2>
-                            <span class="badge rounded-pill text-bg-light border text-muted" style="font-size: 10.5px;">
-                                <code>CALL sp_stats_top_posts(5)</code>
+                            <span class="badge rounded-pill text-bg-danger-subtle text-danger-emphasis border border-danger-subtle" style="font-size: 10.5px;">
+                                <i class="bi bi-lightning-charge-fill me-1"></i>Tương tác cao
                             </span>
                         </div>
-                        <p class="small text-muted mb-0">Xếp hạng từ View <code>vw_post_details</code> theo điểm Vote &amp; Bình luận.</p>
+                        <p class="small text-muted mb-0">Xếp hạng các bài chia sẻ thu hút nhiều lượt bình chọn và thảo luận sôi nổi nhất.</p>
                     </div>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/posts" class="small text-decoration-none fw-medium" style="color: var(--color-ink);">
                         Tất cả bài &rarr;
@@ -411,7 +430,7 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
                     <p class="text-muted text-center py-4 mb-0">Chưa có bài viết nào được xuất bản.</p>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0">
+                        <table class="table align-middle mb-0" style="min-width: 440px;">
                             <thead class="table-light">
                                 <tr>
                                     <th style="width: 42px;">#</th>
@@ -463,18 +482,18 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
 
         <!-- Top Thành viên tích cực nhất -->
         <div class="col-12 col-lg-5">
-            <div class="nature-card h-100" style="border-radius: 32px; padding: 1.75rem;">
+            <div class="nature-card h-100 p-3 p-md-4" style="border-radius: 28px;">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                             <h2 class="h5 fw-normal mb-0" style="color: var(--color-ink);">
-                                <i class="bi bi-award-fill text-success me-1"></i>Top Thành viên
+                                <i class="bi bi-trophy-fill text-warning me-1"></i>Top Thành viên Tích cực
                             </h2>
-                            <span class="badge rounded-pill text-bg-light border text-muted" style="font-size: 10.5px;">
-                                <code>CALL sp_stats_top_users(5)</code>
+                            <span class="badge rounded-pill text-bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 10.5px;">
+                                <i class="bi bi-star-fill me-1"></i>Cống hiến
                             </span>
                         </div>
-                        <p class="small text-muted mb-0">Tổng hợp từ SQL View <code>vw_user_summary</code>.</p>
+                        <p class="small text-muted mb-0">Vinh danh các thành viên có nhiều bài viết chất lượng và điểm uy tín hàng đầu.</p>
                     </div>
                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/users" class="small text-decoration-none fw-medium" style="color: var(--color-ink);">
                         Quản lý &rarr;
@@ -485,17 +504,30 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
                     <p class="text-muted text-center py-4 mb-0">Chưa có dữ liệu thành viên.</p>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0">
+                        <table class="table align-middle mb-0" style="min-width: 380px;">
                             <thead class="table-light">
                                 <tr>
                                     <th>Thành viên</th>
                                     <th class="text-center">Số bài</th>
                                     <th class="text-center">Bình luận</th>
-                                    <th class="text-center">Karma</th>
+                                    <th class="text-center" title="Điểm uy tín tích lũy từ lượt bình chọn (upvote) của cộng đồng">Điểm uy tín</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($topUsers as $uRow): ?>
+                                    <?php
+                                    $karma = (int)($uRow['total_karma'] ?? 0);
+                                    if ($karma > 0) {
+                                        $badgeClass = 'text-bg-success-subtle text-success-emphasis border border-success-subtle';
+                                        $badgeText = '+' . $karma;
+                                    } elseif ($karma < 0) {
+                                        $badgeClass = 'text-bg-danger-subtle text-danger-emphasis border border-danger-subtle';
+                                        $badgeText = (string)$karma;
+                                    } else {
+                                        $badgeClass = 'text-bg-light border text-muted';
+                                        $badgeText = '0';
+                                    }
+                                    ?>
                                     <tr>
                                         <td>
                                             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/users/<?= (int)$uRow['id'] ?>" class="fw-medium text-dark text-decoration-none d-block">
@@ -512,8 +544,8 @@ $totalPostsSafe = max(1, (int)($postCount ?? 0));
                                             <?= (int)($uRow['total_comments'] ?? 0) ?>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge text-bg-success-subtle text-success-emphasis border border-success-subtle">
-                                                +<?= (int)($uRow['total_karma'] ?? 0) ?>
+                                            <span class="badge <?= $badgeClass ?>" title="Điểm uy tín bình chọn: <?= $karma ?>">
+                                                <i class="bi bi-star-fill text-warning me-1"></i><?= $badgeText ?>
                                             </span>
                                         </td>
                                     </tr>
