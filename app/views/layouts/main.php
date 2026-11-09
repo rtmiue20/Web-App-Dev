@@ -102,6 +102,9 @@ HTML;
     <!-- Main View Content -->
     <?= $content ?>
 
+    <!-- Widget Trợ lý Dã ngoại AI (Google Gemini Chatbox) -->
+    <?php require __DIR__ . '/../partials/chatbot-widget.php'; ?>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/main.js?v=<?= @filemtime(__DIR__ . '/../../../public/assets/js/main.js') ?: time() ?>"></script>

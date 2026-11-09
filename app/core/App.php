@@ -268,6 +268,11 @@ class App
 
             $apiRouter->post('/comments/{id}/like', [LikeApi::class, 'toggleCommentLike']);
 
+            // Trợ lý Dã ngoại AI Chatbot (Google Gemini API & Knowledge Base)
+            $chatbot = new ChatbotController();
+            $apiRouter->post('/chat', [$chatbot, 'message']);
+            $apiRouter->get('/chat', [$chatbot, 'message']);
+
             // Tin tức RSS (XML -> JSON)
 
             $apiRouter->get('/news', [RssApi::class, 'index']);
