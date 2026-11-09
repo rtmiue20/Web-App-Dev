@@ -278,23 +278,23 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LIQUID GLASS MODALS FOR POST COMPOSER (Nature Dark Edition)
+   NATURE WHITE CARD MODALS FOR POST COMPOSER
+   Đồng bộ 100% với Design System Đồ án nhóm (Thẻ trắng cao cấp)
    ══════════════════════════════════════════════════════════════ */
 .modal-content.fb-modal-box {
-    background: rgba(14, 20, 11, 0.95) !important;
-    backdrop-filter: blur(40px) saturate(220%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    border-top-color: rgba(255, 255, 255, 0.32) !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
     border-radius: 28px !important;
-    box-shadow: 0 36px 90px -15px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.18) inset !important;
+    box-shadow: 0 24px 60px -12px rgba(20, 24, 16, 0.25) !important;
     overflow: hidden;
-    color: #ffffff !important;
+    color: #23261f !important;
 }
 
 .fb-modal-box .modal-header {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #edf0e8 !important;
     padding: 1.15rem 1.5rem !important;
     position: relative;
 }
@@ -302,7 +302,7 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
 .fb-modal-box .modal-title {
     font-size: 1.15rem !important;
     font-weight: 700 !important;
-    color: #ffffff !important;
+    color: #23261f !important;
     letter-spacing: -0.2px;
 }
 
@@ -310,19 +310,22 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
     padding: 1.5rem !important;
     max-height: 75vh;
     overflow-y: auto;
-    color: #ffffff !important;
+    color: #23261f !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
 }
 
 .fb-modal-box .modal-footer {
-    background: rgba(0, 0, 0, 0.22) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: #fafbfa !important;
+    background-color: #fafbfa !important;
+    border-top: 1px solid #edf0e8 !important;
     padding: 0.95rem 1.5rem !important;
 }
 
-/* Close button - Crisp white */
+/* Close button - Crisp standard dark */
 .fb-modal-box .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%) !important;
-    opacity: 0.8 !important;
+    filter: none !important;
+    opacity: 0.6 !important;
     transition: opacity 0.2s ease, transform 0.2s ease !important;
 }
 .fb-modal-box .btn-close:hover {
@@ -332,70 +335,82 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
 
 /* Labels inside modal */
 .fb-modal-box .nature-label,
-.fb-modal-box .form-label {
-    color: rgba(255, 255, 255, 0.88) !important;
+.fb-modal-box .form-label,
+.fb-modal-box label {
+    color: #23261f !important;
     font-weight: 600 !important;
-    font-size: 12px !important;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
+    font-size: 13px !important;
+    letter-spacing: 0.2px;
     margin-bottom: 0.45rem;
+    display: inline-block;
 }
 
 /* Inputs and Selects inside modal */
 .fb-modal-box .nature-input,
 .fb-modal-box .nature-textarea,
 .fb-modal-box .form-control,
-.fb-modal-box .form-select {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    color: #ffffff !important;
+.fb-modal-box .form-select,
+.fb-modal-box input,
+.fb-modal-box textarea,
+.fb-modal-box select {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #dcdfd6 !important;
+    color: #23261f !important;
     border-radius: 14px !important;
-    font-size: 14.5px !important;
+    font-size: 14px !important;
     transition: all 0.2s ease;
 }
 
 .fb-modal-box .nature-input:focus,
 .fb-modal-box .nature-textarea:focus,
 .fb-modal-box .form-control:focus,
-.fb-modal-box .form-select:focus {
-    background: rgba(255, 255, 255, 0.13) !important;
+.fb-modal-box .form-select:focus,
+.fb-modal-box input:focus,
+.fb-modal-box textarea:focus,
+.fb-modal-box select:focus {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     border-color: #9bbd55 !important;
-    box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.28) !important;
-    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.25) !important;
+    color: #23261f !important;
 }
 
 .fb-modal-box .nature-input::placeholder,
 .fb-modal-box .nature-textarea::placeholder,
-.fb-modal-box .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.45) !important;
+.fb-modal-box .form-control::placeholder,
+.fb-modal-box input::placeholder,
+.fb-modal-box textarea::placeholder {
+    color: #8f9488 !important;
+    opacity: 0.85 !important;
 }
 
 .fb-modal-box select option,
 .fb-modal-box select optgroup {
-    background: #182215 !important;
-    color: #ffffff !important;
+    background: #ffffff !important;
+    color: #23261f !important;
 }
 
 /* Accordion inside modal */
 .fb-modal-box .accordion-item {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: #ffffff !important;
+    border: 1px solid #e3e7df !important;
     border-radius: 18px !important;
     overflow: hidden;
 }
 
 .fb-modal-box .accordion-button {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
+    background: #f7f9f4 !important;
+    color: #23261f !important;
     border: none !important;
     box-shadow: none !important;
 }
 .fb-modal-box .accordion-button:not(.collapsed) {
-    background: rgba(155, 189, 85, 0.15) !important;
-    color: #c4e482 !important;
+    background: #eef4e6 !important;
+    color: #2e441b !important;
 }
 .fb-modal-box .accordion-button::after {
-    filter: invert(1) brightness(150%) !important;
+    filter: none !important;
 }
 
 /* Tool Item Marquee Animation */
@@ -415,6 +430,11 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
     animation-play-state: paused;
 }
 @keyframes toolMarqueeScroll {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(0); }
+    80% { transform: translateX(calc(-100% + 160px)); }
+    100% { transform: translateX(0); }
+}
     0% { transform: translateX(0); }
     20% { transform: translateX(0); }
     80% { transform: translateX(calc(-100% + 160px)); }
@@ -587,39 +607,42 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                         <h5 class="modal-title" id="modalImagesLabel">
                             <i class="bi bi-images text-success me-2"></i>Thêm hình ảnh bài viết
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Dropzone -->
                         <div class="upload-dropzone p-4 text-center rounded-4 border border-2 border-dashed" 
                              id="imageDropzone" 
-                             style="background: rgba(255, 255, 255, 0.04); border-color: rgba(155, 189, 85, 0.45) !important; cursor: pointer; transition: all 0.2s ease;">
-                            <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2" style="color: #9bbd55;"></i>
-                            <div class="fw-semibold text-white mb-1">Nhấn để chọn ảnh, hoặc kéo thả file vào đây</div>
-                            <div class="small" style="color: rgba(255, 255, 255, 0.7);">Hỗ trợ JPG, PNG, WEBP &lt; 2MB/ảnh. Có thể chọn cùng lúc nhiều ảnh để tạo Album ảnh.</div>
+                             style="background: #f7f9f4; border-color: #9bbd55 !important; cursor: pointer; transition: all 0.2s ease;">
+                            <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2" style="color: #7aab3a;"></i>
+                            <div class="fw-semibold text-dark mb-1" style="font-size: 15px;">Nhấn để chọn ảnh, hoặc kéo thả file vào đây</div>
+                            <div class="small" style="color: #686d62;">Hỗ trợ JPG, PNG, WEBP &lt; 2MB/ảnh. Có thể chọn cùng lúc nhiều ảnh để tạo Album ảnh dã ngoại.</div>
                             <input class="d-none" id="imagesInput" name="images[]" type="file" multiple accept="image/png, image/jpeg, image/webp">
                         </div>
 
                         <!-- Previews -->
                         <div class="row g-2 mt-3 d-none" id="imagePreviewContainer"></div>
-                        <div class="small mt-2 d-none" id="imagePreviewCount" style="color: rgba(255, 255, 255, 0.85);"></div>
+                        <div class="small mt-2 d-none" id="imagePreviewCount" style="color: #4a4f44; font-weight: 600;"></div>
 
                         <!-- Cloud URL Input -->
-                        <div class="mt-4 pt-3" style="border-top: 1px solid rgba(255, 255, 255, 0.1) !important;">
-                            <label class="form-label small fw-semibold text-white mb-1">
-                                <i class="bi bi-link-45deg me-1" style="color: #9bbd55;"></i>Hoặc dán Link ảnh Cloud (ImgBB / Cloudinary)
+                        <div class="mt-4 pt-3" style="border-top: 1px solid #edf0e8 !important;">
+                            <label class="form-label small fw-semibold text-dark mb-1">
+                                <i class="bi bi-link-45deg me-1" style="color: #7aab3a;"></i>Hoặc dán Link ảnh Cloud (ImgBB / Cloudinary / Unsplash)
                             </label>
                             <input type="text"
                                    name="cloud_image_url"
                                    id="cloud_image_url"
                                    class="nature-input"
-                                   style="height: 42px; font-size: 13.5px;"
-                                   placeholder="Dán link ảnh từ ImgBB / Cloudinary..."
+                                   style="height: 44px; font-size: 13.5px;"
+                                   placeholder="https://i.ibb.co/... hoặc dán link ảnh trực tuyến..."
                                    value="<?= $escape($old['cloud_image_url'] ?? '') ?>">
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px;">
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <button type="button" class="nature-btn-secondary px-3 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
+                            Đóng
+                        </button>
+                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
                             <i class="bi bi-check-lg me-1"></i> Xong
                         </button>
                     </div>
@@ -637,7 +660,7 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                         <h5 class="modal-title" id="modalLocationLabel">
                             <i class="bi bi-geo-alt-fill text-danger me-2"></i>Check-in Địa điểm & Bản đồ
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Location Name with Map Picker Button -->
@@ -650,15 +673,17 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                        type="text" 
                                        placeholder="Ví dụ: Tà Xùa, Sơn La hoặc Hồ Trị An, Đồng Nai..."
                                        value="<?= $escape($old['location'] ?? '') ?>"
-                                       oninput="updateAllChips()">
+                                       oninput="updateAllChips()"
+                                       style="height: 44px; padding-right: 48px;">
                                 <button type="button"
                                         class="loc-map-btn"
                                         onclick="MapPicker.open()"
-                                        title="Mở bản đồ tìm kiếm vị trí">
+                                        title="Mở bản đồ tìm kiếm vị trí"
+                                        style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #eef4e6; border: 1px solid #c8dcb0; color: #5c8424; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                     <i class="bi bi-map-fill"></i>
                                 </button>
                             </div>
-                            <small class="mt-1 d-block" style="color: rgba(255, 255, 255, 0.65);">Bấm vào biểu tượng bản đồ bên phải ô nhập để tìm kiếm nhanh tọa độ.</small>
+                            <small class="mt-1 d-block" style="color: #686d62; font-size: 12.5px;">Bấm vào biểu tượng bản đồ bên phải ô nhập để tìm kiếm nhanh tọa độ.</small>
                         </div>
 
                         <!-- Coordinates Lat / Lng -->
@@ -672,7 +697,8 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                        step="any"
                                        placeholder="VD: 21.2833"
                                        value="<?= $escape((string)($old['lat'] ?? '')) ?>"
-                                       oninput="updateAllChips()">
+                                       oninput="updateAllChips()"
+                                       style="height: 44px;">
                             </div>
                             <div class="col-6">
                                 <label for="lng" class="nature-label">Kinh độ (Lng)</label>
@@ -683,15 +709,19 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                        step="any"
                                        placeholder="VD: 104.3167"
                                        value="<?= $escape((string)($old['lng'] ?? '')) ?>"
-                                       oninput="updateAllChips()">
+                                       oninput="updateAllChips()"
+                                       style="height: 44px;">
                             </div>
                         </div>
-                        <div class="rounded-3 mt-3 p-3 small" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.3); color: #d6e8b5; line-height: 1.5;">
-                            <i class="bi bi-info-circle-fill me-1" style="color: #9bbd55;"></i>Khi có tọa độ GPS, hệ thống sẽ tự động ghim vị trí lên <strong class="text-white">Bản đồ địa điểm</strong> và kích hoạt <strong class="text-white">Dự báo thời tiết 4 ngày tới</strong> cho người đọc!
+                        <div class="rounded-4 mt-3 p-3 small" style="background: #f1f7ea; border: 1px solid rgba(155, 189, 85, 0.45); color: #2e441b; line-height: 1.55;">
+                            <i class="bi bi-info-circle-fill me-1" style="color: #7aab3a; font-size: 15px;"></i>Khi có tọa độ GPS, hệ thống sẽ tự động ghim vị trí lên <strong style="color: #1a2a0e;">Bản đồ địa điểm</strong> và kích hoạt <strong style="color: #1a2a0e;">Dự báo thời tiết 4 ngày tới</strong> cho người đọc!
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px;">
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <button type="button" class="nature-btn-secondary px-3 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
+                            Đóng
+                        </button>
+                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
                             <i class="bi bi-check-lg me-1"></i> Xác nhận địa điểm
                         </button>
                     </div>
@@ -702,50 +732,48 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                  MAP PICKER MODAL (OpenStreetMap + Nominatim)
                  Đặt trong #modalLocation để tránh xung đột FocusTrap của Bootstrap
             ══════════════════════════════════════════════════════════ -->
-            <div id="mapPickerModal" style="display:none; position:fixed; inset:0; z-index:1070; background:rgba(0,0,0,0.72); align-items:center; justify-content:center;">
-                <div style="background:#182215; border:1px solid rgba(255,255,255,0.18); border-radius:24px; width:min(640px,96vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.8);">
+            <div id="mapPickerModal" style="display:none; position:fixed; inset:0; z-index:1070; background:rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items:center; justify-content:center;">
+                <div style="background:#ffffff; border:1px solid rgba(0,0,0,0.1); border-radius:24px; width:min(640px,96vw); max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.35);">
                     <!-- Modal Header -->
-                    <div style="padding:1rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
-                        <i class="bi bi-map-fill" style="color:#9bbd55; font-size:1.15rem;"></i>
-                        <strong style="color:#fff; flex:1; font-size:1.05rem;">Chọn địa điểm trên bản đồ</strong>
-                        <button type="button" onclick="MapPicker.close()" style="background:none;border:none;color:rgba(255,255,255,0.75);font-size:1.25rem;cursor:pointer;padding:0;line-height:1;">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
+                    <div style="padding:1.1rem 1.35rem; border-bottom:1px solid #edf0e8; display:flex; align-items:center; gap:10px; background:#fafbfa;">
+                        <i class="bi bi-map-fill" style="color:#7aab3a; font-size:1.15rem;"></i>
+                        <strong style="color:#23261f; flex:1; font-size:1.05rem;">Chọn địa điểm trên bản đồ</strong>
+                        <button type="button" onclick="MapPicker.close()" class="btn-close" style="opacity:0.6; cursor:pointer;" aria-label="Đóng"></button>
                     </div>
 
                     <!-- Search bar -->
-                    <div style="padding:0.85rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; gap:8px;">
+                    <div style="padding:0.85rem 1.25rem; border-bottom:1px solid #edf0e8; display:flex; gap:8px; background:#ffffff;">
                         <input type="text" id="mapSearchInput"
                                placeholder="Nhập tên địa điểm, ví dụ: Đỉnh Fansipan, Tà Xùa, Núi Bà Đen..."
-                               style="flex:1; background:rgba(255,255,255,0.09); border:1px solid rgba(255,255,255,0.2); border-radius:12px;
-                                      color:#fff; padding:0.55rem 0.95rem; font-size:0.92rem; outline:none;"
+                               style="flex:1; background:#ffffff; border:1px solid #dcdfd6; border-radius:12px;
+                                      color:#23261f; padding:0.6rem 0.95rem; font-size:0.92rem; outline:none;"
                                onkeydown="if(event.key==='Enter'){event.preventDefault();MapPicker.search();}">
                         <button type="button" onclick="MapPicker.search()"
-                                style="background:#9bbd55; border:none; border-radius:12px; color:#182215; font-weight:600;
-                                       padding:0.55rem 1.2rem; cursor:pointer; font-size:0.9rem; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+                                style="background:#9bbd55; border:none; border-radius:12px; color:#1e2b18; font-weight:600;
+                                       padding:0.6rem 1.25rem; cursor:pointer; font-size:0.9rem; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; box-shadow: 0 2px 8px rgba(155,189,85,0.35);">
                             <i class="bi bi-search"></i> Tìm
                         </button>
                     </div>
 
                     <!-- Search results -->
-                    <div id="mapSearchResults" style="max-height:240px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.08);"></div>
+                    <div id="mapSearchResults" style="max-height:240px; overflow-y:auto; border-bottom:1px solid #edf0e8; background:#ffffff;"></div>
 
                     <!-- Selected info -->
-                    <div id="mapSelectedInfo" style="padding:0.75rem 1.25rem; background:rgba(155,189,85,0.12); border-bottom:1px solid rgba(155,189,85,0.2); display:none; align-items:center; gap:8px;">
-                        <i class="bi bi-geo-alt-fill" style="color:#9bbd55;"></i>
-                        <span id="mapSelectedText" style="color:#d6e8b5; font-size:0.88rem; flex:1;"></span>
+                    <div id="mapSelectedInfo" style="padding:0.75rem 1.25rem; background:#f1f7ea; border-bottom:1px solid rgba(155,189,85,0.3); display:none; align-items:center; gap:8px;">
+                        <i class="bi bi-geo-alt-fill" style="color:#7aab3a;"></i>
+                        <span id="mapSelectedText" style="color:#2e441b; font-size:0.88rem; flex:1; font-weight:500;"></span>
                     </div>
 
                     <!-- Footer -->
-                    <div style="padding:0.85rem 1.25rem; display:flex; justify-content:flex-end; gap:8px; background:rgba(0,0,0,0.2);">
+                    <div style="padding:0.85rem 1.25rem; display:flex; justify-content:flex-end; gap:8px; background:#fafbfa;">
                         <button type="button" onclick="MapPicker.close()"
-                                style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:12px;
-                                       color:#eee; padding:0.5rem 1.2rem; cursor:pointer; font-size:0.9rem;">
+                                class="nature-btn-secondary px-3 py-1.5"
+                                style="border-radius:12px; font-size:0.9rem;">
                             Hủy
                         </button>
                         <button type="button" id="mapConfirmBtn" onclick="MapPicker.confirm()" disabled
-                                style="background:#9bbd55; border:none; border-radius:12px; color:#182215; font-weight:600;
-                                       padding:0.5rem 1.35rem; cursor:pointer; opacity:0.5; font-size:0.9rem;">
+                                style="background:#9bbd55; border:none; border-radius:12px; color:#1e2b18; font-weight:600;
+                                       padding:0.5rem 1.35rem; cursor:pointer; opacity:0.5; font-size:0.9rem; box-shadow: 0 2px 8px rgba(155,189,85,0.3);">
                             <i class="bi bi-check-lg me-1"></i> Xác nhận
                         </button>
                     </div>
@@ -763,16 +791,16 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                         <h5 class="modal-title" id="modalTripInfoLabel">
                             <i class="bi bi-compass-fill text-primary me-2"></i>Thông tin hành trình "Chuyến đi" (Trip Details)
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="small mb-3" style="color: rgba(255, 255, 255, 0.7); font-size: 13.5px;">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc bài viết và chuẩn bị hành trang.</p>
+                        <p class="small mb-3" style="color: #686d62; font-size: 13.5px;">Cung cấp các thông số thực tế để giúp cộng đồng dễ dàng lọc bài viết và chuẩn bị hành trang.</p>
 
                         <div class="row g-3 mb-3">
                             <!-- Loại hình -->
                             <div class="col-12 col-md-4">
                                 <label for="activity_type" class="nature-label">Loại hình dã ngoại</label>
-                                <select class="nature-input" id="activity_type" name="activity_type" onchange="updateAllChips()">
+                                <select class="nature-input" id="activity_type" name="activity_type" onchange="updateAllChips()" style="height: 44px;">
                                     <option value="">-- Chọn loại hình --</option>
                                     <option value="camping" <?= (($old['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>Cắm trại (Camping)</option>
                                     <option value="trekking" <?= (($old['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>Đi bộ đường dài (Trekking)</option>
@@ -785,7 +813,7 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                             <!-- Mức độ khó -->
                             <div class="col-12 col-md-4">
                                 <label for="difficulty" class="nature-label">Mức độ khó</label>
-                                <select class="nature-input" id="difficulty" name="difficulty" onchange="updateAllChips()">
+                                <select class="nature-input" id="difficulty" name="difficulty" onchange="updateAllChips()" style="height: 44px;">
                                     <option value="easy" <?= (($old['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>Dễ (Người mới, gia đình)</option>
                                     <option value="medium" <?= (($old['difficulty'] ?? 'medium') === 'medium') ? 'selected' : '' ?>>Trung bình (Cần thể lực cơ bản)</option>
                                     <option value="hard" <?= (($old['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>Khó (Đồi dốc, dài ngày)</option>
@@ -802,7 +830,7 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                 $isCustomReg = (!empty($oldRegion) && !in_array($oldRegion, $standardRegions, true)) || ($oldRegion === 'Quốc tế khác');
                                 $customRegVal = $isCustomReg ? ($oldRegion === 'Quốc tế khác' ? ($old['custom_region'] ?? '') : $oldRegion) : '';
                                 ?>
-                                <select class="nature-input" id="region" name="region" onchange="updateAllChips()">
+                                <select class="nature-input" id="region" name="region" onchange="updateAllChips()" style="height: 44px;">
                                     <option value="">-- Chọn khu vực --</option>
                                     <optgroup label="Việt Nam">
                                         <option value="Tây Bắc" <?= ($oldRegion === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
@@ -826,7 +854,8 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                 <div id="custom_region_wrapper" class="mt-2" style="display: <?= $isCustomReg ? 'block' : 'none' ?>;">
                                     <input type="text" class="nature-input" id="custom_region" name="custom_region" 
                                            placeholder="Nhập tên quốc gia / địa điểm..." 
-                                           value="<?= $escape($customRegVal) ?>" oninput="updateAllChips()">
+                                           value="<?= $escape($customRegVal) ?>" oninput="updateAllChips()"
+                                           style="height: 44px;">
                                 </div>
                             </div>
                         </div>
@@ -836,19 +865,22 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                 <label for="route" class="nature-label">Cung đường di chuyển</label>
                                 <input type="text" class="nature-input" id="route" name="route" 
                                        placeholder="VD: Hà Nội - Đèo Đá Trắng - Tà Xùa" 
-                                       value="<?= $escape($old['route'] ?? '') ?>" oninput="updateAllChips()">
+                                       value="<?= $escape($old['route'] ?? '') ?>" oninput="updateAllChips()"
+                                       style="height: 44px;">
                             </div>
                             <div class="col-12 col-md-3">
                                 <label for="trip_duration" class="nature-label">Thời gian</label>
                                 <input type="text" class="nature-input" id="trip_duration" name="trip_duration" 
                                        placeholder="VD: 2 ngày 1 đêm" 
-                                       value="<?= $escape($old['trip_duration'] ?? '') ?>" oninput="updateAllChips()">
+                                       value="<?= $escape($old['trip_duration'] ?? '') ?>" oninput="updateAllChips()"
+                                       style="height: 44px;">
                             </div>
                             <div class="col-12 col-md-4">
                                 <label for="estimated_cost" class="nature-label">Chi phí dự tính</label>
                                 <input type="text" class="nature-input" id="estimated_cost" name="estimated_cost" 
                                        placeholder="VD: 1.200.000 đ/người" 
-                                       value="<?= $escape($old['estimated_cost'] ?? '') ?>" oninput="updateAllChips()">
+                                       value="<?= $escape($old['estimated_cost'] ?? '') ?>" oninput="updateAllChips()"
+                                       style="height: 44px;">
                             </div>
                         </div>
 
@@ -859,8 +891,11 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                       oninput="updateAllChips()"><?= $escape($old['gear_needed'] ?? '') ?></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px;">
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <button type="button" class="nature-btn-secondary px-3 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
+                            Đóng
+                        </button>
+                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
                             <i class="bi bi-check-lg me-1"></i> Lưu thông tin hành trình
                         </button>
                     </div>
@@ -879,44 +914,44 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                             <h5 class="modal-title mb-0" id="modalToolsGearLabel">
                                 <i class="bi bi-tools text-warning me-2"></i>Dụng cụ & Trang thiết bị chuyến đi
                             </h5>
-                            <span class="badge rounded-pill text-white" id="modalToolsCountBadge" style="background: #9bbd55; font-size: 11px;">0</span>
+                            <span class="badge rounded-pill" id="modalToolsCountBadge" style="background: #eef4e6; color: #43691a; border: 1px solid #c5deb0; font-size: 11.5px; font-weight: 700;">0</span>
                         </div>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
                     <div class="modal-body">
                         <!-- KHỐI 1: TỰ NHẬP CÔNG CỤ CÁ NHÂN -->
-                        <div class="p-3 mb-3 rounded-4 border" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12) !important;">
+                        <div class="p-3 mb-3 rounded-4 border" style="background: #f8faf5; border-color: #e3e7df !important;">
                             <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                                <span class="fw-semibold text-white small">
-                                    <i class="bi bi-bag-check-fill me-1" style="color: #9bbd55;"></i>Thêm dụng cụ cá nhân bạn dùng
+                                <span class="fw-semibold small" style="color: #23261f; font-size: 13.5px;">
+                                    <i class="bi bi-bag-check-fill me-1" style="color: #7aab3a;"></i>Thêm dụng cụ cá nhân bạn dùng
                                 </span>
-                                <button type="button" class="btn btn-sm rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 shadow-sm" onclick="addCustomToolRow()" style="font-size: 12px; font-weight: 600; background: rgba(155, 189, 85, 0.2); border: 1px solid #9bbd55; color: #c4e482;">
+                                <button type="button" class="btn btn-sm rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1 shadow-sm" onclick="addCustomToolRow()" style="font-size: 12.5px; font-weight: 600; background: #eef4e6; border: 1px solid #9bbd55; color: #3b5c1c;">
                                     <i class="bi bi-plus-circle-fill"></i> Thêm món đồ
                                 </button>
                             </div>
                             <div id="customToolsContainer" class="d-flex flex-column gap-3 mt-2"></div>
-                            <div id="emptyToolsNotice" class="text-center py-3 small" style="background: rgba(255, 255, 255, 0.02); border-radius: 14px; border: 1px dashed rgba(255, 255, 255, 0.16); color: rgba(255, 255, 255, 0.72); padding: 1rem;">
-                                <span>Chưa có món đồ cá nhân nào. Hãy bấm <strong class="text-white">"Thêm món đồ"</strong> để chia sẻ lều, balo, bếp... kèm link mua Shopee/Lazada!</span>
+                            <div id="emptyToolsNotice" class="text-center py-3 small" style="background: #ffffff; border-radius: 14px; border: 1px dashed #dcdfd6; color: #686d62; padding: 1rem;">
+                                <span>Chưa có món đồ cá nhân nào. Hãy bấm <strong style="color: #23261f;">"Thêm món đồ"</strong> để chia sẻ lều, balo, bếp... kèm link mua Shopee/Lazada!</span>
                             </div>
                         </div>
 
                         <!-- KHỐI 2: CHỌN TỪ KHO DỤNG CỤ CỘNG ĐỒNG CÓ SẴN -->
                         <?php if (!empty($products)): ?>
                             <div class="accordion border-0" id="accordionExistingTools">
-                                <div class="accordion-item rounded-4 border overflow-hidden" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12) !important;">
+                                <div class="accordion-item rounded-4 border overflow-hidden" style="background: #ffffff; border-color: #e3e7df !important;">
                                     <h2 class="accordion-header">
-                                        <button class="accordion-button collapsed py-2.5 px-3 fw-semibold text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExistingTools" aria-expanded="false" style="font-size: 13px; background: rgba(255, 255, 255, 0.05); color: #ffffff !important; box-shadow: none;">
-                                            <i class="bi bi-collection me-2" style="color: #9bbd55;"></i> Hoặc chọn từ kho dụng cụ cộng đồng sẵn có (<?= count($products) ?> sản phẩm)
+                                        <button class="accordion-button collapsed py-2.5 px-3 fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExistingTools" aria-expanded="false" style="font-size: 13.5px; background: #f7f9f4; color: #23261f !important; box-shadow: none;">
+                                            <i class="bi bi-collection me-2" style="color: #7aab3a;"></i> Hoặc chọn từ kho dụng cụ cộng đồng sẵn có (<?= count($products) ?> sản phẩm)
                                         </button>
                                     </h2>
                                     <div id="collapseExistingTools" class="accordion-collapse collapse" data-bs-parent="#accordionExistingTools">
                                         <div class="accordion-body p-3">
                                             <div class="mb-2">
                                                 <input type="text" id="toolSearchInput" class="form-control form-control-sm rounded-pill" 
-                                                       style="background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.18); color: #ffffff;"
+                                                       style="background: #ffffff; border-color: #dcdfd6; color: #23261f;"
                                                        placeholder="Tìm nhanh lều, balo, bếp, đèn pin..." oninput="filterToolsList(this.value)">
                                             </div>
-                                            <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 220px; overflow-y: auto;">
+                                            <div class="row row-cols-1 row-cols-md-2 g-2" id="toolsCheckboxGrid" style="max-height: 240px; overflow-y: auto;">
                                                 <?php foreach ($products as $prod):
                                                     $pId = (int)$prod['id'];
                                                     $isChecked = in_array($pId, $selectedProductIds ?? [], true);
@@ -930,16 +965,16 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                                     }
                                                 ?>
                                                     <div class="col tool-item" data-name="<?= $escape(mb_strtolower($prod['name'])) ?>">
-                                                        <label class="d-flex align-items-center gap-2 p-2 rounded-3 border h-100 position-relative" style="cursor: pointer; background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12) !important; transition: all 0.2s ease;">
+                                                        <label class="d-flex align-items-center gap-2 p-2 rounded-3 border h-100 position-relative" style="cursor: pointer; background: #ffffff; border-color: #e3e7df !important; transition: all 0.2s ease;">
                                                             <input type="checkbox" name="product_ids[]" value="<?= $pId ?>" 
                                                                    class="form-check-input mt-0 tool-checkbox flex-shrink-0" 
                                                                    <?= $isChecked ? 'checked' : '' ?> onchange="updateSelectedToolsCounter()">
                                                             <img src="<?= $escape($toolImg) ?>" alt="<?= $escape($prod['name']) ?>" class="rounded-2 object-fit-cover flex-shrink-0" style="width: 38px; height: 38px;">
                                                             <div class="min-w-0 flex-grow-1" style="font-size: 12.5px; overflow: hidden;">
                                                                 <div class="tool-name-marquee-container">
-                                                                    <div class="fw-semibold text-white tool-name-marquee-text" title="<?= $escape($prod['name']) ?>"><?= $escape($prod['name']) ?></div>
+                                                                    <div class="fw-semibold tool-name-marquee-text" style="color: #23261f;" title="<?= $escape($prod['name']) ?>"><?= $escape($prod['name']) ?></div>
                                                                 </div>
-                                                                <div class="fw-bold small" style="color: #9bbd55;"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</div>
+                                                                <div class="fw-bold small" style="color: #5c8424;"><?= number_format((float)($prod['price'] ?? 0), 0, ',', '.') ?> đ</div>
                                                             </div>
                                                         </label>
                                                     </div>
@@ -951,8 +986,17 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px;">
+                    <div class="modal-footer d-flex justify-content-between align-items-center">
+                        <button type="button" class="nature-btn-secondary px-3 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
+                            Đóng
+                        </button>
+                        <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
+                            <i class="bi bi-check-lg me-1"></i> Lưu danh sách dụng cụ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
                             <i class="bi bi-check-lg me-1"></i> Lưu danh sách dụng cụ
                         </button>
                     </div>
@@ -1329,9 +1373,9 @@ function addCustomToolRow(initialData) {
 
     var card = document.createElement('div');
     card.className = 'custom-tool-card p-3 rounded-4 border position-relative';
-    card.style.background = 'rgba(255, 255, 255, 0.07)';
-    card.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-    card.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
+    card.style.background = '#ffffff';
+    card.style.borderColor = '#e0e4da';
+    card.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.05)';
 
     var nameVal = data.name ? escapeHtml(data.name) : '';
     var priceVal = (data.price !== undefined && data.price !== null) ? escapeHtml(data.price) : '';
@@ -1345,38 +1389,38 @@ function addCustomToolRow(initialData) {
         '</button>' +
         '<div class="row g-2">' +
             '<div class="col-12 col-md-7">' +
-                '<label class="form-label small fw-semibold text-white mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
                 '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple" required oninput="updateAllChips()">' +
             '</div>' +
             '<div class="col-12 col-md-5">' +
-                '<label class="form-label small fw-semibold text-white mb-1">Giá tham khảo (VNĐ)</label>' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>' +
                 '<div class="input-group input-group-sm">' +
                     '<input type="number" name="custom_tool_price[]" value="' + priceVal + '" class="form-control form-control-sm rounded-start-3" placeholder="VD: 350000" min="0" step="1000">' +
-                    '<span class="input-group-text rounded-end-3" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: rgba(255, 255, 255, 0.85);">đ</span>' +
+                    '<span class="input-group-text rounded-end-3" style="background: #f4f6f0; border: 1px solid #dcdfd6; color: #4a4f44; font-weight: 600;">đ</span>' +
                 '</div>' +
             '</div>' +
             '<div class="col-12">' +
-                '<label class="form-label small fw-semibold text-white mb-1"><i class="bi bi-link-45deg me-1" style="color: #9bbd55;"></i>Link mua (Shopee / Lazada...)</label>' +
+                '<label class="form-label small fw-semibold text-dark mb-1"><i class="bi bi-link-45deg me-1" style="color: #7aab3a;"></i>Link mua (Shopee / Lazada...)</label>' +
                 '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm rounded-3" placeholder="https://shopee.vn/...">' +
             '</div>' +
             '<div class="col-12 col-md-6">' +
-                '<label class="form-label small fw-semibold text-white mb-1">Tải ảnh lên</label>' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Tải ảnh lên</label>' +
                 '<input type="file" name="custom_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">' +
             '</div>' +
             '<div class="col-12 col-md-6">' +
-                '<label class="form-label small fw-semibold text-white mb-1">Hoặc dán URL ảnh</label>' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Hoặc dán URL ảnh</label>' +
                 '<input type="url" name="custom_tool_image_url[]" value="' + imgVal + '" class="form-control form-control-sm rounded-3" placeholder="https://domain.com/anh.jpg">' +
             '</div>' +
             '<div class="col-12">' +
-                '<label class="form-label small fw-semibold text-white mb-1">Đánh giá ngắn khi sử dụng</label>' +
+                '<label class="form-label small fw-semibold text-dark mb-1">Đánh giá ngắn khi sử dụng</label>' +
                 '<input type="text" name="custom_tool_desc[]" value="' + descVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Lửa mạnh, cản gió tốt, gập gọn nhẹ...">' +
             '</div>' +
-            '<div class="col-12 mt-2 pt-2 border-top" style="border-color: rgba(255, 255, 255, 0.1) !important;">' +
+            '<div class="col-12 mt-2 pt-2 border-top" style="border-color: #edf0e8 !important;">' +
                 '<div class="form-check d-flex align-items-center gap-2 m-0">' +
                     '<input class="form-check-input mt-0" type="checkbox" ' + (data.is_shared === 0 ? '' : 'checked') + ' style="cursor: pointer; width: 1.15em; height: 1.15em;" onchange="this.nextElementSibling.value = this.checked ? \'1\' : \'0\'">' +
                     '<input type="hidden" name="custom_tool_is_shared[]" value="' + (data.is_shared === 0 ? '0' : '1') + '">' +
-                    '<label class="form-check-label small text-white fw-medium" style="cursor: pointer; user-select: none;">' +
-                        '<i class="bi bi-share me-1" style="color: #9bbd55;"></i>Chia sẻ vào kho dụng cụ cộng đồng' +
+                    '<label class="form-check-label small text-dark fw-medium" style="cursor: pointer; user-select: none;">' +
+                        '<i class="bi bi-share me-1" style="color: #7aab3a;"></i>Chia sẻ vào kho dụng cụ cộng đồng' +
                     '</label>' +
                 '</div>' +
             '</div>' +

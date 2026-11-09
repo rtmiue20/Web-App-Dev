@@ -102,6 +102,9 @@ HTML;
     <!-- Main View Content -->
     <?= $content ?>
 
+    <!-- Modal Chia sẻ Mã QR (QuickChart / GoQR REST API) -->
+    <?php require __DIR__ . '/../partials/qr-share-modal.php'; ?>
+
     <!-- Widget Trợ lý Dã ngoại AI (Google Gemini Chatbox) -->
     <?php require __DIR__ . '/../partials/chatbot-widget.php'; ?>
 

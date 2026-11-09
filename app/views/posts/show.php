@@ -5,6 +5,9 @@ $title = $post['title'] ?? 'Chi tiết bài viết';
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 
 $isLoggedIn = Session::has('user');
+$escape = function ($value): string {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 
 
 
@@ -464,6 +467,17 @@ $galleryCount = count($galleryImages);
 
                 </button>
 
+                <!-- Nút Mã QR chia sẻ bài viết bằng điện thoại (QuickChart / GoQR API) -->
+                <button type="button"
+                        class="btn btn-sm rounded-pill border px-3 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold"
+                        id="btnQrSharePost"
+                        onclick="ForumAjax.openQrShareModal('/posts/<?= (int)$post['id'] ?>', '<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>', 'post')"
+                        title="Sinh mã QR chia sẻ bài viết nhanh qua điện thoại"
+                        style="background: rgba(35, 61, 44, 0.08); color: #1f4d32; border-color: rgba(35, 61, 44, 0.25) !important;">
+                    <i class="bi bi-qr-code-scan text-success"></i>
+                    <span>Mã QR chia sẻ</span>
+                </button>
+
 
 
                 <!-- Nút Báo cáo vi phạm (Report) -->
@@ -672,13 +686,13 @@ $galleryCount = count($galleryImages);
 
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
 
-        <div class="weather-forecast-card mt-4 p-3 p-md-4 rounded-4 border shadow-sm" style="background: rgba(30, 40, 25, 0.88); border-color: rgba(155, 189, 85, 0.3) !important;">
+        <div class="weather-forecast-card mt-4 p-3.5 p-md-4 border shadow-sm" style="background: linear-gradient(160deg, rgba(28, 38, 24, 0.95) 0%, rgba(18, 25, 15, 0.98) 100%); border-color: rgba(155, 189, 85, 0.35) !important; border-radius: 28px !important; backdrop-filter: blur(16px); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35) !important;">
 
-            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2.5 pb-2.5 border-bottom border-white border-opacity-10">
 
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2.5">
 
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; background: rgba(155, 189, 85, 0.25); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.4);">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-3 shadow-sm flex-shrink-0" style="width: 42px; height: 42px; background: linear-gradient(135deg, rgba(155, 189, 85, 0.3) 0%, rgba(95, 138, 55, 0.2) 100%); color: #d4f291; border: 1px solid rgba(155, 189, 85, 0.45); border-radius: 14px !important;">
 
                         <i class="bi bi-cloud-sun-fill fs-5"></i>
 
@@ -686,9 +700,11 @@ $galleryCount = count($galleryImages);
 
                     <div>
 
-                        <h3 class="h6 mb-0 text-white fw-bold" style="font-size: 15px; letter-spacing: 0.2px;">Dự báo thời tiết &amp; Khuyến nghị chuyến đi</h3>
+                        <div class="fw-bold" style="color: #ffffff !important; font-size: 17px !important; letter-spacing: 0.2px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">Thời tiết &amp; Môi trường dã ngoại</div>
 
-                        <span style="font-size: 11.5px; color: rgba(255, 255, 255, 0.70);">Dữ liệu khí tượng cập nhật theo tọa độ địa điểm qua Open-Meteo Web Service</span>
+                        <span style="font-size: 12.5px; color: rgba(235, 245, 230, 0.82) !important; line-height: 1.4; display: block; margin-top: 2px;">
+                            Theo dõi điều kiện tự nhiên theo thời gian thực để chuẩn bị chuyến đi an toàn
+                        </span>
 
                     </div>
 
@@ -696,9 +712,9 @@ $galleryCount = count($galleryImages);
 
                 <?php if (!empty($post['location'])): ?>
 
-                    <span class="badge rounded-pill px-3 py-1.5" style="background: rgba(255, 255, 255, 0.12); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.22); font-size: 11.5px;">
+                    <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1.5 shadow-sm ms-auto ms-sm-0" style="background: rgba(255, 255, 255, 0.12); color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.22); font-size: 12.5px; backdrop-filter: blur(10px);">
 
-                        <i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
+                        <i class="bi bi-geo-alt-fill text-danger"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
 
                     </span>
 
@@ -706,11 +722,11 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <div id="weather-forecast-panel" class="p-3 rounded-3" style="background: rgba(14, 20, 11, 0.65); border: 1px solid rgba(255, 255, 255, 0.12);">
+            <div id="weather-forecast-panel" class="p-3.5" style="background: rgba(12, 17, 10, 0.70); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px !important;">
 
                 <div class="text-center py-3 text-white small" style="opacity: 0.85;">
 
-                    <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu khí tượng và dự báo 4 ngày tới...
+                    <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu thời tiết thực địa...
 
                 </div>
 
@@ -2142,86 +2158,51 @@ $galleryCount = count($galleryImages);
 ══════════════════════════════════════════ -->
 
 <div class="modal fade" id="reportPostModal" tabindex="-1" aria-labelledby="reportPostModalLabel" aria-hidden="true">
-
     <div class="modal-dialog modal-dialog-centered">
-
-        <div class="modal-content border-0 shadow-lg rounded-4" style="background: #252b21; color: #f1f1ec; border: 1px solid rgba(255, 255, 255, 0.1) !important;">
-
-            <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
-
-                <h5 class="modal-title d-flex align-items-center gap-2 fs-6 fw-bold text-white" id="reportPostModalLabel">
-
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; background: #ffffff; color: #23261f; overflow: hidden;">
+            <div class="modal-header border-bottom px-4 pt-4 pb-3" style="border-color: #edf0e8 !important; background: #ffffff;">
+                <h5 class="modal-title d-flex align-items-center gap-2 fs-6 fw-bold" id="reportPostModalLabel" style="color: #23261f;">
                     <i class="bi bi-shield-exclamation text-danger"></i> Báo cáo bài viết vi phạm
-
                 </h5>
-
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
-
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
-
             <form id="reportPostForm" onsubmit="event.preventDefault(); ForumAjax.submitReport(this, <?= (int)$post['id'] ?>, 'post');">
-
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-
-                <div class="modal-body py-3">
-
-                    <p class="small text-white-50 mb-3">
-
+                <div class="modal-body p-4" style="background: #ffffff; color: #23261f;">
+                    <p class="small mb-3" style="color: #686d62;">
                         Báo cáo của bạn sẽ được gửi trực tiếp đến hàng chờ kiểm duyệt của Ban điều hành (Moderator / Admin) để xử lý.
-
                     </p>
-
                     <div class="mb-3">
-
-                        <label for="reportReason" class="form-label small fw-semibold text-white">Lý do vi phạm *</label>
-
-                        <select class="form-select bg-dark text-white border-secondary border-opacity-50 rounded-3" id="reportReason" name="reason" required>
-
+                        <label for="reportReason" class="form-label small fw-semibold" style="color: #23261f;">Lý do vi phạm *</label>
+                        <select class="form-select rounded-3" id="reportReason" name="reason" required style="background: #ffffff; border: 1px solid #dcdfd6; color: #23261f;">
                             <option value="">-- Chọn lý do --</option>
-
                             <option value="Spam / Quảng cáo trái phép">Spam / Quảng cáo rác</option>
-
                             <option value="Ngôn từ xúc phạm, thù địch">Ngôn từ xúc phạm, thiếu văn hóa</option>
-
                             <option value="Thông tin sai lệch hoặc nguy hiểm">Thông tin địa điểm sai lệch / nguy hiểm</option>
-
                             <option value="Nội dung vi phạm pháp luật / thuần phong mỹ tục">Vi phạm pháp luật / thuần phong mỹ tục</option>
-
                             <option value="Lý do khác">Lý do khác</option>
-
                         </select>
-
                     </div>
-
                     <div class="mb-2">
-
-                        <label for="reportDetails" class="form-label small fw-semibold text-white">Mô tả chi tiết (tùy chọn)</label>
-
-                        <textarea class="form-control bg-dark text-white border-secondary border-opacity-50 rounded-3" 
-
+                        <label for="reportDetails" class="form-label small fw-semibold" style="color: #23261f;">Mô tả chi tiết (tùy chọn)</label>
+                        <textarea class="form-control rounded-3" 
                                   id="reportDetails" 
-
                                   name="details" 
-
                                   rows="3" 
-
-                                  placeholder="Cung cấp thêm ngữ cảnh hoặc chi tiết vi phạm..."></textarea>
-
+                                  placeholder="Cung cấp thêm ngữ cảnh hoặc chi tiết vi phạm..."
+                                  style="background: #ffffff; border: 1px solid #dcdfd6; color: #23261f;"></textarea>
                     </div>
-
                 </div>
-
-                <div class="modal-footer border-top border-secondary border-opacity-25 pt-2">
-
-                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 text-white-50" data-bs-dismiss="modal">Hủy</button>
-
-                    <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4" id="btnSubmitReport">
-
+                <div class="modal-footer border-top px-4 py-3 d-flex justify-content-between align-items-center" style="border-color: #edf0e8 !important; background: #fafbfa;">
+                    <button type="button" class="nature-btn-secondary px-3 py-1.5" data-bs-dismiss="modal" style="font-size: 13.5px;">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4" id="btnSubmitReport" style="height: 38px; font-weight: 600;">
                         <i class="bi bi-send-fill me-1"></i> Gửi báo cáo
-
                     </button>
-
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
 
             </form>
 

@@ -184,11 +184,19 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                     </div>
 
                     <!-- Action Bar -->
-                    <div class="d-flex justify-content-between align-items-center pt-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-pill" style="font-size: 11.5px;"
-                                onclick="toggleAllChecks(<?= (int)$checklist['id'] ?>)">
-                            <i class="bi bi-check2-all me-1"></i>Chọn tất cả
-                        </button>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2">
+                        <div class="d-flex align-items-center gap-1.5">
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-pill" style="font-size: 11.5px;"
+                                    onclick="toggleAllChecks(<?= (int)$checklist['id'] ?>)">
+                                <i class="bi bi-check2-all me-1"></i>Chọn tất cả
+                            </button>
+                            <button type="button" class="btn btn-sm rounded-pill py-1 px-2.5 fw-semibold"
+                                    style="font-size: 11.5px; background: rgba(35, 61, 44, 0.08); color: #233d2c; border: 1px solid rgba(35, 61, 44, 0.22);"
+                                    onclick="ForumAjax.openQrShareModal('/checklists#checklist-card-<?= (int)$checklist['id'] ?>', '<?= $escape(addslashes($checklist['title'])) ?>', 'checklist')"
+                                    title="Mã QR chia sẻ checklist qua điện thoại">
+                                <i class="bi bi-qr-code-scan text-success me-1"></i>Mã QR chia sẻ
+                            </button>
+                        </div>
                         <a href="<?= $escape($baseUrl) ?>/trips" class="text-success small text-decoration-none fw-semibold">
                             Rủ bạn đi chung <i class="bi bi-arrow-right"></i>
                         </a>

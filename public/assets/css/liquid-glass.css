@@ -15,18 +15,18 @@
 
 /* ── 1. Color Tokens & Biến chuẩn ────────────────────────────────────────── */
 :root {
-  --color-moss:        #9bbd55;
-  --color-moss-dark:   #7aab3a;
+  --color-moss: #9bbd55;
+  --color-moss-dark: #7aab3a;
   --color-moss-subtle: rgba(155, 189, 85, 0.15);
-  --color-scene:       #4a4d44;
-  --color-scene-edge:  #383b34;
-  --color-paper:       #ffffff;
-  --color-paper-warm:  #f6f7f2;
-  --color-ink:         #23261f;
-  --color-ink-muted:   #686d62;
+  --color-scene: #4a4d44;
+  --color-scene-edge: #383b34;
+  --color-paper: #ffffff;
+  --color-paper-warm: #f6f7f2;
+  --color-ink: #23261f;
+  --color-ink-muted: #686d62;
   --color-border-card: rgba(0, 0, 0, 0.07);
-  --card-radius:       28px;
-  --card-shadow:       0 20px 48px -12px rgba(20, 24, 16, 0.35), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --card-radius: 28px;
+  --card-shadow: 0 20px 48px -12px rgba(20, 24, 16, 0.35), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 /* ── 2. Toàn bộ nền trang (Canvas giống hệt Admin Dashboard) ─────────────── */
@@ -112,12 +112,29 @@ body {
 }
 
 /* ── 5. Màu chữ bên trong thẻ nội dung (Đậm đà, tương phản tuyệt đối) ────── */
-.nature-card h1, .nature-card h2, .nature-card h3, .nature-card h4, .nature-card h5, .nature-card h6,
-.paper-card h1, .paper-card h2, .paper-card h3, .paper-card h4, .paper-card h5, .paper-card h6,
-.post-content-box h1, .post-content-box h2, .post-content-box h3,
-.fb-composer-card h1, .fb-composer-card h2, .fb-composer-card h3,
-.app-container .nature-card h1, .app-container .nature-card h2, .app-container .nature-card h3,
-.app-container .nature-card h4, .app-container .nature-card h5 {
+.nature-card h1,
+.nature-card h2,
+.nature-card h3,
+.nature-card h4,
+.nature-card h5,
+.nature-card h6,
+.paper-card h1,
+.paper-card h2,
+.paper-card h3,
+.paper-card h4,
+.paper-card h5,
+.paper-card h6,
+.post-content-box h1,
+.post-content-box h2,
+.post-content-box h3,
+.fb-composer-card h1,
+.fb-composer-card h2,
+.fb-composer-card h3,
+.app-container .nature-card h1,
+.app-container .nature-card h2,
+.app-container .nature-card h3,
+.app-container .nature-card h4,
+.app-container .nature-card h5 {
   color: var(--color-ink, #23261f) !important;
   font-weight: 600 !important;
 }
@@ -203,7 +220,7 @@ select option {
   color: #23261f !important;
   border-radius: 28px !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 32px 72px -16px rgba(0, 0, 0, 0.55) !important;
+  box-shadow: 0 32px 72px -16px rgba(0, 0, 0, 0.35) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   overflow: hidden !important;
@@ -212,12 +229,12 @@ select option {
 .modal-header {
   border-bottom: 1px solid #edf0e8 !important;
   padding: 1.25rem 1.75rem !important;
-  background: #fafbfa !important;
+  background: #ffffff !important;
 }
 
 .modal-title {
   color: #23261f !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   font-size: 1.15rem !important;
   letter-spacing: -0.01em !important;
 }
@@ -237,7 +254,9 @@ select option {
 /* Inputs bên trong modal → Trắng sạch, tương phản cao, bo góc mềm */
 .modal-content .form-control,
 .modal-content .form-select,
-.modal-content textarea {
+.modal-content textarea,
+.modal-content .nature-input,
+.modal-content .nature-textarea {
   background-color: #ffffff !important;
   border: 1px solid #dcdfd6 !important;
   color: #23261f !important;
@@ -247,7 +266,9 @@ select option {
 
 .modal-content .form-control:focus,
 .modal-content .form-select:focus,
-.modal-content textarea:focus {
+.modal-content textarea:focus,
+.modal-content .nature-input:focus,
+.modal-content .nature-textarea:focus {
   background-color: #ffffff !important;
   border-color: #9bbd55 !important;
   color: #23261f !important;
@@ -256,22 +277,26 @@ select option {
 
 .modal-content .btn-close {
   filter: none !important;
-  opacity: 0.55 !important;
+  opacity: 0.65 !important;
   transition: opacity 0.2s ease, transform 0.2s ease !important;
 }
+
 .modal-content .btn-close:hover {
   opacity: 1 !important;
 }
 
 .modal-content .form-control::placeholder,
-.modal-content textarea::placeholder { 
-  color: #9ea298 !important; 
-  opacity: 0.8 !important;
+.modal-content textarea::placeholder,
+.modal-content .nature-input::placeholder,
+.modal-content .nature-textarea::placeholder {
+  color: #8f9488 !important;
+  opacity: 0.85 !important;
 }
 
-.modal-content select option { 
-  background: #ffffff !important; 
-  color: #23261f !important; 
+.modal-content select option,
+.modal-content select optgroup {
+  background: #ffffff !important;
+  color: #23261f !important;
 }
 
 /* Input group addon bên trong modal */
@@ -289,6 +314,7 @@ select option {
   background-color: #ffffff !important;
   color: #23261f !important;
 }
+
 .modal-content input[type="file"].form-control::file-selector-button {
   background: #20251c;
   color: #ffffff;
@@ -301,6 +327,7 @@ select option {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .modal-content input[type="file"].form-control::file-selector-button:hover {
   background: #2e3529;
   color: #c4e482;
@@ -310,6 +337,7 @@ select option {
 .modal-content .form-check-input {
   cursor: pointer;
 }
+
 .modal-content .form-check-input:checked {
   background-color: #7aab3a !important;
   border-color: #7aab3a !important;
@@ -319,21 +347,24 @@ select option {
 .modal-content .input-group {
   border-radius: 12px;
 }
-.modal-content .input-group > .form-control:first-child,
-.modal-content .input-group > .input-group-text:first-child {
+
+.modal-content .input-group>.form-control:first-child,
+.modal-content .input-group>.input-group-text:first-child {
   border-top-left-radius: 12px !important;
   border-bottom-left-radius: 12px !important;
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
 }
-.modal-content .input-group > .form-control:last-child,
-.modal-content .input-group > .input-group-text:last-child {
+
+.modal-content .input-group>.form-control:last-child,
+.modal-content .input-group>.input-group-text:last-child {
   border-top-right-radius: 12px !important;
   border-bottom-right-radius: 12px !important;
   border-top-left-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
 }
-.modal-content .input-group > :not(:first-child) {
+
+.modal-content .input-group> :not(:first-child) {
   margin-left: -1px;
 }
 
@@ -351,6 +382,7 @@ select option {
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
 }
+
 .modal-backdrop.show {
   opacity: 1 !important;
 }
@@ -461,8 +493,8 @@ select option {
   /* Giữ background gốc (var(--color-paper) = #f2f3ef) */
   /* Chỉ nâng shadow và border */
   box-shadow:
-    0 8px 32px -8px rgba(20,24,16,0.25),
-    0 2px 0 rgba(255,255,255,0.80) inset !important;
+    0 8px 32px -8px rgba(20, 24, 16, 0.25),
+    0 2px 0 rgba(255, 255, 255, 0.80) inset !important;
   transition:
     transform 350ms var(--lg-spring),
     box-shadow 350ms var(--lg-spring) !important;
@@ -512,7 +544,12 @@ select option {
   color: #586150 !important;
 }
 
-.nature-card h1, .nature-card h2, .nature-card h3, .nature-card h4, .nature-card h5, .nature-card h6 {
+.nature-card h1,
+.nature-card h2,
+.nature-card h3,
+.nature-card h4,
+.nature-card h5,
+.nature-card h6 {
   color: #1a2217 !important;
 }
 
@@ -527,6 +564,7 @@ select option {
   color: #274718 !important;
   font-weight: 600 !important;
 }
+
 .follow-user-btn.following:hover {
   background: rgba(239, 68, 68, 0.15) !important;
   border-color: rgba(239, 68, 68, 0.35) !important;
@@ -551,7 +589,12 @@ select option {
   color: #586150 !important;
 }
 
-.nature-card h1, .nature-card h2, .nature-card h3, .nature-card h4, .nature-card h5, .nature-card h6 {
+.nature-card h1,
+.nature-card h2,
+.nature-card h3,
+.nature-card h4,
+.nature-card h5,
+.nature-card h6 {
   color: #1a2217 !important;
 }
 
@@ -601,7 +644,7 @@ select option {
   line-height: 1.6 !important;
 }
 
-.comment-reply-node > .comment-card {
+.comment-reply-node>.comment-card {
   background: #fbfcf9 !important;
   border-left: 3px solid #9bbd55 !important;
 }
@@ -834,7 +877,7 @@ select option {
   cursor: pointer;
   position: relative;
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 0 rgba(255,255,255,0.08) inset;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
 .floating-bell-btn:hover {
@@ -870,8 +913,15 @@ select option {
 }
 
 @keyframes bellPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.6); }
-  50%       { box-shadow: 0 0 0 5px rgba(230, 57, 70, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.6);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(230, 57, 70, 0);
+  }
 }
 
 /* ─── Panel popup thông báo – Nature Paper Card ─────────────────────────── */
@@ -886,7 +936,7 @@ select option {
   border: 1px solid rgba(0, 0, 0, 0.07);
   box-shadow:
     0 24px 60px -12px rgba(0, 0, 0, 0.35),
-    0 2px 0 rgba(255,255,255,0.90) inset;
+    0 2px 0 rgba(255, 255, 255, 0.90) inset;
   overflow: hidden;
   color: #23261f;
   transform-origin: top right;
@@ -894,8 +944,15 @@ select option {
 }
 
 @keyframes notifPanelSlide {
-  from { opacity: 0; transform: scale(0.92) translateY(-8px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ─── Header panel ──────────────────────────────────────────────────────── */
@@ -951,7 +1008,10 @@ select option {
   scrollbar-color: #dcdfd6 transparent;
 }
 
-.notifications-list-scroll::-webkit-scrollbar { width: 4px; }
+.notifications-list-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
 .notifications-list-scroll::-webkit-scrollbar-thumb {
   background: #dcdfd6;
   border-radius: 4px;
@@ -1051,6 +1111,7 @@ select option {
     display: flex !important;
     z-index: 1060 !important;
   }
+
   .floating-bell-btn {
     width: 48px !important;
     height: 48px !important;
@@ -1058,6 +1119,7 @@ select option {
     background: rgba(34, 40, 31, 0.92) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
   }
+
   .floating-notifications-panel {
     top: auto !important;
     bottom: calc(100% + 0.75rem) !important;
@@ -1067,6 +1129,7 @@ select option {
     transform-origin: bottom right !important;
     animation: notifPanelSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
   }
+
   .floating-bell-btn {
     width: 48px !important;
     height: 48px !important;
@@ -1074,6 +1137,7 @@ select option {
     background: rgba(34, 40, 31, 0.92) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
   }
+
   .floating-notifications-panel {
     top: auto !important;
     bottom: calc(100% + 0.75rem) !important;
@@ -1086,13 +1150,27 @@ select option {
 }
 
 @keyframes notifPanelSlideUp {
-  from { opacity: 0; transform: scale(0.92) translateY(12px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes notifPanelSlideUp {
-  from { opacity: 0; transform: scale(0.92) translateY(12px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ─── Badge trên mobile bell (mobileNavUnreadBadge) dùng lại bell-badge-pulse */
@@ -1102,37 +1180,75 @@ select option {
 
 /* ─── Composer toolbar buttons ─────────────────────────────────────────── */
 .composer-toolbar-btn {
-  display: inline-flex; flex-direction: column; align-items: center; gap: 0.25rem;
-  padding: 0.5rem 0.75rem; border-radius: 14px;
-  border: 1px solid transparent; background: transparent;
-  color: rgba(255,255,255,0.75); font-size: 0.75rem; font-weight: 400;
-  cursor: pointer; transition: all 220ms var(--lg-spring);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.75rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 220ms var(--lg-spring);
 }
+
 .composer-toolbar-btn:hover {
-  background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.16);
-  color: #ffffff; transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: translateY(-2px);
 }
-.composer-toolbar-btn i { font-size: 1.25rem; }
+
+.composer-toolbar-btn i {
+  font-size: 1.25rem;
+}
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.12); border-radius: 999px; }
-::-webkit-scrollbar-thumb { background: rgba(155,189,85,0.35); border-radius: 999px; border: 1px solid rgba(255,255,255,0.08); }
-::-webkit-scrollbar-thumb:hover { background: rgba(155,189,85,0.55); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 189, 85, 0.35);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 189, 85, 0.55);
+}
 
 /* ─── Focus ring ────────────────────────────────────────────────────────── */
 *:focus-visible {
-  outline: 2px solid rgba(155,189,85,0.65) !important;
+  outline: 2px solid rgba(155, 189, 85, 0.65) !important;
   outline-offset: 2px !important;
 }
 
 /* ─── Reduced motion ────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .lg-iridescent::after { animation: none; }
-  .paper-card, .paper-card:hover, .app-container article.nature-card:hover {
-    transition: none !important; animation: none !important;
+  .lg-iridescent::after {
+    animation: none;
   }
-  .modal-content { animation: none !important; }
+
+  .paper-card,
+  .paper-card:hover,
+  .app-container article.nature-card:hover {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .modal-content {
+    animation: none !important;
+  }
 }
 
 /* ─── Profile tabs & Avatar input (Nature / Liquid Glass) ───────────────── */
@@ -1169,6 +1285,7 @@ input[type="file"].nature-input {
   line-height: normal;
   cursor: pointer;
 }
+
 input[type="file"].nature-input::file-selector-button {
   background: #20251c;
   color: #ffffff;
@@ -1181,6 +1298,7 @@ input[type="file"].nature-input::file-selector-button {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 input[type="file"].nature-input::file-selector-button:hover {
   background: #2e3529;
   color: #c4e482;
@@ -1317,8 +1435,17 @@ input[type="file"].nature-input::file-selector-button:hover {
 }
 
 @keyframes chatbotDotPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.15); opacity: 0.75; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.75;
+  }
 }
 
 .chatbot-brand-label {
@@ -1348,6 +1475,7 @@ input[type="file"].nature-input::file-selector-button:hover {
     opacity: 0;
     transform: translateY(12px) scale(0.97);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -1592,12 +1720,28 @@ input[type="file"].nature-input::file-selector-button:hover {
   animation: typingBounce 1.2s infinite ease-in-out;
 }
 
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+  margin-right: 0;
+}
 
 @keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-4px); opacity: 1; }
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
 }
 
 /* Footer nhập tin nhắn (Dạng viên thuốc thanh lịch, cuộn mượt khi prompt dài) */
@@ -1663,6 +1807,7 @@ input[type="file"].nature-input::file-selector-button:hover {
     bottom: 80px;
     right: 16px;
   }
+
   .outdoor-chatbot-window {
     bottom: 140px;
     right: 12px;
