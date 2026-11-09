@@ -8,6 +8,8 @@ Thumbs.db
 
 # Local config & credentials
 config.local.php
+config/secrets.php
+secrets.php
 .env
 
 # Uploads (giữ cấu trúc thư mục & ảnh mẫu seed ban đầu, bỏ qua ảnh người dùng đăng bài khi test)
