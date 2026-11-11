@@ -186,6 +186,10 @@ class App
 
             $apiRouter->get('/provinces.php', [$api, 'provinces']);
 
+            $apiRouter->get('/qr', [$api, 'qrCode']);
+
+            $apiRouter->get('/qr.php', [$api, 'qrCode']);
+
 
 
             $apiRouter->get('/comments', [$api, 'listComments']);
