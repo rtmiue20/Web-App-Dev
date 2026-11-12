@@ -162,7 +162,14 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
 
                     <!-- Author Info & Progress -->
                     <div class="d-flex align-items-center justify-content-between text-muted small mb-3 pb-2 border-bottom">
-                        <span><i class="bi bi-person me-1"></i><?= $escape($checklist['username']) ?> · <?= date('d/m/Y', strtotime($checklist['created_at'])) ?></span>
+                        <span class="d-inline-flex align-items-center gap-1.5">
+                            <?php if (!empty($checklist['avatar_path'])): ?>
+                                <img src="<?= $escape(upload_url($checklist['avatar_path'])) ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="20" height="20">
+                            <?php else: ?>
+                                <i class="bi bi-person me-1"></i>
+                            <?php endif; ?>
+                            <span><?= $escape($checklist['username']) ?> · <?= date('d/m/Y', strtotime($checklist['created_at'])) ?></span>
+                        </span>
                         <span class="fw-semibold text-success progress-text-<?= (int)$checklist['id'] ?>" style="font-size: 11.5px;">
                             0/<?= $totalItems ?> món
                         </span>

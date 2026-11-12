@@ -348,11 +348,12 @@ END$$
 DROP PROCEDURE IF EXISTS sp_comment_list$$
 CREATE PROCEDURE sp_comment_list(IN p_post_id INT)
 BEGIN
-    SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username
+    SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at, u.username, u.avatar_path, r.name AS role_name
     FROM comments c
     JOIN users u ON c.user_id = u.id
+    LEFT JOIN roles r ON r.id = u.role_id
     WHERE c.post_id = p_post_id
-    ORDER BY c.created_at DESC;
+    ORDER BY c.created_at ASC, c.id ASC;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_comment_create$$

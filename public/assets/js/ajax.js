@@ -24,6 +24,15 @@ const ForumAjax = {
     return raw;
   },
 
+  formatAvatarUrl: function (path) {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = String(path).replace(/^\/+/, '');
+    const prefix = (!clean.startsWith('uploads/') && !clean.startsWith('assets/')) ? 'uploads/' : '';
+    const baseUrl = this.getBaseUrl();
+    return `${baseUrl}/${prefix}${clean}`;
+  },
+
   // 1. FR08: Hệ thống Vote (Upvote +1 / Downvote -1) bài viết qua AJAX
   votePost: async function (postId, voteType, btnElement) {
     if (!postId) return;
@@ -244,12 +253,17 @@ const ForumAjax = {
 
     const safeUsernameAttr = String(cm.username || 'Thành viên').replace(/'/g, "\\'");
 
+    const avatarUrl = this.formatAvatarUrl(cm.avatar_path);
+    const authorAvatarHtml = avatarUrl
+      ? `<img src="${avatarUrl}" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="22" height="22" style="margin-right: 4px;">`
+      : '<i class="bi bi-person-fill me-1"></i>';
+
     threadWrap.innerHTML = `
       <div class="comment-card" id="comment-item-${cm.id}">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
           <div class="d-flex align-items-center flex-wrap">
-            <span class="comment-author">
-              <i class="bi bi-person-fill me-1"></i>${cm.username || 'Bạn'}
+            <span class="comment-author d-inline-flex align-items-center">
+              ${authorAvatarHtml}${cm.username || 'Bạn'}
             </span>
             ${roleBadgeHtml}
             ${replyToHtml}
@@ -1128,7 +1142,10 @@ const ForumAjax = {
               <i class="bi bi-chat-dots me-1"></i> ${commentsCount}
             </a>
           </div>
-          <span style="font-size: 0.78rem;">${this.escapeHtml(post.username || '')}</span>
+          <span style="font-size: 0.78rem;" class="d-inline-flex align-items-center">
+            ${post.avatar_path ? `<img src="${this.formatAvatarUrl(post.avatar_path)}" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="18" height="18" style="margin-right: 4px;">` : '<i class="bi bi-person me-1"></i>'}
+            ${this.escapeHtml(post.username || '')}
+          </span>
         </div>
       </article>
     `;

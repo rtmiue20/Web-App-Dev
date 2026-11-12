@@ -136,11 +136,14 @@ class UserController extends Controller
             return null;
         }
 
-        // Đồng bộ role_id và role_name mới nhất từ CSDL vào Session
+        // Đồng bộ thông tin cá nhân, avatar và phân quyền mới nhất từ CSDL vào Session
         if (is_array($sessionUser)) {
             $sessionUser['id'] = $user->getId();
+            $sessionUser['username'] = $user->getUsername();
+            $sessionUser['bio'] = $user->getBio();
             $sessionUser['role_id'] = $user->getRoleId();
             $sessionUser['role_name'] = $user->getRoleName();
+            $sessionUser['avatar_path'] = $user->getAvatarPath();
             Session::set('user', $sessionUser);
         }
 

@@ -80,10 +80,15 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             ?>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
                class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
+                <?php if (!empty($currentUser['avatar_path'])): ?>
+                    <img src="<?= htmlspecialchars(upload_url($currentUser['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" 
+                         alt="Avatar" class="rounded-circle object-fit-cover flex-shrink-0" width="22" height="22" style="border: 1.5px solid rgba(155, 189, 85, 0.7); margin-left: -2px;">
+                <?php else: ?>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                <?php endif; ?>
                 <span><?= htmlspecialchars($currentUser['username'] ?? 'Cá nhân', ENT_QUOTES, 'UTF-8') ?></span>
                 <?php if ($navPendingCount > 0): ?>
                     <span class="badge rounded-pill bg-warning text-dark ms-1 fw-bold" style="font-size: 10.5px; padding: 2px 7px;" title="Bạn có <?= $navPendingCount ?> bài viết đang chờ duyệt">

@@ -1326,11 +1326,20 @@ $galleryCount = count($galleryImages);
 
                     <article class="border-top py-3">
 
-                        <div class="d-flex justify-content-between gap-2">
+                        <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
 
-                            <strong><?= htmlspecialchars($review['username'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            <div class="d-flex align-items-center gap-2">
+                                <?php if (!empty($review['avatar_path'])): ?>
+                                    <img src="<?= htmlspecialchars(upload_url($review['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="28" height="28">
+                                <?php else: ?>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0" style="width: 28px; height: 28px; background: #9bbd55; font-size: 13px;">
+                                        <?= strtoupper(mb_substr($review['username'] ?? 'U', 0, 1)) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <strong><?= htmlspecialchars($review['username'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            </div>
 
-                            <span>★ <?= (int) $review['rating'] ?>/5</span>
+                            <span class="text-warning fw-semibold">★ <?= (int) $review['rating'] ?>/5</span>
 
                         </div>
 
@@ -1495,9 +1504,14 @@ $galleryCount = count($galleryImages);
 
                             <div class="d-flex align-items-center flex-wrap">
 
-                                <span class="comment-author">
+                                <span class="comment-author d-inline-flex align-items-center gap-1.5">
 
-                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?>
+                                    <?php if (!empty($cm['avatar_path'])): ?>
+                                        <img src="<?= htmlspecialchars(upload_url($cm['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="22" height="22">
+                                    <?php else: ?>
+                                        <i class="bi bi-person-fill me-1"></i>
+                                    <?php endif; ?>
+                                    <span><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?></span>
 
                                 </span>
 

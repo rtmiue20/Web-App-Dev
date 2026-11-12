@@ -36,7 +36,7 @@ class CommentRepository extends BaseRepository
         try {
             return $this->query(
                 'SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
-                        u.username, r.name AS role_name,
+                        u.username, u.avatar_path, r.name AS role_name,
                         (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) AS likes_count,
                         (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.user_id = :current_user_id) AS user_liked
                  FROM comments c

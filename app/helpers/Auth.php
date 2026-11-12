@@ -35,12 +35,11 @@ class Auth
         }
 
         $uid = (int)($user['id'] ?? 0);
-        if ($uid > 0 && self::$syncedUserId !== $uid && class_exists('Database')) {
-            self::$syncedUserId = $uid;
+        if ($uid > 0 && class_exists('Database')) {
             try {
-                $pdo = Database::getInstance()->getConnection();
+                $pdo = Database::getConnection();
                 $stmt = $pdo->prepare(
-                    'SELECT u.role_id, LOWER(COALESCE(r.name, "")) AS role_name
+                    'SELECT u.username, u.avatar_path, u.role_id, LOWER(COALESCE(r.name, "")) AS role_name
                      FROM users u
                      LEFT JOIN roles r ON r.id = u.role_id
                      WHERE u.id = :id
@@ -51,6 +50,7 @@ class Auth
                 $stmt->closeCursor();
 
                 if (is_array($row) && !empty($row['role_id'])) {
+                    $hasChange = false;
                     $dbRoleId = (int)$row['role_id'];
                     $dbRoleName = trim((string)($row['role_name'] ?? ''));
                     if ($dbRoleName === '') {
@@ -64,6 +64,22 @@ class Auth
                     if (($user['role_id'] ?? null) !== $dbRoleId || ($user['role_name'] ?? null) !== $dbRoleName) {
                         $user['role_id'] = $dbRoleId;
                         $user['role_name'] = $dbRoleName;
+                        $hasChange = true;
+                    }
+
+                    // Đồng bộ avatar_path và username từ CSDL vào Session
+                    $dbAvatar = $row['avatar_path'] ?? null;
+                    if (($user['avatar_path'] ?? null) !== $dbAvatar) {
+                        $user['avatar_path'] = $dbAvatar;
+                        $hasChange = true;
+                    }
+                    $dbUsername = trim((string)($row['username'] ?? ''));
+                    if ($dbUsername !== '' && ($user['username'] ?? '') !== $dbUsername) {
+                        $user['username'] = $dbUsername;
+                        $hasChange = true;
+                    }
+
+                    if ($hasChange) {
                         Session::set('user', $user);
                     }
                 }

@@ -217,10 +217,14 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
                 <?php foreach ($participants as $p): ?>
                     <div class="col-sm-6 col-md-4">
                         <div class="p-3 rounded-4 border d-flex align-items-center gap-2.5" style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.08) !important;">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                                 style="width: 40px; height: 40px; background: <?= (int)$p['is_organizer'] === 1 ? '#9bbd55' : '#70d6ff' ?>;">
-                                <?= strtoupper(mb_substr($p['username'], 0, 1)) ?>
-                            </div>
+                            <?php if (!empty($p['avatar_path'])): ?>
+                                <img src="<?= $escape(upload_url($p['avatar_path'])) ?>" alt="<?= $escape($p['username']) ?>" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="40" height="40">
+                            <?php else: ?>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                                     style="width: 40px; height: 40px; background: <?= (int)$p['is_organizer'] === 1 ? '#9bbd55' : '#70d6ff' ?>;">
+                                    <?= strtoupper(mb_substr($p['username'], 0, 1)) ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="min-w-0 flex-grow-1">
                                 <div class="fw-semibold text-truncate" style="color: var(--color-ink); font-size: 14px;">
                                     <?= $escape($p['username']) ?>

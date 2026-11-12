@@ -110,12 +110,17 @@ $defaultImages = [
                             </a>
                         </div>
 
-                        <div class="d-flex align-items-center gap-2 text-truncate">
-                            <span>
-                                <i class="bi bi-person me-1"></i><?= htmlspecialchars($post['username'] ?? 'Thành viên', ENT_QUOTES, 'UTF-8') ?>
+                        <div class="d-flex align-items-center gap-1.5 text-truncate">
+                            <?php if (!empty($post['avatar_path'])): ?>
+                                <img src="<?= htmlspecialchars(upload_url($post['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="18" height="18">
+                            <?php else: ?>
+                                <i class="bi bi-person me-1"></i>
+                            <?php endif; ?>
+                            <span class="text-truncate">
+                                <?= htmlspecialchars($post['username'] ?? 'Thành viên', ENT_QUOTES, 'UTF-8') ?>
                             </span>
                             <span>·</span>
-                            <span>
+                            <span class="text-nowrap">
                                 <?= !empty($post['created_at']) ? date('d/m/Y', strtotime($post['created_at'])) : '' ?>
                             </span>
                         </div>

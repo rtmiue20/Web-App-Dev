@@ -251,7 +251,11 @@ $escape = static function ($value): string {
                             <span><?= date('H:i · d/m/Y', strtotime($trip['starts_at'])) ?></span>
                         </div>
                         <div class="d-flex align-items-center gap-1.5 text-muted small">
-                            <i class="bi bi-person-fill flex-shrink-0"></i>
+                            <?php if (!empty($trip['avatar_path'])): ?>
+                                <img src="<?= $escape(upload_url($trip['avatar_path'])) ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="20" height="20">
+                            <?php else: ?>
+                                <i class="bi bi-person-fill flex-shrink-0"></i>
+                            <?php endif; ?>
                             <span>Tổ chức bởi <strong><?= $escape($trip['username']) ?></strong></span>
                         </div>
                     </div>

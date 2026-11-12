@@ -80,11 +80,12 @@ class AuthService extends BaseService
         Csrf::rotate();
 
         $sessionPayload = [
-            'id'        => $user->getId(),
-            'username'  => $user->getUsername(),
-            'email'     => $user->getEmail(),
-            'role_id'   => $user->getRoleId(),
-            'role_name' => $user->getRoleName(),
+            'id'          => $user->getId(),
+            'username'    => $user->getUsername(),
+            'email'       => $user->getEmail(),
+            'role_id'     => $user->getRoleId(),
+            'role_name'   => $user->getRoleName(),
+            'avatar_path' => $user->getAvatarPath(),
         ];
         Session::set('user', $sessionPayload);
 
