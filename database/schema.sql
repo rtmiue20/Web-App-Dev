@@ -195,9 +195,12 @@ INSERT INTO users (username, email, password_hash, role_id) VALUES
   ('minh',  'minh@forum.local',  'hash_demo', 1),
   ('lan',   'lan@forum.local',   'hash_demo', 1);
 INSERT INTO categories (name, description) VALUES
-  ('Cắm trại', 'Kinh nghiệm cắm trại'),
-  ('Trekking', 'Leo núi, đi rừng'),
-  ('Dụng cụ',  'Review đồ dã ngoại');
+  ('Cắm trại & Glamping', 'Kinh nghiệm hạ trại, chọn bãi cắm ven hồ, cắm trại rừng thông & dã ngoại gia đình.'),
+  ('Trekking & Leo núi', 'Chinh phục đỉnh cao, săn mây, băng rừng và khám phá những cung đường mạo hiểm.'),
+  ('Dụng cụ & Đồ phượt', 'Đánh giá và chia sẻ kinh nghiệm chọn lều, túi ngủ, bếp ga, balo, dao sinh tồn.'),
+  ('Kỹ năng sinh tồn', 'Kỹ năng nhóm lửa, lọc nước, sơ cứu ngoài trời, định vị bản đồ GPS và ứng phó thời tiết.'),
+  ('Kinh nghiệm chuyến đi', 'Cẩm nang lịch trình thực tế, review bãi cắm, chi phí, tọa độ đẹp và kinh nghiệm di chuyển.'),
+  ('Bạn đồng hành & Ghép xe', 'Rủ rê đồng đội, kết nối phượt thủ, ghép xe máy & ô tô cho các chuyến dã ngoại cuối tuần.');
 INSERT INTO posts (user_id, category_id, title, content, location) VALUES
   (2, 1, 'Cắm trại Đà Lạt', 'Chia sẻ kinh nghiệm...', 'Đà Lạt'),
   (2, 2, 'Trekking Tà Năng', 'Lịch trình 2 ngày...', 'Lâm Đồng'),
