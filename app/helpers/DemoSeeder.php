@@ -359,9 +359,9 @@ class DemoSeeder
 
                     Database::execute("
                         INSERT IGNORE INTO post_images (post_id, image_url) VALUES
-                        (1, 'uploads/posts/1121ddee7bf6fd0f2cce7d6f4d96d49d.jpg'),
-                        (2, 'uploads/posts/1792544054_6716c5f3d63f.jpg'),
-                        (3, 'uploads/posts/729197006baecca7a06257f4f9179eb4.jpg')
+                        (1, 'uploads/posts/post_da_lat_san_may.jpg'),
+                        (2, 'uploads/posts/post_ta_nang_phan_dung.jpg'),
+                        (3, 'uploads/posts/post_leu_chong_mua_ta_xua.png')
                     ");
                 }
                 self::markSeeded('posts_seeded');

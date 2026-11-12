@@ -15,6 +15,13 @@ secrets.php
 # Uploads (giữ cấu trúc thư mục & ảnh mẫu seed ban đầu, bỏ qua ảnh người dùng đăng bài khi test)
 public/uploads/posts/*
 !public/uploads/posts/.gitkeep
+!public/uploads/posts/post_da_lat_san_may.jpg
+!public/uploads/posts/post_ta_nang_phan_dung.jpg
+!public/uploads/posts/post_leu_chong_mua_ta_xua.png
+!public/uploads/posts/post_tuyen_lam_glamping.jpg
+!public/uploads/posts/b3e8b655d9dc8776b5ab3cdc4eee42e2.jpg
+!public/uploads/posts/3b29d07b3d33520de46d0799b04429d6.jpg
+!public/uploads/posts/0cbc76d4218901b66b755e99b45a9ffc.jpg
 !public/uploads/posts/1121ddee7bf6fd0f2cce7d6f4d96d49d.jpg
 !public/uploads/posts/1792544054_6716c5f3d63f.jpg
 !public/uploads/posts/338c3415e2eb26f4650ecb888117196e.jpg
