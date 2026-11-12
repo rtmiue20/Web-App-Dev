@@ -259,31 +259,6 @@ $filterQuery = $catQuery . $sortQuery;
     <!-- Post list grid -->
     <?php require __DIR__ . '/../partials/post-cards.php'; ?>
 
-    <!-- AJAX Tải thêm bài viết & Tự động cuộn (Infinite Scroll - Phúc) -->
-    <div class="text-center my-4" id="load-more-container">
-        <?php if ($currentPage < $totalPages): ?>
-            <div class="d-flex flex-wrap align-items-center justify-content-center gap-3">
-                <button type="button" 
-                        id="btnLoadMorePosts" 
-                        class="nature-btn-secondary px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm"
-                        data-current-page="<?= $currentPage ?>"
-                        data-total-pages="<?= $totalPages ?>"
-                        data-category-id="<?= htmlspecialchars((string)($selectedCategoryId ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                        data-sort="<?= htmlspecialchars($selectedSort, ENT_QUOTES, 'UTF-8') ?>">
-                    <i class="bi bi-arrow-down-circle-fill" style="color: var(--color-moss, #9bbd55);"></i>
-                    <span class="btn-text">Tải thêm bài viết</span>
-                </button>
-                <div class="form-check form-switch d-inline-flex align-items-center gap-2 text-white-50 small">
-                    <input class="form-check-input" type="checkbox" id="toggleInfiniteScroll">
-                    <label class="form-check-label" for="toggleInfiniteScroll">Tự động cuộn (Infinite Scroll)</label>
-                </div>
-            </div>
-        <?php endif; ?>
-        <div id="no-more-posts-msg" class="text-white-50 small py-3" style="display: none;">
-            <i class="bi bi-check2-circle text-success me-1"></i>Bạn đã xem hết tất cả bài viết.
-        </div>
-    </div>
-
     <!-- Thanh phân trang Bootstrap (Đồng bộ chuẩn Nature Glass) -->
     <?php if (($totalPosts ?? 0) > 0): ?>
         <nav aria-label="Điều hướng phân trang bài viết" class="mt-5 mb-4">
@@ -435,13 +410,9 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
         updateSlidebarState();
     }
-    // Khởi tạo tính năng AJAX: Tìm kiếm gợi ý & Tải thêm bài viết (Phúc)
+    // Khởi tạo tính năng AJAX: Tìm kiếm gợi ý
     if (window.ForumAjax) {
         window.ForumAjax.initSearchAutocomplete('forumSearchInput', 'searchSuggestionsDropdown');
-        window.ForumAjax.initInfiniteScroll({
-            btnId: 'btnLoadMorePosts',
-            rowId: 'post-cards-row'
-        });
     }
 });
 </script>
