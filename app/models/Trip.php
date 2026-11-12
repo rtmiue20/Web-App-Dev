@@ -6,10 +6,18 @@ class Trip extends Model
     public function getAll(string $filter = 'upcoming', ?int $userId = null): array
     {
         $sql = "SELECT t.*, u.username, u.avatar_path,
-                       (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = t.id) AS participant_count
-                FROM trips t
-                JOIN users u ON u.id = t.user_id";
+                       (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = t.id) AS participant_count";
         $params = [];
+
+        if ($userId !== null && $userId > 0) {
+            $sql .= ", (SELECT COUNT(*) FROM trip_participants tp2 WHERE tp2.trip_id = t.id AND tp2.user_id = :current_uid) AS is_joined";
+            $params['current_uid'] = $userId;
+        } else {
+            $sql .= ", 0 AS is_joined";
+        }
+
+        $sql .= " FROM trips t
+                JOIN users u ON u.id = t.user_id";
 
         if ($filter === 'upcoming') {
             $sql .= " WHERE t.starts_at >= NOW()";
@@ -26,7 +34,7 @@ class Trip extends Model
     public function getById(int $id): array|false
     {
         $trips = Database::query(
-            "SELECT t.*, u.username, u.avatar_path,
+            "SELECT t.*, u.username, u.avatar_path, u.email, u.bio,
                     (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = t.id) AS participant_count
              FROM trips t
              JOIN users u ON u.id = t.user_id

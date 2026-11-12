@@ -742,9 +742,9 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                     </div>
 
                     <!-- Search bar -->
-                    <div style="padding:0.85rem 1.25rem; border-bottom:1px solid #edf0e8; display:flex; gap:8px; background:#ffffff;">
+                    <div style="padding:0.85rem 1.25rem 0.5rem; border-bottom:none; display:flex; gap:8px; background:#ffffff;">
                         <input type="text" id="mapSearchInput"
-                               placeholder="Nhập tên địa điểm, ví dụ: Đỉnh Fansipan, Tà Xùa, Núi Bà Đen..."
+                               placeholder="Nhập tên địa điểm, ví dụ: Đồi Đa Phú, Tà Xùa, Núi Bà Đen..."
                                style="flex:1; background:#ffffff; border:1px solid #dcdfd6; border-radius:12px;
                                       color:#23261f; padding:0.6rem 0.95rem; font-size:0.92rem; outline:none;"
                                onkeydown="if(event.key==='Enter'){event.preventDefault();MapPicker.search();}">
@@ -753,6 +753,16 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                                        padding:0.6rem 1.25rem; cursor:pointer; font-size:0.9rem; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; box-shadow: 0 2px 8px rgba(155,189,85,0.35);">
                             <i class="bi bi-search"></i> Tìm
                         </button>
+                    </div>
+
+                    <!-- Quick suggestions -->
+                    <div style="padding:0 1.25rem 0.75rem; background:#ffffff; border-bottom:1px solid #edf0e8; display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px;">
+                        <span class="text-muted small"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gợi ý:</span>
+                        <button type="button" onclick="MapPicker.quickSearch('Đồi Đa Phú')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Đồi Đa Phú</button>
+                        <button type="button" onclick="MapPicker.quickSearch('Tà Xùa')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Tà Xùa</button>
+                        <button type="button" onclick="MapPicker.quickSearch('Núi Bà Đen')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Núi Bà Đen</button>
+                        <button type="button" onclick="MapPicker.quickSearch('Fansipan')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Fansipan</button>
+                        <button type="button" onclick="MapPicker.quickSearch('Hồ Tuyền Lâm')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Hồ Tuyền Lâm</button>
                     </div>
 
                     <!-- Search results -->
@@ -1034,22 +1044,23 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
 }
 
 .map-result-item {
-    padding: 0.65rem 1.25rem;
+    padding: 0.7rem 1.25rem;
     cursor: pointer;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid #edf0e8;
     transition: background 0.15s;
-    color: #ccc;
-    font-size: 0.86rem;
+    color: #475569;
+    font-size: 0.88rem;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
+    background: #ffffff;
 }
-.map-result-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
-.map-result-item.selected { background: rgba(122,171,58,0.15); }
-.map-result-item i { color: var(--color-moss,#7aab3a); margin-top:2px; flex-shrink:0; }
-.map-result-item strong { display:block; font-size:0.9rem; color:#fff; }
-.map-result-item span { font-size: 0.78rem; color: #999; }
-.map-spinner { padding:1rem; text-align:center; color:rgba(255,255,255,0.45); font-size:0.85rem; }
+.map-result-item:hover { background: rgba(155, 189, 85, 0.12); color: #1e293b; }
+.map-result-item.selected { background: rgba(155, 189, 85, 0.22); border-left: 3px solid #7aab3a; }
+.map-result-item i { color: #7aab3a; margin-top: 3px; flex-shrink: 0; font-size: 1rem; }
+.map-result-item strong { display: block; font-size: 0.92rem; color: #1e293b; font-weight: 600; }
+.map-result-item span { font-size: 0.8rem; color: #64748b; line-height: 1.35; display: block; margin-top: 2px; }
+.map-spinner { padding: 1.25rem; text-align: center; color: #64748b; font-size: 0.88rem; }
 </style>
 
 <script>
@@ -1200,8 +1211,49 @@ function clearImages() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// MAP PICKER — OpenStreetMap Nominatim
+// MAP PICKER — Đa tầng Web Service Geocoding & Dã Ngoại Việt Nam
+// Tự động chuyển đổi Photon (OpenStreetMap) -> Open-Meteo -> Nominatim -> Offline Spots
 // ══════════════════════════════════════════════════════════════
+const VIETNAM_OUTDOOR_SPOTS = [
+    { name: "Đồi Đa Phú", detail: "Phường 7, TP. Đà Lạt, Lâm Đồng (Điểm cắm trại, săn mây)", lat: 11.9772, lng: 108.4116 },
+    { name: "TP. Đà Lạt", detail: "Lâm Đồng (Thành phố ngàn hoa, trung tâm dã ngoại)", lat: 11.9404, lng: 108.4583 },
+    { name: "Hồ Tuyền Lâm", detail: "Phường 4, TP. Đà Lạt, Lâm Đồng (Chèo SUP, cắm trại ven hồ)", lat: 11.8906, lng: 108.4312 },
+    { name: "Đỉnh Langbiang", detail: "Huyện Lạc Dương, Lâm Đồng (Đỉnh Bà 2167m, săn mây)", lat: 12.0468, lng: 108.4419 },
+    { name: "Đồi Cỏ Hồng Đan Kia", detail: "Huyện Lạc Dương, Lâm Đồng (Cắm trại đồi cỏ hồng)", lat: 12.0125, lng: 108.3842 },
+    { name: "Đồi Thiên Phúc Đức", detail: "Phường 7, TP. Đà Lạt, Lâm Đồng (Cây thông cô đơn)", lat: 11.9688, lng: 108.4283 },
+    { name: "Sống lưng khủng long Tà Xùa", detail: "Huyện Bắc Yên, Sơn La (Săn mây, trekking đỉnh gió)", lat: 21.2833, lng: 104.3167 },
+    { name: "Đỉnh Núi Bà Đen", detail: "TP. Tây Ninh, Tây Ninh (Nóc nhà Nam Bộ 986m)", lat: 11.3736, lng: 106.1744 },
+    { name: "Núi Chứa Chan", detail: "Huyện Xuân Lộc, Đồng Nai (Đệ nhị nóc nhà Nam Bộ 837m)", lat: 10.9575, lng: 107.3822 },
+    { name: "Cung Trekking Tà Năng - Phan Dũng", detail: "Huyện Đức Trọng, Lâm Đồng & Tuy Phong, Bình Thuận", lat: 11.5333, lng: 108.4667 },
+    { name: "Đỉnh Fansipan", detail: "Thị xã Sa Pa, Lào Cai (Nóc nhà Đông Dương 3143m)", lat: 22.3033, lng: 103.7750 },
+    { name: "Đỉnh Lảo Thẩn", detail: "Xã Y Tý, Huyện Bát Xát, Lào Cai (Nóc nhà Y Tý săn mây 2860m)", lat: 22.6111, lng: 103.6289 },
+    { name: "Đỉnh Ky Quan San (Bạch Mộc Lương Tử)", detail: "Huyện Bát Xát, Lào Cai (3046m)", lat: 22.5025, lng: 103.5886 },
+    { name: "Đỉnh Tà Chì Nhù", detail: "Huyện Trạm Tấu, Yên Bái (Hoa chi pâu tím, biển mây 2979m)", lat: 21.5219, lng: 104.3831 },
+    { name: "Đèo Mã Pí Lèng & Sông Nho Quế", detail: "Huyện Mèo Vạc & Đồng Văn, Hà Giang", lat: 23.2415, lng: 105.4119 },
+    { name: "Hẻm Tu Sản", detail: "Sông Nho Quế, Mèo Vạc, Hà Giang (Chèo thuyền Kayak)", lat: 23.1625, lng: 105.4058 },
+    { name: "Đỉnh Pha Luông", detail: "Huyện Mộc Châu, Sơn La (Đỉnh núi hùng vĩ 2000m)", lat: 20.7303, lng: 104.6067 },
+    { name: "Đồi thông Bản Áng", detail: "Huyện Mộc Châu, Sơn La (Cắm trại rừng thông)", lat: 20.8306, lng: 104.6436 },
+    { name: "Hồ Trị An", detail: "Huyện Vĩnh Cửu, Đồng Nai (Cắm trại ven hồ, câu cá)", lat: 11.1408, lng: 107.0306 },
+    { name: "Hồ Dầu Tiếng", detail: "Huyện Dầu Tiếng, Bình Dương & Tây Ninh (Bãi cỏ ven hồ)", lat: 11.3256, lng: 106.3475 },
+    { name: "Hồ Đồng Đò", detail: "Xã Minh Trí, Huyện Sóc Sơn, Hà Nội (Cắm trại ven hồ, chèo SUP)", lat: 21.3217, lng: 105.7761 },
+    { name: "Núi Hàm Lợn", detail: "Huyện Sóc Sơn, Hà Nội (Nóc nhà Thủ đô, hồ Hàm Lợn)", lat: 21.3094, lng: 105.7889 },
+    { name: "Vườn Quốc gia Ba Vì", detail: "Huyện Ba Vì, Hà Nội (Đỉnh Vua, Rừng thông)", lat: 21.0583, lng: 105.3667 },
+    { name: "Núi Dinh", detail: "Thị xã Phú Mỹ, Bà Rịa - Vũng Tàu (Trekking suối Tiên, suối Đá)", lat: 10.5367, lng: 107.1267 },
+    { name: "Mũi Né - Bàu Trắng", detail: "TP. Phan Thiết, Bình Thuận (Đồi cát trắng, cắm trại biển)", lat: 11.0647, lng: 108.4239 },
+    { name: "Đảo Phú Quý", detail: "Huyện đảo Phú Quý, Bình Thuận (Cắm trại Bờ Kè, Vịnh Triều Dương)", lat: 10.5186, lng: 108.9406 },
+    { name: "Vườn Quốc gia Cát Bà", detail: "Huyện Cát Hải, Hải Phòng (Đỉnh Ngự Lâm)", lat: 20.8000, lng: 106.9833 },
+    { name: "Vườn Quốc gia Cúc Phương", detail: "Huyện Nho Quan, Ninh Bình (Rừng nguyên sinh)", lat: 20.3167, lng: 105.6000 },
+    { name: "Vườn Quốc gia Cát Tiên", detail: "Huyện Tân Phú, Đồng Nai (Bàu Sấu, xem thú đêm)", lat: 11.4236, lng: 107.4292 },
+    { name: "Cần Giờ", detail: "Huyện Cần Giờ, TP. Hồ Chí Minh (Rừng ngập mặn)", lat: 10.4114, lng: 106.9547 },
+    { name: "Thác K50 (Hang Én)", detail: "Khu bảo tồn Kon Chư Răng, Gia Lai", lat: 14.5422, lng: 108.6186 },
+    { name: "Thác Bản Giốc", detail: "Huyện Trùng Khánh, Cao Bằng", lat: 22.8542, lng: 106.7236 },
+    { name: "Hồ Ba Bể", detail: "Huyện Ba Bể, Bắc Kạn", lat: 22.4167, lng: 105.6167 },
+    { name: "Cao nguyên Đồng Cao", detail: "Huyện Sơn Động, Bắc Giang", lat: 21.4333, lng: 106.9167 },
+    { name: "Cù Lao Câu", detail: "Huyện Tuy Phong, Bình Thuận", lat: 11.2333, lng: 108.8167 },
+    { name: "Bình Lập - Bình Hưng", detail: "TP. Cam Ranh, Khánh Hòa", lat: 11.8333, lng: 109.1667 },
+    { name: "Mũi Điện (Đại Lãnh)", detail: "Thị xã Đông Hòa, Phú Yên", lat: 12.8833, lng: 109.4567 }
+];
+
 const MapPicker = (function() {
     let selected = null;
 
@@ -1212,13 +1264,42 @@ const MapPicker = (function() {
     function selectedText() { return document.getElementById('mapSelectedText'); }
     function confirmBtn() { return document.getElementById('mapConfirmBtn'); }
 
+    function cleanTones(s) {
+        return (s || '').normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/Đ/g, 'D')
+            .toLowerCase()
+            .trim();
+    }
+
+    function renderItems(items) {
+        if (!resultsBox()) return;
+        resultsBox().innerHTML = '';
+        if (!items || items.length === 0) {
+            resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-search me-1"></i>Không tìm thấy địa điểm. Thử từ khóa khác.</div>';
+            return;
+        }
+        items.forEach(function(item) {
+            const div = document.createElement('div');
+            div.className = 'map-result-item';
+            const badgeHtml = item.badge ? `<span class="badge text-bg-success ms-2" style="font-size:10px;font-weight:600;">${item.badge}</span>` : '';
+            div.innerHTML = `<i class="bi bi-geo-alt-fill text-danger"></i><div><strong>${item.short_name}${badgeHtml}</strong><span>${item.display_name}</span></div>`;
+            div.addEventListener('click', function() {
+                selectResult(item, div);
+            });
+            resultsBox().appendChild(div);
+        });
+    }
+
     function open() {
         selected = null;
-        if (resultsBox()) resultsBox().innerHTML = '';
         if (selectedInfo()) selectedInfo().style.display = 'none';
         if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
+        
+        const curLoc = document.getElementById('location')?.value?.trim() || '';
         if (searchInput()) {
-            searchInput().value = document.getElementById('location')?.value || '';
+            searchInput().value = curLoc;
         }
 
         // Tạm thời vô hiệu hóa FocusTrap của Bootstrap Modal nếu đang mở
@@ -1231,6 +1312,23 @@ const MapPicker = (function() {
         }
 
         if (modal()) modal().style.display = 'flex';
+
+        // Hiển thị ngay các địa điểm gợi ý ban đầu để người dùng chọn nhanh không cần gõ
+        if (curLoc) {
+            search();
+        } else {
+            const initialList = VIETNAM_OUTDOOR_SPOTS.slice(0, 8).map(function(s) {
+                return {
+                    short_name: s.name,
+                    display_name: s.name + ', ' + s.detail,
+                    lat: s.lat,
+                    lon: s.lng,
+                    badge: 'Gợi ý dã ngoại'
+                };
+            });
+            renderItems(initialList);
+        }
+
         setTimeout(function() {
             if (searchInput()) {
                 searchInput().focus();
@@ -1257,63 +1355,168 @@ const MapPicker = (function() {
         }
     }
 
+    function quickSearch(name) {
+        if (searchInput()) {
+            searchInput().value = name;
+            search();
+        }
+    }
+
+    function useCustomName(name) {
+        const locInput = document.getElementById('location');
+        if (locInput) locInput.value = name;
+        close();
+        if (typeof updateAllChips === 'function') updateAllChips();
+    }
+
     async function search() {
         const q = searchInput()?.value?.trim();
         if (!q) return;
 
-        resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-hourglass-split me-1"></i>Đang tìm kiếm...</div>';
+        resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-hourglass-split me-1"></i>Đang tìm kiếm địa điểm...</div>';
         if (selectedInfo()) selectedInfo().style.display = 'none';
         if (confirmBtn()) { confirmBtn().disabled = true; confirmBtn().style.opacity = '0.5'; }
         selected = null;
 
-        try {
-            const url = new URL('https://nominatim.openstreetmap.org/search');
-            url.searchParams.set('format', 'json');
-            url.searchParams.set('q', q);
-            url.searchParams.set('limit', '8');
-            url.searchParams.set('addressdetails', '1');
-            url.searchParams.set('accept-language', 'vi,en');
+        const results = [];
+        const seen = new Set();
 
-            const res = await fetch(url.toString(), {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' },
-                signal: AbortSignal.timeout(8000)
-            });
-
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-
-            if (!data || data.length === 0) {
-                resultsBox().innerHTML = '<div class="map-spinner"><i class="bi bi-search me-1"></i>Không tìm thấy địa điểm. Thử từ khóa khác.</div>';
-                return;
-            }
-
-            resultsBox().innerHTML = '';
-            data.forEach(function(item) {
-                const div = document.createElement('div');
-                div.className = 'map-result-item';
-                const shortName = item.display_name.split(',')[0].trim();
-                const address   = item.display_name;
-                div.innerHTML = `<i class="bi bi-geo-alt-fill"></i><div><strong>${shortName}</strong><span>${address}</span></div>`;
-                div.addEventListener('click', function() {
-                    selectResult(item, div);
-                });
-                resultsBox().appendChild(div);
-            });
-        } catch (err) {
-            console.error('Nominatim error:', err);
-            resultsBox().innerHTML = `<div class="map-spinner" style="color:#f99;">
-                <i class="bi bi-wifi-off me-1"></i>Không thể kết nối dịch vụ bản đồ.<br>
-                <small class="d-block mt-1 opacity-75">Bạn có thể tự gõ tên và tọa độ thủ công.</small>
-            </div>`;
+        function addResult(item) {
+            const key = (item.lat.toFixed(3) + ',' + item.lon.toFixed(3));
+            if (seen.has(key)) return;
+            seen.add(key);
+            results.push(item);
         }
+
+        const normQ = cleanTones(q);
+
+        // Tầng 1: Danh mục địa điểm Dã ngoại Việt Nam tích hợp sẵn (Tức thì, 0ms, không phụ thuộc mạng)
+        if (Array.isArray(VIETNAM_OUTDOOR_SPOTS)) {
+            VIETNAM_OUTDOOR_SPOTS.forEach(function(spot) {
+                const normName = cleanTones(spot.name);
+                const normDetail = cleanTones(spot.detail);
+                if (normName.includes(normQ) || normDetail.includes(normQ) || normQ.includes(normName)) {
+                    addResult({
+                        short_name: spot.name,
+                        display_name: spot.name + ', ' + spot.detail,
+                        lat: parseFloat(spot.lat),
+                        lon: parseFloat(spot.lng),
+                        badge: 'Địa điểm dã ngoại'
+                    });
+                }
+            });
+        }
+
+        // Tầng 2: Web Service Komoot Photon API (Dữ liệu OpenStreetMap toàn cầu, miễn phí, hỗ trợ CORS, siêu tốc)
+        try {
+            const photonUrl = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q) + '&limit=8';
+            const res = await fetch(photonUrl, { method: 'GET', signal: AbortSignal.timeout(4500) });
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.features)) {
+                    data.features.forEach(function(f) {
+                        const p = f.properties || {};
+                        const name = p.name || p.street || p.city || '';
+                        if (!name) return;
+                        const parts = [name, p.district, p.county, p.city, p.state, p.country].filter(Boolean);
+                        const displayName = parts.join(', ');
+                        const coords = f.geometry && f.geometry.coordinates;
+                        if (coords && coords.length >= 2) {
+                            addResult({
+                                short_name: name,
+                                display_name: displayName,
+                                lat: parseFloat(coords[1]),
+                                lon: parseFloat(coords[0])
+                            });
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('Photon geocoding fallback warning:', err);
+        }
+
+        // Tầng 3: Web Service Open-Meteo Geocoding (Tỉnh thành / Quận huyện Việt Nam)
+        if (results.length < 5) {
+            try {
+                const meteoUrl = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=6&language=vi&format=json';
+                const res = await fetch(meteoUrl, { method: 'GET', signal: AbortSignal.timeout(4000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && Array.isArray(data.results)) {
+                        data.results.forEach(function(r) {
+                            const parts = [r.name, r.admin2, r.admin1, r.country].filter(Boolean);
+                            addResult({
+                                short_name: r.name,
+                                display_name: parts.join(', '),
+                                lat: parseFloat(r.latitude),
+                                lon: parseFloat(r.longitude)
+                            });
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Open-Meteo geocoding warning:', err);
+            }
+        }
+
+        // Tầng 4: Nominatim OpenStreetMap (Nếu mạng nội hạt phân giải được)
+        if (results.length === 0) {
+            try {
+                const url = new URL('https://nominatim.openstreetmap.org/search');
+                url.searchParams.set('format', 'json');
+                url.searchParams.set('q', q);
+                url.searchParams.set('limit', '6');
+                url.searchParams.set('addressdetails', '1');
+                url.searchParams.set('accept-language', 'vi,en');
+                const res = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(3000)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        data.forEach(function(item) {
+                            addResult({
+                                short_name: item.display_name.split(',')[0].trim(),
+                                display_name: item.display_name,
+                                lat: parseFloat(item.lat),
+                                lon: parseFloat(item.lon)
+                            });
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Nominatim fallback warning:', err);
+            }
+        }
+
+        // Tầng 5: Nếu không có kết quả từ bất kỳ nguồn nào: Cho phép người dùng xác nhận tên tùy chỉnh
+        if (results.length === 0) {
+            const safeQ = q.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const safeArg = q.replace(/'/g, "\\'");
+            resultsBox().innerHTML = `
+                <div class="p-4 text-center">
+                    <i class="bi bi-geo-alt fs-2 text-success d-block mb-2"></i>
+                    <div style="font-size:0.92rem;color:#1e293b;">Chưa có tọa độ tự động cho <strong>"${safeQ}"</strong>.</div>
+                    <div class="small text-muted mt-1 mb-3">Bạn có thể gán tên này vào bài viết và nhập tọa độ thủ công:</div>
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1.5" onclick="MapPicker.useCustomName('${safeArg}')">
+                        <i class="bi bi-check2-circle me-1"></i> Sử dụng tên "${safeQ}"
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        renderItems(results);
     }
 
     function selectResult(item, el) {
         selected = {
             lat: parseFloat(item.lat),
             lng: parseFloat(item.lon),
-            short_name: item.display_name.split(',').slice(0, 2).join(',').trim()
+            short_name: item.short_name || item.display_name.split(',').slice(0, 2).join(',').trim()
         };
 
         document.querySelectorAll('.map-result-item').forEach(function(e) {
@@ -1336,7 +1539,7 @@ const MapPicker = (function() {
         if (latInput) latInput.value = selected.lat.toFixed(7);
         if (lngInput) lngInput.value = selected.lng.toFixed(7);
         close();
-        updateAllChips();
+        if (typeof updateAllChips === 'function') updateAllChips();
     }
 
     var mapModalEl = document.getElementById('mapPickerModal');

@@ -42,21 +42,12 @@ if (!empty($post['images']) && is_array($post['images'])) {
 }
 
 if (empty($galleryImages) && !empty($post['image_url'])) {
-
     $url = $post['image_url'];
-
     $galleryImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
-
 }
 
-if (empty($galleryImages)) {
-
-    $galleryImages[] = $baseUrl . '/assets/img/ta-xua-trek.png';
-
-}
-
+// Chỉ hiển thị ảnh nếu tác giả thực sự có tải ảnh lên (không tự động gán ảnh placeholder giả)
 $galleryCount = count($galleryImages);
-
 ?>
 
 <div class="app-container" style="max-width: 900px;">
@@ -76,25 +67,57 @@ $galleryCount = count($galleryImages);
 
 
     <?php 
-
     $currentPostStatus = $post['status'] ?? 'published';
-
     if ($currentPostStatus === 'pending'): ?>
-
-        <div class="alert alert-warning d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-warning" role="alert">
-
-            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
-
-            <div>
-
-                <strong class="d-block mb-1">Bài viết đang chờ duyệt (Pending)</strong>
-
-                <span class="small text-muted">Bài viết này hiện chưa hiển thị công khai trên diễn đàn. Chỉ bạn (tác giả) và Quản trị viên mới có thể xem được nội dung này cho đến khi được duyệt.</span>
-
+        <div class="user-pending-alert-banner mb-4 p-4 rounded-4 shadow-sm" 
+             style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%); border: 2px solid rgba(245, 158, 11, 0.5); backdrop-filter: blur(12px);" 
+             role="alert">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" 
+                          style="background: #f59e0b; color: #1e1e1e; font-weight: 700; font-size: 13px;">
+                        <i class="bi bi-hourglass-split"></i> TRẠNG THÁI: CHỜ DUYỆT (PENDING)
+                    </span>
+                    <span class="badge text-bg-dark border border-warning border-opacity-50 text-warning px-2.5 py-1" style="font-size: 11px;">
+                        Chỉ bạn &amp; Ban Quản Trị thấy
+                    </span>
+                </div>
+                <?php if ($canManage): ?>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/edit" 
+                           class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1 text-decoration-none" 
+                           style="font-size: 13px;">
+                            <i class="bi bi-pencil"></i> Chỉnh sửa bài viết
+                        </a>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile?tab=posts" 
+                           class="btn btn-sm btn-outline-light rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1 text-decoration-none" 
+                           style="font-size: 13px;">
+                            <i class="bi bi-folder2-open"></i> Quản lý trong Hồ sơ
+                        </a>
+                        <form method="post" 
+                              action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/delete" 
+                              class="d-inline m-0" 
+                              onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn hủy bỏ và xóa bài viết đang chờ duyệt “<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>” không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', 'Hủy bỏ bài viết chờ duyệt?');">
+                            <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="redirect" value="profile">
+                            <button type="submit" 
+                                    class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1" 
+                                    style="font-size: 13px;"
+                                    title="Hủy bỏ và xóa bài viết này">
+                                <i class="bi bi-trash3"></i> Hủy / Xóa bài viết
+                            </button>
+                        </form>
+                    </div>
+                <?php endif; ?>
             </div>
-
+            <p class="text-white mb-2" style="font-size: 14px; opacity: 0.95; line-height: 1.5;">
+                Bài viết này đã được tiếp nhận an toàn và đang nằm trong danh sách kiểm duyệt của <strong>Ban Quản Trị</strong>. Ngay sau khi được phê duyệt, bài viết sẽ tự động xuất hiện công khai trên diễn đàn cho tất cả thành viên.
+            </p>
+            <div class="d-flex align-items-center gap-2 text-white-50 small">
+                <i class="bi bi-info-circle text-warning"></i>
+                <span>Bạn vẫn có thể bổ sung hình ảnh và chỉnh sửa lại nội dung bài viết bất cứ lúc nào trước khi Admin duyệt.</span>
+            </div>
         </div>
-
     <?php elseif ($currentPostStatus === 'rejected'): ?>
 
         <div class="alert alert-danger d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-danger" role="alert">
@@ -129,14 +152,10 @@ $galleryCount = count($galleryImages);
 
     <?php endif; ?>
 
-
-
+    <?php if (!empty($galleryImages)): ?>
     <!-- ══════════════════════════════════════════
-
          IMAGE CAROUSEL
-
     ══════════════════════════════════════════ -->
-
     <div class="post-carousel-wrap mb-4" id="postCarousel">
 
 
@@ -264,12 +283,9 @@ $galleryCount = count($galleryImages);
             <img src="" alt="" id="lbImg" class="lb-img">
 
             <div class="lb-caption" id="lbCaption"></div>
-
         </div>
-
     </div>
-
-
+    <?php endif; /* end if !empty($galleryImages) */ ?>
 
     <!-- Article Content Box -->
 
@@ -1276,21 +1292,29 @@ $galleryCount = count($galleryImages);
 
             <?php elseif ($isLoggedIn && Auth::isGuest()): ?>
 
-                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
-                    <i class="bi bi-eye-fill text-muted fs-5"></i>
-                    <span class="small text-muted">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên không thể gửi đánh giá địa điểm.</span>
+                <div class="d-flex align-items-center gap-2 mt-3 mb-0 p-3 rounded-4" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.28);">
+                    <i class="bi bi-eye-fill fs-5" style="color: var(--color-moss);"></i>
+                    <span class="small" style="color: var(--color-ink);">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên không thể gửi đánh giá địa điểm.</span>
                 </div>
 
             <?php elseif ($isLoggedIn && $isAuthorOfPost && !$isCurAdmin): ?>
 
-                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
+                <div class="d-flex align-items-center gap-2 mt-3 mb-0 p-3 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
                     <i class="bi bi-info-circle-fill text-muted fs-5"></i>
                     <span class="small text-muted">Bạn là tác giả bài viết này nên không thể tự đánh giá địa điểm của chính mình. Chỉ Admin và các thành viên khác mới có thể gửi đánh giá.</span>
                 </div>
 
             <?php else: ?>
 
-                <p class="mt-3 mb-0"><a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login">Đăng nhập</a> để đánh giá địa điểm.</p>
+                <div class="p-3 mt-3 mb-0 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.28);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill fs-5" style="color: var(--color-moss);"></i>
+                        <span class="small" style="color: var(--color-ink);">Đăng nhập tài khoản để đánh giá địa điểm dã ngoại này.</span>
+                    </div>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-primary py-1 px-3 d-inline-flex align-items-center gap-1" style="width: auto; height: 34px; font-size: 12.5px;">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                    </a>
+                </div>
 
             <?php endif; ?>
 
@@ -2223,8 +2247,17 @@ $galleryCount = count($galleryImages);
 
 
     const IMAGES  = <?= json_encode($galleryImages, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-
     const TOTAL   = IMAGES.length;
+
+    if (TOTAL === 0) {
+        window.CarouselLB = {
+            goTo: function() {}, next: function() {}, prev: function() {},
+            togglePlay: function() {}, openLightbox: function() {}, closeLightbox: function() {},
+            lbNext: function() {}, lbPrev: function() {}, touchStart: function() {},
+            touchMove: function() {}, touchEnd: function() {}
+        };
+        return;
+    }
 
     const AUTO_MS = 1000; // 1 second auto-cycle
 

@@ -9,11 +9,16 @@ $catQuery = !empty($selectedCategoryId) ? 'category=' . (int)$selectedCategoryId
 $sortQuery = 'sort=' . urlencode($selectedSort) . '&';
 $filterQuery = $catQuery . $sortQuery;
 ?>
-<div class="app-container">
-    <div class="d-flex flex-wrap justify-content-between align-items-center page-header gap-3">
+<div class="app-container" style="max-width: 1100px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 page-header">
         <div>
-            <h1 class="page-title">Cộng đồng chia sẻ</h1>
-            <p class="page-subtitle">Khám phá kinh nghiệm, cẩm nang và hành trình thực tế từ các phượt thủ.</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge" style="background: rgba(155, 189, 85, 0.18); color: var(--color-moss); border: 1px solid rgba(155, 189, 85, 0.35);">
+                    <i class="bi bi-compass-fill me-1"></i>Kinh nghiệm &amp; Khám phá
+                </span>
+            </div>
+            <h1 class="page-title mb-1">Cộng đồng chia sẻ</h1>
+            <p class="page-subtitle mb-0">Khám phá kinh nghiệm, cẩm nang và hành trình thực tế từ các phượt thủ.</p>
         </div>
         <div>
             <?php if (class_exists('Auth') && Auth::check() && Auth::isGuest()): ?>
@@ -139,18 +144,15 @@ $filterQuery = $catQuery . $sortQuery;
                 <?php endif; ?>
             </button>
 
-            <?php if (!empty($popularTags)): ?>
-                <div class="d-inline-flex align-items-center gap-1 flex-wrap">
-                    <span class="small text-white-50 me-1"><i class="bi bi-tags me-1"></i>Tag:</span>
-                    <?php foreach ($popularTags as $t): 
-                        $isTagActive = ($filters['tag_name'] ?? '') === $t['name'];
-                    ?>
-                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?tag=<?= urlencode($t['name']) ?>&sort=<?= urlencode($selectedSort) ?>" 
-                           class="badge rounded-pill text-decoration-none <?= $isTagActive ? 'text-bg-success' : 'text-bg-dark border border-secondary border-opacity-50' ?>" 
-                           style="font-size: 11px;">
-                            #<?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>
+            <?php if (!empty($filters['tag_name'])): ?>
+                <div class="d-inline-flex align-items-center gap-1.5">
+                    <span class="badge rounded-pill text-bg-success px-3 py-1.5 d-inline-flex align-items-center gap-1.5" style="font-size: 12px;">
+                        <i class="bi bi-tag-fill"></i> #<?= htmlspecialchars($filters['tag_name'], ENT_QUOTES, 'UTF-8') ?>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?sort=<?= urlencode($selectedSort) ?><?= !empty($selectedCategoryId) ? '&category=' . (int)$selectedCategoryId : '' ?>" 
+                           class="text-white text-decoration-none ms-1" title="Bỏ lọc thẻ này">
+                            <i class="bi bi-x-circle-fill"></i>
                         </a>
-                    <?php endforeach; ?>
+                    </span>
                 </div>
             <?php endif; ?>
         </div>
@@ -163,6 +165,9 @@ $filterQuery = $catQuery . $sortQuery;
                         <input type="hidden" name="category" value="<?= (int)$selectedCategoryId ?>">
                     <?php endif; ?>
                     <input type="hidden" name="sort" value="<?= htmlspecialchars($selectedSort, ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if (!empty($filters['tag_name'])): ?>
+                        <input type="hidden" name="tag" value="<?= htmlspecialchars($filters['tag_name'], ENT_QUOTES, 'UTF-8') ?>">
+                    <?php endif; ?>
 
                     <!-- Loại hình -->
                     <div class="col-6 col-md-3">
@@ -274,13 +279,13 @@ $filterQuery = $catQuery . $sortQuery;
                 </div>
             </div>
         <?php endif; ?>
-        <div id="no-more-posts-msg" class="text-white-50 small py-3" style="display: <?= ($currentPage >= $totalPages && $totalPosts > 0) ? 'block' : 'none' ?>;">
+        <div id="no-more-posts-msg" class="text-white-50 small py-3" style="display: none;">
             <i class="bi bi-check2-circle text-success me-1"></i>Bạn đã xem hết tất cả bài viết.
         </div>
     </div>
 
-    <!-- Thanh phân trang Bootstrap (FR03 - Tuần 4 - Phúc) -->
-    <?php if ($totalPages > 1): ?>
+    <!-- Thanh phân trang Bootstrap (Đồng bộ chuẩn Nature Glass) -->
+    <?php if (($totalPosts ?? 0) > 0): ?>
         <nav aria-label="Điều hướng phân trang bài viết" class="mt-5 mb-4">
             <ul class="pagination forum-pagination justify-content-center flex-wrap">
                 <!-- Nút trang trước -->
@@ -315,38 +320,9 @@ $filterQuery = $catQuery . $sortQuery;
             </ul>
 
             <div class="text-center text-white-50 small mt-2">
-                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị tối đa 6 bài / trang)
+                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($posts) ?> bài viết / trang • Tổng số <?= $totalPosts ?> bài viết)
             </div>
         </nav>
-
-        <style>
-            .forum-pagination .page-link {
-                background-color: rgba(34, 40, 31, 0.7);
-                color: #ffffff;
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                backdrop-filter: blur(8px);
-                padding: 0.5rem 1rem;
-                margin: 0 3px;
-                transition: all 0.2s ease;
-                box-shadow: none;
-            }
-            .forum-pagination .page-link:hover {
-                background-color: var(--color-moss, #9bbd55);
-                color: #22281f;
-                border-color: var(--color-moss, #9bbd55);
-            }
-            .forum-pagination .page-item.active .page-link {
-                background-color: var(--color-moss, #9bbd55);
-                color: #22281f;
-                border-color: var(--color-moss, #9bbd55);
-                font-weight: 600;
-            }
-            .forum-pagination .page-item.disabled .page-link {
-                background-color: rgba(255, 255, 255, 0.05);
-                color: rgba(255, 255, 255, 0.3);
-                border-color: rgba(255, 255, 255, 0.05);
-            }
-        </style>
     <?php endif; ?>
 </div>
 

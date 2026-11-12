@@ -30,6 +30,9 @@ public/uploads/posts/*
 public/uploads/products/*
 !public/uploads/products/.gitkeep
 
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+
 # Cache, locks & temporary files
 storage/cache/*
 !storage/cache/.gitkeep

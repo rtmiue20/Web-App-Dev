@@ -5,21 +5,41 @@ $userId = is_array($user) ? (int) $user['id'] : null;
 $isAdmin = class_exists('Auth') ? Auth::isAdmin($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
 $isMember = class_exists('Auth') ? Auth::isMember($user) : is_array($user);
 $isGuestAccount = is_array($user) && !$isMember;
-$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$escape = static function ($value): string {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <main class="app-container" style="max-width: 1100px;">
+    <style>
+    /* Icon lịch bên phải ô thời gian khởi hành & kích hoạt picker mượt mà */
+    #trip-date::-webkit-calendar-picker-indicator {
+        opacity: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 48px;
+        height: 100%;
+        cursor: pointer;
+        z-index: 4;
+    }
+    </style>
     <!-- Page Header -->
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 page-header">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="badge" style="background: rgba(112, 214, 255, 0.15); color: #70d6ff; border: 1px solid rgba(112, 214, 255, 0.35);">
+                <span class="badge" style="background: rgba(155, 189, 85, 0.18); color: var(--color-moss); border: 1px solid rgba(155, 189, 85, 0.35);">
                     <i class="bi bi-people-fill me-1"></i>Cộng đồng kết nối
                 </span>
             </div>
             <h1 class="page-title mb-1">Nhóm đi chung</h1>
             <p class="page-subtitle mb-0">Rủ rê bạn đồng hành, ghép xe và cùng nhau chia sẻ chi phí cho những chuyến dã ngoại tuyệt vời.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <?php if ($isGuestAccount): ?>
+                <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1" style="background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.22); font-size: 13px; font-weight: 500;">
+                    <i class="bi bi-eye me-1"></i> Tài khoản Khách (Chỉ xem)
+                </span>
+            <?php endif; ?>
             <a class="nature-btn-secondary px-3 py-2 d-inline-flex align-items-center gap-1" href="<?= $escape($baseUrl) ?>/checklists" style="height: 42px; font-size: 13.5px;">
                 <i class="bi bi-card-checklist"></i> Checklist
             </a>
@@ -53,7 +73,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         <section class="nature-card p-4 mb-4" style="border-radius: 28px;">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px; background: rgba(112, 214, 255, 0.2); color: #70d6ff;">
+                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px; background: rgba(155, 189, 85, 0.2); color: var(--color-moss);">
                         <i class="bi bi-plus-circle-fill fs-5"></i>
                     </span>
                     <h2 class="h5 mb-0 fw-semibold" style="color: var(--color-ink);">Đăng chuyến đi mới</h2>
@@ -77,10 +97,30 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                         <?php if (!empty($errors['location'])): ?><div class="text-danger small mt-1"><?= $escape($errors['location']) ?></div><?php endif; ?>
                     </div>
                     <div class="col-md-6">
+                        <?php
+                        $rawStartsAt = (string)($old['starts_at'] ?? '');
+                        $startsAtVal = '';
+                        if ($rawStartsAt !== '') {
+                            if (str_contains($rawStartsAt, ' ')) {
+                                $rawStartsAt = str_replace(' ', 'T', $rawStartsAt);
+                            }
+                            $startsAtVal = strlen($rawStartsAt) >= 16 ? substr($rawStartsAt, 0, 16) : $rawStartsAt;
+                        }
+                        ?>
                         <label class="nature-label" for="trip-date">Thời gian khởi hành <span class="text-danger">*</span></label>
-                        <input class="nature-input" id="trip-date" name="starts_at" type="datetime-local" required
-                               min="<?= date('Y-m-d\TH:i') ?>"
-                               value="<?= $escape($old['starts_at'] ?? '') ?>">
+                        <div class="position-relative d-flex align-items-center">
+                            <input class="nature-input pe-5" id="trip-date" name="starts_at" type="datetime-local" required
+                                   step="60"
+                                   min="<?= date('Y-m-d\TH:i') ?>"
+                                   value="<?= $escape($startsAtVal) ?>"
+                                   onclick="if(typeof this.showPicker === 'function') this.showPicker();"
+                                   style="cursor: pointer;">
+                            <span class="position-absolute end-0 me-3 d-flex align-items-center justify-content-center"
+                                  style="pointer-events: none; z-index: 2;"
+                                  title="Chọn ngày và giờ khởi hành">
+                                <i class="bi bi-calendar-event fs-5" style="color: #2e7d32;"></i>
+                            </span>
+                        </div>
                         <?php if (!empty($errors['starts_at'])): ?><div class="text-danger small mt-1"><?= $escape($errors['starts_at']) ?></div><?php endif; ?>
                     </div>
                     <div class="col-md-6">
@@ -115,20 +155,20 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </form>
         </section>
     <?php elseif ($isGuestAccount): ?>
-        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(112, 214, 255, 0.12); border: 1px solid rgba(112, 214, 255, 0.25);">
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.14); border: 1px solid rgba(155, 189, 85, 0.32);">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-eye-fill text-info fs-5"></i>
+                <i class="bi bi-eye-fill fs-5" style="color: var(--color-moss);"></i>
                 <span class="text-white">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên chỉ có thể xem thông tin các nhóm đi chung, không thể đăng chuyến đi mới hoặc đăng ký tham gia.</span>
             </div>
         </div>
     <?php else: ?>
-        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(112, 214, 255, 0.12); border: 1px solid rgba(112, 214, 255, 0.25);">
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.14); border: 1px solid rgba(155, 189, 85, 0.32);">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                <i class="bi bi-info-circle-fill fs-5" style="color: var(--color-moss);"></i>
                 <span class="text-white">Đăng nhập để đăng chuyến đi hoặc đăng ký tham gia nhóm.</span>
             </div>
-            <a href="<?= $escape($baseUrl) ?>/login" class="nature-btn-primary py-1 px-3" style="width: auto; height: 36px; font-size: 13px;">
-                Đăng nhập ngay
+            <a href="<?= $escape($baseUrl) ?>/login" class="nature-btn-primary py-1 px-3.5 d-inline-flex align-items-center gap-1" style="width: auto; height: 38px; font-size: 13.5px;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập ngay
             </a>
         </div>
     <?php endif; ?>
@@ -148,6 +188,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         <?php foreach ($trips as $trip): ?>
             <?php
             $isOwner = $userId !== null && (int) $trip['user_id'] === $userId;
+            $isJoined = !empty($trip['is_joined']) && (int) $trip['is_joined'] > 0;
             $canDelete = $isMember && ($isOwner || $isAdmin);
             $pCount = (int) $trip['participant_count'];
             $maxP = (int) $trip['max_participants'];
@@ -156,16 +197,28 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             $percent = min(100, (int) round(($pCount / max(1, $maxP)) * 100));
             ?>
             <div class="col-12 col-md-6">
-                <article class="nature-card h-100 d-flex flex-column p-4" style="border-radius: 28px;">
+                <article class="nature-card h-100 d-flex flex-column p-4" style="border-radius: 28px; <?= $isJoined ? 'border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 4px 20px rgba(34, 197, 94, 0.08);' : '' ?>">
                     <!-- Top Status -->
                     <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
                             <?php if ($hasStarted): ?>
                                 <span class="badge text-bg-secondary"><i class="bi bi-check-all me-1"></i>Đã khởi hành</span>
-                            <?php elseif ($spotsLeft === 0): ?>
-                                <span class="badge text-bg-warning"><i class="bi bi-lock-fill me-1"></i>Đã đủ người</span>
-                            <?php else: ?>
-                                <span class="badge text-bg-success"><i class="bi bi-person-plus-fill me-1"></i>Còn <?= $spotsLeft ?> chỗ trống</span>
+                            <?php endif; ?>
+
+                            <?php if ($isOwner): ?>
+                                <span class="badge" style="background-color: #1e3a8a; color: #fff;"><i class="bi bi-star-fill me-1 text-warning"></i>Bạn tổ chức</span>
+                            <?php elseif ($isJoined): ?>
+                                <span class="badge" style="background-color: #166534; color: #fff;"><i class="bi bi-check-circle-fill me-1 text-white"></i>Bạn đã tham gia</span>
+                            <?php endif; ?>
+
+                            <?php if (!$hasStarted): ?>
+                                <?php if ($spotsLeft === 0): ?>
+                                    <span class="badge text-bg-warning"><i class="bi bi-lock-fill me-1"></i>Đã đủ người</span>
+                                <?php elseif ($isJoined || $isOwner): ?>
+                                    <span class="badge" style="background: rgba(35, 61, 44, 0.08); color: var(--color-ink); border: 1px solid rgba(35, 61, 44, 0.18);"><i class="bi bi-people me-1"></i>Còn <?= $spotsLeft ?> chỗ</span>
+                                <?php else: ?>
+                                    <span class="badge text-bg-success"><i class="bi bi-person-plus-fill me-1"></i>Còn <?= $spotsLeft ?> chỗ trống</span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
 
@@ -234,13 +287,77 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                                 <span class="text-muted small d-none d-sm-inline"><i class="bi bi-cloud-sun text-info me-1"></i>Có thời tiết</span>
                             <?php endif; ?>
                         </div>
-                        <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1"
-                           href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px;">
-                            Xem chi tiết & Đăng ký <i class="bi bi-arrow-right"></i>
-                        </a>
+                        <?php if ($isOwner): ?>
+                            <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1.5"
+                               href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px;" title="Quản lý chuyến đi bạn đã tạo">
+                                <i class="bi bi-gear-fill text-primary" style="font-size: 12px;"></i> Quản lý chuyến đi <i class="bi bi-arrow-right"></i>
+                            </a>
+                        <?php elseif ($isJoined): ?>
+                            <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1.5"
+                               href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px; border-color: rgba(34, 197, 94, 0.45); background: rgba(34, 197, 94, 0.08);" title="Xem chi tiết và kế hoạch chuyến đi bạn đã tham gia">
+                                <i class="bi bi-check2-circle text-success" style="font-size: 14px;"></i> Xem chi tiết chuyến đi <i class="bi bi-arrow-right"></i>
+                            </a>
+                        <?php elseif ($hasStarted): ?>
+                            <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1"
+                               href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px;">
+                                Xem chuyến đi <i class="bi bi-arrow-right"></i>
+                            </a>
+                        <?php elseif ($spotsLeft === 0): ?>
+                            <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1"
+                               href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px;">
+                                Xem chi tiết <i class="bi bi-arrow-right"></i>
+                            </a>
+                        <?php else: ?>
+                            <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1"
+                               href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px;">
+                                Xem chi tiết & Đăng ký <i class="bi bi-arrow-right"></i>
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </article>
             </div>
         <?php endforeach; ?>
     </div>
+
+    <!-- Thanh phân trang Đi chung (Đồng bộ chuẩn Nature Glass giống Dụng cụ) -->
+    <?php if (($totalTrips ?? 0) > 0): ?>
+        <?php $filterQuery = !empty($currentFilter) ? 'filter=' . urlencode($currentFilter) . '&' : ''; ?>
+        <nav aria-label="Điều hướng phân trang nhóm đi chung" class="mt-5 mb-4">
+            <ul class="pagination forum-pagination justify-content-center flex-wrap">
+                <!-- Nút trang trước -->
+                <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                    <a class="page-link rounded-pill" 
+                       href="<?= $escape($baseUrl) ?>/trips?<?= $filterQuery ?>page=<?= max(1, $currentPage - 1) ?>" 
+                       tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
+                       aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
+                        <i class="bi bi-chevron-left me-1"></i> Trước
+                    </a>
+                </li>
+
+                <!-- Danh sách số trang -->
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= $escape($baseUrl) ?>/trips?<?= $filterQuery ?>page=<?= $i ?>">
+                            <?= $i ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
+
+                <!-- Nút trang sau -->
+                <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                    <a class="page-link rounded-pill" 
+                       href="<?= $escape($baseUrl) ?>/trips?<?= $filterQuery ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
+                       tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
+                       aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
+                        Sau <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="text-center text-white-50 small mt-2">
+                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($trips) ?> chuyến đi / trang • Tổng số <?= $totalTrips ?> chuyến đi)
+            </div>
+        </nav>
+    <?php endif; ?>
 </main>

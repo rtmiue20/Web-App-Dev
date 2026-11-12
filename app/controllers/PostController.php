@@ -603,8 +603,11 @@ class PostController extends Controller {
                     );
                 }
             }
+            $redirectTarget = (!empty($_POST['redirect']) && $_POST['redirect'] === 'profile')
+                ? '/profile?tab=posts'
+                : '/posts';
             Session::flash('success', 'Đã xóa bài viết thành công!');
-            $this->redirect('/posts');
+            $this->redirect($redirectTarget);
         } else {
             Session::flash('error', 'Không thể xóa bài viết. Vui lòng thử lại.');
             $this->redirect('/posts/' . $id);

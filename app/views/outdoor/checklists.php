@@ -94,20 +94,20 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </form>
         </section>
     <?php elseif ($isGuestAccount): ?>
-        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.14); border: 1px solid rgba(155, 189, 85, 0.32);">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-eye-fill text-success fs-5"></i>
+                <i class="bi bi-eye-fill fs-5" style="color: var(--color-moss);"></i>
                 <span class="text-white">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong>. Bạn có thể xem và đánh dấu thử các mẫu checklist công khai, nhưng không thể tạo checklist mới.</span>
             </div>
         </div>
     <?php else: ?>
-        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.14); border: 1px solid rgba(155, 189, 85, 0.32);">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-info-circle-fill text-success fs-5"></i>
+                <i class="bi bi-info-circle-fill fs-5" style="color: var(--color-moss);"></i>
                 <span class="text-white">Bạn đang xem danh sách dã ngoại công khai.</span>
             </div>
-            <a href="<?= $escape($baseUrl) ?>/login" class="nature-btn-primary py-1 px-3" style="width: auto; height: 36px; font-size: 13px;">
-                Đăng nhập để tạo checklist riêng
+            <a href="<?= $escape($baseUrl) ?>/login" class="nature-btn-primary py-1 px-3.5 d-inline-flex align-items-center gap-1" style="width: auto; height: 38px; font-size: 13.5px;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập để tạo checklist riêng
             </a>
         </div>
     <?php endif; ?>
@@ -205,6 +205,48 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </div>
         <?php endforeach; ?>
     </div>
+
+    <!-- Thanh phân trang checklist (Đồng bộ chuẩn Nature Glass giống Dụng cụ) -->
+    <?php if (($totalChecklists ?? 0) > 0): ?>
+        <?php $typeQuery = !empty($currentType) ? 'type=' . urlencode($currentType) . '&' : ''; ?>
+        <nav aria-label="Điều hướng phân trang checklist" class="mt-5 mb-4">
+            <ul class="pagination forum-pagination justify-content-center flex-wrap">
+                <!-- Nút trang trước -->
+                <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                    <a class="page-link rounded-pill" 
+                       href="<?= $escape($baseUrl) ?>/checklists?<?= $typeQuery ?>page=<?= max(1, $currentPage - 1) ?>" 
+                       tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
+                       aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
+                        <i class="bi bi-chevron-left me-1"></i> Trước
+                    </a>
+                </li>
+
+                <!-- Danh sách số trang -->
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= $escape($baseUrl) ?>/checklists?<?= $typeQuery ?>page=<?= $i ?>">
+                            <?= $i ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
+
+                <!-- Nút trang sau -->
+                <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                    <a class="page-link rounded-pill" 
+                       href="<?= $escape($baseUrl) ?>/checklists?<?= $typeQuery ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
+                       tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
+                       aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
+                        Sau <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="text-center text-white-50 small mt-2">
+                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($checklists) ?> checklist / trang • Tổng số <?= $totalChecklists ?> checklist)
+            </div>
+        </nav>
+    <?php endif; ?>
 </main>
 
 <script>

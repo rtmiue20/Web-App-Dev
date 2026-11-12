@@ -49,7 +49,8 @@ assert(count($emptyTools) === 0, "Không xóa hết dụng cụ cũ!");
 $productModel->syncPostProducts($testPostId, $sampleProductIds);
 echo "6. Khôi phục lại dụng cụ bài viết 1 thành công." . PHP_EOL;
 
-// 7. Kiểm tra thêm dụng cụ mới với người chia sẻ (user_id = 7)
+// 7. Kiểm tra thêm dụng cụ mới với người chia sẻ (user_id = 1 - admin)
+$testUserId = 1;
 $newToolId = $productModel->create(
     1,
     'Dao đi rừng sinh tồn đa năng Morakniv',
@@ -58,7 +59,7 @@ $newToolId = $productModel->create(
     'Thép carbon sắc bén, cán nhựa chống trượt an toàn',
     'https://shopee.vn/search?keyword=dao%20morakniv',
     1,
-    7
+    $testUserId
 );
 echo "7. Thêm dụng cụ mới thành công, ID: {$newToolId}" . PHP_EOL;
 assert($newToolId > 0, "Không tạo được dụng cụ mới!");
@@ -67,7 +68,7 @@ assert($newToolId > 0, "Không tạo được dụng cụ mới!");
 $newTool = $productModel->findById($newToolId);
 echo "8. Người chia sẻ dụng cụ: " . ($newTool['author_username'] ?? 'Không rõ') . PHP_EOL;
 assert(!empty($newTool['author_username']), "Không lấy được tên người chia sẻ!");
-assert((int)$newTool['user_id'] === 7, "User ID người chia sẻ không đúng!");
+assert((int)$newTool['user_id'] === $testUserId, "User ID người chia sẻ không đúng!");
 
 // 9. Kiểm tra cập nhật dụng cụ
 $updateSuccess = $productModel->update(

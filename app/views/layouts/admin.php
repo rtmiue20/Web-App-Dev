@@ -381,7 +381,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <!-- Footer -->
     <footer class="py-4 text-center text-white-50 small mt-auto border-top border-white-10" style="background: rgba(0,0,0,0.15);">
         <div class="container">
-            <span>Quản trị Hệ thống Diễn đàn Dã Ngoại &copy; <?= date('Y') ?> &bull; Phiên bản tuần 3</span>
+            <span>Quản trị Hệ thống Diễn đàn Dã Ngoại &copy; <?= date('Y') ?></span>
         </div>
     </footer>
 
