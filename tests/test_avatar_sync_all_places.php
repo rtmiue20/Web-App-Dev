@@ -90,3 +90,4 @@ $db->query("UPDATE users SET avatar_path = NULL WHERE id = 1");
 echo "\n======================================================\n";
 echo "🎉 TẤT CẢ TEST ĐỒNG BỘ ẢNH ĐẠI DIỆN ĐỀU PASS 100%!\n";
 echo "======================================================\n";
+
