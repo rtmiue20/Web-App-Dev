@@ -321,10 +321,19 @@ class PostController extends Controller {
         $authorGamification = Gamification::calculate($authorId);
         $placeReviews = new PlaceReview();
 
+        // Tối ưu hóa Web Service Thời tiết Open-Meteo: lấy dữ liệu từ cache hoặc cURL Multi để SSR
+        // Giúp giao diện bài viết hiển thị thời tiết NGAY TỨC THÌ (0ms), không bị kẹt spinner loading
+        $initialWeather = null;
+        if (!empty($post['lat']) && !empty($post['lng'])) {
+            $weatherService = new WeatherService();
+            $initialWeather = $weatherService->getForecast((float)$post['lat'], (float)$post['lng']);
+        }
+
         $this->render('posts/show', [
             'title'                => $post['title'],
             'post'                 => $post,
-            'placeReviews' => $placeReviews->getByPost($id),
+            'initialWeather'       => $initialWeather,
+            'placeReviews'         => $placeReviews->getByPost($id),
             'placeRating' => $placeReviews->getSummary($id),
             'tools'                => $tools,
             'comments'             => $commentsTree,

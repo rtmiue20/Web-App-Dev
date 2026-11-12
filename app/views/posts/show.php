@@ -243,7 +243,7 @@ $galleryCount = count($galleryImages);
 
                     <i class="bi bi-geo-alt-fill me-1"></i><?= htmlspecialchars($post['location'] ?: 'Địa điểm bài viết', ENT_QUOTES, 'UTF-8') ?>
 
-                    <span id="weather-info" class="ms-2"></span>
+                    <span id="weather-info" class="ms-2"><?php if (!empty($initialWeather['temp'])): ?> · <?= (int)$initialWeather['temp'] ?>°C · <?= htmlspecialchars($initialWeather['condition'] ?? '', ENT_QUOTES, 'UTF-8') ?><?php endif; ?></span>
 
                 </span>
 
@@ -682,14 +682,149 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <div id="weather-forecast-panel" class="weather-forecast-content pt-1">
+            <div id="weather-forecast-panel" class="weather-forecast-content pt-1" <?php if (!empty($initialWeather['temp'])): ?>data-loaded="true"<?php endif; ?>>
+                <?php if (!empty($initialWeather['temp'])): ?>
+                    <?php
+                        $w = $initialWeather;
+                        $uv = $w['uv'] ?? [];
+                        $aq = $w['air_quality'] ?? [];
+                    ?>
+                    <!-- Row 1: Thẻ tóm tắt khí tượng hiện tại -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3.5 px-4 rounded-4" style="background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="display-5 fw-bold mb-0 d-flex align-items-center gap-2 text-white" style="text-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                                        <i class="bi <?= htmlspecialchars($w['icon'] ?? 'bi-cloud-sun-fill text-warning') ?>"></i>
+                                        <span><?= (int)$w['temp'] ?>°C</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-white fs-5"><?= htmlspecialchars($w['condition'] ?? 'Thời tiết ôn hòa') ?></div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap text-white-50 mt-1" style="font-size: 12px;">
+                                            <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1">Cảm giác: <strong class="text-white"><?= (int)($w['feels_like'] ?? $w['temp']) ?>°C</strong></span>
+                                            <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-droplet text-info me-1"></i>Độ ẩm: <strong class="text-white"><?= (int)($w['humidity'] ?? 75) ?>%</strong></span>
+                                            <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-wind text-success me-1"></i>Gió: <strong class="text-white"><?= htmlspecialchars((string)($w['windspeed'] ?? 8)) ?> km/h</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
+                                    <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" style="background: rgba(155, 189, 85, 0.16); border: 1px solid rgba(155, 189, 85, 0.35); color: #d4f291; font-size: 11.5px; font-weight: 500;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 8px #4ade80;"></span>
+                                        Trạm khí tượng thực địa GPS
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="text-center py-4 text-white small" style="opacity: 0.85;">
+                    <!-- Row 2: UV Index & Chất lượng không khí AQI -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
+                                        <div class="d-flex align-items-center gap-2 text-white fw-bold" style="font-size: 14.5px;">
+                                            <i class="bi <?= htmlspecialchars($uv['icon'] ?? 'bi-brightness-high-fill') ?>" style="color: <?= htmlspecialchars($uv['color'] ?? '#facc15') ?>;"></i>
+                                            <span>Chỉ số Tia UV (Bức xạ tia cực tím)</span>
+                                        </div>
+                                        <span class="badge rounded-pill px-2.5 py-1" style="background: <?= htmlspecialchars($uv['badge_bg'] ?? 'rgba(250,204,21,0.16)') ?>; color: <?= htmlspecialchars($uv['color'] ?? '#facc15') ?>; border: 1px solid <?= htmlspecialchars($uv['badge_border'] ?? 'rgba(250,204,21,0.4)') ?>; font-size: 11px;">
+                                            <?= htmlspecialchars($uv['level'] ?? 'Trung bình') ?>
+                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                                        <span class="display-6 fw-bold text-white"><?= htmlspecialchars((string)($uv['index'] ?? '5.0')) ?></span>
+                                        <span class="text-white-50 small">/ Đỉnh ngày: <strong class="text-white"><?= htmlspecialchars((string)($uv['max_daily'] ?? '6.5')) ?> UV</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.12); border-radius: 99px;">
+                                        <div class="progress-bar" role="progressbar" style="width: <?= min(100, max(5, (int)($uv['percent'] ?? 40))) ?>%; background: <?= htmlspecialchars($uv['color'] ?? '#facc15') ?>; border-radius: 99px;"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2.5 border-top border-white border-opacity-10 text-white-50 small" style="font-size: 11.5px; line-height: 1.45;">
+                                    <i class="bi bi-shield-check text-success me-1"></i><?= htmlspecialchars($uv['advice'] ?? 'Nên đội mũ rộng vành và thoa kem chống nắng khi di chuyển.') ?>
+                                </div>
+                            </div>
+                        </div>
 
-                    <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu thời tiết thực địa...
+                        <div class="col-12 col-md-6">
+                            <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
+                                        <div class="d-flex align-items-center gap-2 text-white fw-bold" style="font-size: 14.5px;">
+                                            <i class="bi <?= htmlspecialchars($aq['icon'] ?? 'bi-wind') ?>" style="color: <?= htmlspecialchars($aq['color'] ?? '#4ade80') ?>;"></i>
+                                            <span>Chất lượng không khí (US AQI)</span>
+                                        </div>
+                                        <span class="badge rounded-pill px-2.5 py-1" style="background: <?= htmlspecialchars($aq['badge_bg'] ?? 'rgba(74,222,128,0.16)') ?>; color: <?= htmlspecialchars($aq['color'] ?? '#4ade80') ?>; border: 1px solid <?= htmlspecialchars($aq['badge_border'] ?? 'rgba(74,222,128,0.4)') ?>; font-size: 11px;">
+                                            <?= htmlspecialchars($aq['level'] ?? 'Rất trong lành') ?>
+                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                                        <span class="display-6 fw-bold text-white"><?= (int)($aq['aqi'] ?? 20) ?></span>
+                                        <span class="text-white-50 small">AQI · Bụi PM2.5: <strong class="text-white"><?= htmlspecialchars((string)($aq['pm2_5'] ?? '5.0')) ?> µg/m³</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.12); border-radius: 99px;">
+                                        <div class="progress-bar" role="progressbar" style="width: <?= min(100, max(5, (int)($aq['percent'] ?? 15))) ?>%; background: <?= htmlspecialchars($aq['color'] ?? '#4ade80') ?>; border-radius: 99px;"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2.5 border-top border-white border-opacity-10 text-white-50 small" style="font-size: 11.5px; line-height: 1.45;">
+                                    <i class="bi bi-flower1 text-success me-1"></i><?= htmlspecialchars($aq['advice'] ?? 'Không khí vùng núi rất trong lành, lý tưởng cho dã ngoại.') ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                </div>
+                    <!-- Row 3: Lời khuyên dã ngoại -->
+                    <?php if (!empty($w['advice'])): ?>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="p-3 px-3.5 rounded-pill small d-flex align-items-center gap-2.5 shadow-sm" style="background: linear-gradient(90deg, rgba(155, 189, 85, 0.22) 0%, rgba(155, 189, 85, 0.10) 100%); color: #d6f296; border: 1px solid rgba(155, 189, 85, 0.4); backdrop-filter: blur(8px);">
+                                <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 24px; height: 24px; background: #9bbd55; color: #182213;">
+                                    <i class="bi bi-compass-fill" style="font-size: 12px;"></i>
+                                </span>
+                                <span class="fw-semibold">Gợi ý dã ngoại:</span>
+                                <span class="text-white text-opacity-90"><?= htmlspecialchars($w['advice']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
+                    <!-- Row 4: Dự báo 4 ngày -->
+                    <?php if (!empty($w['daily']) && is_array($w['daily'])): ?>
+                    <div class="d-flex align-items-center justify-content-between mt-3 mb-2.5 pt-3 border-top border-white border-opacity-10 flex-wrap gap-2 px-1">
+                        <span class="small fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
+                            <i class="bi bi-calendar3 text-success"></i>Dự báo khí tượng &amp; chỉ số UV 4 ngày tới
+                        </span>
+                        <span class="text-white-50 small" style="font-size: 11.5px;">Cập nhật theo chu kỳ vệ tinh Open-Meteo</span>
+                    </div>
+                    <div class="row row-cols-2 row-cols-md-4 g-3 mb-1">
+                        <?php foreach ($w['daily'] as $d): ?>
+                        <div class="col">
+                            <div class="p-3.5 text-center h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(160deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.12); min-height: 165px;">
+                                <div>
+                                    <div class="fw-bold text-white mb-0" style="font-size: 13px;"><?= htmlspecialchars($d['day_label'] ?? '') ?></div>
+                                    <div class="text-white-50 mb-1" style="font-size: 11px;"><?= htmlspecialchars($d['date'] ?? '') ?></div>
+                                    <div class="my-2 fs-3"><i class="bi <?= htmlspecialchars($d['icon'] ?? 'bi-cloud-sun-fill text-warning') ?>"></i></div>
+                                    <div class="fw-bold text-white mt-1" style="font-size: 13px;">
+                                        <?= (int)($d['temp_max'] ?? 25) ?>° <span class="text-white-50 fw-normal" style="font-size: 11.5px;">/ <?= (int)($d['temp_min'] ?? 18) ?>°C</span>
+                                    </div>
+                                </div>
+                                <div class="mt-2.5 pt-2 border-top border-white border-opacity-10 d-flex align-items-center justify-content-center gap-1.5 flex-wrap">
+                                    <span class="badge rounded-pill px-2 py-1" style="background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.32); font-size: 10px;">
+                                        <i class="bi bi-droplet-fill me-0.5"></i><?= (int)($d['rain_prob'] ?? 10) ?>%
+                                    </span>
+                                    <span class="badge rounded-pill px-2 py-1" style="background: rgba(250, 204, 21, 0.16); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.35); font-size: 10px;">
+                                        UV <?= htmlspecialchars((string)($d['uv_max'] ?? '5.0')) ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="text-center py-4 text-white small" style="opacity: 0.85;">
+                        <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu thời tiết thực địa...
+                    </div>
+                <?php endif; ?>
             </div>
 
         </div>
