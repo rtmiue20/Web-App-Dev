@@ -45,3 +45,4 @@ echo "[OK] Re-created sp_product_list_by_category in MariaDB successfully!\n";
 $stmt = $pdo->query("SHOW CREATE PROCEDURE sp_product_list_by_category");
 $res = $stmt->fetch(PDO::FETCH_ASSOC);
 echo "New procedure definition:\n" . $res['Create Procedure'] . "\n";
+

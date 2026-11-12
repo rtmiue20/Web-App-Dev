@@ -44,7 +44,7 @@ if (empty($editImages) && !empty($post['image_url'])) {
             </div>
         <?php endif; ?>
 
-        <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/update" enctype="multipart/form-data">
+        <form method="post" action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/update" enctype="multipart/form-data" id="postEditForm" novalidate>
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
 
             <!-- Post Title -->
@@ -1122,7 +1122,7 @@ function addCustomToolRow(initialData) {
         '<div class="row g-2">' +
             '<div class="col-12 col-md-7">' +
                 '<label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
-                '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple FMS-105" required>' +
+                '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple FMS-105">' +
             '</div>' +
             '<div class="col-12 col-md-5">' +
                 '<label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>' +
@@ -1137,7 +1137,7 @@ function addCustomToolRow(initialData) {
                 '</label>' +
                 '<div class="input-group input-group-sm">' +
                     '<span class="input-group-text bg-white border-end-0 text-success rounded-start-3"><i class="bi bi-bag-check"></i></span>' +
-                    '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link web shop">' +
+                    '<input type="text" inputmode="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link web shop">' +
                 '</div>' +
             '</div>' +
             '<div class="col-12">' +

@@ -532,7 +532,7 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
     </div>
 
     <!-- Main Post Composer Form (Bao gồm các modal bên trong) -->
-    <form method="post" action="<?= $escape($baseUrl) ?>/posts" enctype="multipart/form-data" id="postCreateForm">
+    <form method="post" action="<?= $escape($baseUrl) ?>/posts" enctype="multipart/form-data" id="postCreateForm" novalidate>
         <input type="hidden" name="_csrf" value="<?= $escape(Csrf::token()) ?>">
 
         <?php if (!empty($errors['form'])): ?>
@@ -1072,12 +1072,6 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                             Đóng
                         </button>
                         <button type="button" class="nature-btn-primary px-4 py-2" data-bs-dismiss="modal" style="width: auto; height: 42px; font-size: 13.5px;">
-                            <i class="bi bi-check-lg me-1"></i> Lưu danh sách dụng cụ
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
                             <i class="bi bi-check-lg me-1"></i> Lưu danh sách dụng cụ
                         </button>
                     </div>
@@ -1672,7 +1666,7 @@ function addCustomToolRow(initialData) {
         '<div class="row g-2">' +
             '<div class="col-12 col-md-7">' +
                 '<label class="form-label small fw-semibold text-dark mb-1">Tên dụng cụ / Thiết bị <span class="text-danger">*</span></label>' +
-                '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple" required oninput="updateAllChips()">' +
+                '<input type="text" name="custom_tool_name[]" value="' + nameVal + '" class="form-control form-control-sm rounded-3" placeholder="VD: Bếp ga dã ngoại Fire-Maple" oninput="updateAllChips()">' +
             '</div>' +
             '<div class="col-12 col-md-5">' +
                 '<label class="form-label small fw-semibold text-dark mb-1">Giá tham khảo (VNĐ)</label>' +
@@ -1683,7 +1677,7 @@ function addCustomToolRow(initialData) {
             '</div>' +
             '<div class="col-12">' +
                 '<label class="form-label small fw-semibold text-dark mb-1"><i class="bi bi-link-45deg me-1" style="color: #7aab3a;"></i>Link mua (Shopee / Lazada...)</label>' +
-                '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm rounded-3" placeholder="https://shopee.vn/...">' +
+                '<input type="text" inputmode="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm rounded-3" placeholder="https://shopee.vn/...">' +
             '</div>' +
             '<div class="col-12">' +
                 '<label class="form-label small fw-semibold text-dark mb-1">' +
@@ -1973,6 +1967,46 @@ document.addEventListener('DOMContentLoaded', function() {
     var cloudUrlInput = document.getElementById('cloud_image_url');
     if (cloudUrlInput) {
         cloudUrlInput.addEventListener('input', updateAllChips);
+    }
+
+    // Client-side submit validation: check required fields and focus nicely
+    var createForm = document.getElementById('postCreateForm');
+    if (createForm) {
+        createForm.addEventListener('submit', function(e) {
+            var catSelect = document.getElementById('category_id');
+            var titleInput = document.getElementById('title');
+            var contentInput = document.getElementById('content');
+
+            if (!catSelect || !catSelect.value || catSelect.value === '0') {
+                e.preventDefault();
+                alert('Vui lòng chọn chuyên mục cho bài viết của bạn.');
+                if (catSelect) {
+                    catSelect.focus();
+                    catSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+
+            if (!titleInput || titleInput.value.trim().length < 5) {
+                e.preventDefault();
+                alert('Tiêu đề bài viết phải có ít nhất 5 ký tự.');
+                if (titleInput) {
+                    titleInput.focus();
+                    titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+
+            if (!contentInput || contentInput.value.trim().length < 10) {
+                e.preventDefault();
+                alert('Nội dung bài viết phải có ít nhất 10 ký tự.');
+                if (contentInput) {
+                    contentInput.focus();
+                    contentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+        });
     }
 
     // Initialize chips on first load (e.g. from $old)

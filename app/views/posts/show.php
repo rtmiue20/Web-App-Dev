@@ -1050,10 +1050,9 @@ $galleryCount = count($galleryImages);
 
 
 
-                                        <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
-
-                                            <span class="tool-title-inner"><?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?></span>
-
+                                        <?php $cleanToolName = ltrim((string)($tool['name'] ?? ''), " \t\n\r\0\x0B,"); ?>
+                                        <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($cleanToolName, ENT_QUOTES, 'UTF-8') ?>">
+                                            <span class="tool-title-inner"><?= htmlspecialchars($cleanToolName, ENT_QUOTES, 'UTF-8') ?></span>
                                         </div>
 
 
