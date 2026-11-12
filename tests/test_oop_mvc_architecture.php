@@ -76,6 +76,8 @@ $serviceClasses = [
     CategoryService::class,
     PostService::class,
     UserService::class,
+    WeatherService::class,
+    QrCodeService::class,
 ];
 foreach ($serviceClasses as $srvClass) {
     assertTrue(
@@ -83,6 +85,23 @@ foreach ($serviceClasses as $srvClass) {
         "{$srvClass} kế thừa BaseService"
     );
 }
+
+$weatherService = new WeatherService();
+$weatherData = $weatherService->getForecast(21.2833, 104.3167);
+assertTrue(
+    isset($weatherData['uv']['index'], $weatherData['uv']['level'], $weatherData['air_quality']['aqi'], $weatherData['air_quality']['pm2_5']),
+    'WeatherService tích hợp Open-Meteo Forecast + Air Quality & UV Index API (JSON)'
+);
+
+putenv('QR_API_KEY=sample_env_key_outdoor_forum');
+$qrService = new QrCodeService();
+$qrResult = $qrService->generateQrData('http://localhost:8000/trips/1', 'Chuyến đi Tà Năng', 'trip');
+assertTrue(
+    isset($qrResult['qr_image_url'], $qrResult['fallback_qr_url'], $qrResult['api_key_masked'])
+    && $qrResult['has_api_key'] === true,
+    'QrCodeService tích hợp QuickChart & GoQR Code REST API với API Key xác thực an toàn qua Biến môi trường'
+);
+putenv('QR_API_KEY'); // Dọn dẹp biến môi trường sau test
 
 echo "\n=== 4. KIỂM THỬ BẢO MẬT (CSRF, RBAC, BASE ALIAS) ===\n";
 $token1 = Csrf::token();

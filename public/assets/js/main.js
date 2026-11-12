@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Main JavaScript for Dã Ngoại Forum
  * Handles mouse parallax, password visibility, and interactions
  */
