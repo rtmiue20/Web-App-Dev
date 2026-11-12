@@ -514,16 +514,16 @@ const ForumAjax = {
               const dayUvVal = typeof d.uv_max !== 'undefined' ? d.uv_max : '5.0';
               dailyCards += `
                 <div class="col">
-                  <div class="p-3 text-center h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 18px !important; background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.12); transition: transform 0.2s ease, border-color 0.2s ease;">
+                  <div class="p-3.5 text-center h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(160deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.12); min-height: 165px; transition: transform 0.2s ease, border-color 0.2s ease;">
                     <div>
                       <div class="fw-bold text-white mb-0" style="font-size: 13px; letter-spacing: 0.2px;">${d.day_label}</div>
                       <div class="text-white-50 mb-1" style="font-size: 11px;">${d.date}</div>
-                      <div class="my-1.5 fs-3" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));"><i class="bi ${d.icon || 'bi-cloud-sun-fill text-warning'}"></i></div>
+                      <div class="my-2 fs-3" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));"><i class="bi ${d.icon || 'bi-cloud-sun-fill text-warning'}"></i></div>
                       <div class="fw-bold text-white mt-1" style="font-size: 13px;">
                         ${d.temp_max}° <span class="text-white-50 fw-normal" style="font-size: 11.5px;">/ ${d.temp_min}°C</span>
                       </div>
                     </div>
-                    <div class="mt-2 pt-2 border-top border-white border-opacity-10 d-flex align-items-center justify-content-center gap-1.5 flex-wrap">
+                    <div class="mt-2.5 pt-2 border-top border-white border-opacity-10 d-flex align-items-center justify-content-center gap-1.5 flex-wrap">
                       <span class="badge rounded-pill px-2 py-1" style="background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.32); font-size: 10px; font-weight: 500;" title="Xác suất mưa">
                         <i class="bi bi-droplet-fill me-0.5"></i>${d.rain_prob}%
                       </span>
@@ -536,23 +536,52 @@ const ForumAjax = {
               `;
             }
             dailyHtml = `
-              <div class="d-flex align-items-center justify-content-between mt-3 mb-2 pt-2 border-top border-white border-opacity-10 flex-wrap gap-2">
-                <span class="small fw-semibold text-white d-inline-flex align-items-center gap-1.5" style="font-size: 12.5px;">
+              <div class="d-flex align-items-center justify-content-between mt-3 mb-2.5 pt-3 border-top border-white border-opacity-10 flex-wrap gap-2 px-1">
+                <span class="small fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
                   <i class="bi bi-calendar3 text-success"></i>Dự báo khí tượng &amp; chỉ số UV 4 ngày tới
                 </span>
-                <span class="text-white-50 small" style="font-size: 11px;">Cập nhật theo chu kỳ vệ tinh Open-Meteo</span>
+                <span class="text-white-50 small" style="font-size: 11.5px;">Cập nhật theo chu kỳ vệ tinh Open-Meteo</span>
               </div>
-              <div class="row row-cols-2 row-cols-sm-4 g-2.5">
+              <div class="row row-cols-2 row-cols-md-4 g-3 mb-1">
                 ${dailyCards}
               </div>
             `;
           }
 
+          const summaryHtml = `
+            <div class="row g-3 mb-3">
+              <div class="col-12">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3.5 px-4 rounded-4" style="background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px !important;">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="display-5 fw-bold mb-0 d-flex align-items-center gap-2 text-white" style="text-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                      <i class="bi ${w.icon || 'bi-cloud-sun-fill text-warning'}"></i>
+                      <span>${w.temp}°C</span>
+                    </div>
+                    <div>
+                      <div class="fw-bold text-white fs-5">${w.condition}</div>
+                      <div class="d-flex align-items-center gap-2 flex-wrap text-white-50 mt-1" style="font-size: 12px;">
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1">Cảm giác: <strong class="text-white">${w.feels_like ?? w.temp}°C</strong></span>
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-droplet text-info me-1"></i>Độ ẩm: <strong class="text-white">${w.humidity ?? 75}%</strong></span>
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-wind text-success me-1"></i>Gió: <strong class="text-white">${w.windspeed} km/h</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
+                    <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" style="background: rgba(155, 189, 85, 0.16); border: 1px solid rgba(155, 189, 85, 0.35); color: #d4f291; font-size: 11.5px; font-weight: 500;">
+                      <span style="width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 8px #4ade80;"></span>
+                      Trạm khí tượng thực địa GPS
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
           const envCardsHtml = `
-            <div class="row g-3 my-2">
+            <div class="row g-3 mb-3">
               <!-- Card 1: Chỉ số Tia cực tím (UV Index) -->
               <div class="col-12 col-md-6">
-                <div class="p-3.5 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
                   <div>
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
                       <span class="fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
@@ -582,7 +611,7 @@ const ForumAjax = {
                     </div>
                   </div>
 
-                  <div class="p-2.5 rounded-3 text-white-50 d-flex align-items-start gap-2" style="background: rgba(0, 0, 0, 0.22); border: 1px solid rgba(255, 255, 255, 0.05); font-size: 11.5px; line-height: 1.45;">
+                  <div class="p-2.5 px-3 rounded-3 text-white-50 d-flex align-items-start gap-2.5 mt-auto" style="background: rgba(0, 0, 0, 0.24); border: 1px solid rgba(255, 255, 255, 0.06); font-size: 12px; line-height: 1.5;">
                     <i class="bi bi-shield-shaded flex-shrink-0 mt-0.5 fs-6" style="color: ${uv.color || '#facc15'};"></i>
                     <span>${uv.advice}</span>
                   </div>
@@ -591,7 +620,7 @@ const ForumAjax = {
 
               <!-- Card 2: Chất lượng Không khí (AQI & Bụi mịn PM2.5) -->
               <div class="col-12 col-md-6">
-                <div class="p-3.5 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
                   <div>
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
                       <span class="fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
@@ -621,7 +650,7 @@ const ForumAjax = {
                     </div>
                   </div>
 
-                  <div class="p-2.5 rounded-3 text-white-50 d-flex align-items-start gap-2" style="background: rgba(0, 0, 0, 0.22); border: 1px solid rgba(255, 255, 255, 0.05); font-size: 11.5px; line-height: 1.45;">
+                  <div class="p-2.5 px-3 rounded-3 text-white-50 d-flex align-items-start gap-2.5 mt-auto" style="background: rgba(0, 0, 0, 0.24); border: 1px solid rgba(255, 255, 255, 0.06); font-size: 12px; line-height: 1.5;">
                     <i class="bi bi-lungs flex-shrink-0 mt-0.5 fs-6" style="color: ${aq.color || '#4ade80'};"></i>
                     <span>${aq.advice}</span>
                   </div>
@@ -630,40 +659,26 @@ const ForumAjax = {
             </div>
           `;
 
-          targetPanel.innerHTML = `
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 rounded-4 mb-2.5" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px !important;">
-              <div class="d-flex align-items-center gap-3">
-                <div class="display-5 fw-bold mb-0 d-flex align-items-center gap-2 text-white" style="text-shadow: 0 4px 12px rgba(0,0,0,0.35);">
-                  <i class="bi ${w.icon || 'bi-cloud-sun-fill text-warning'}"></i>
-                  <span>${w.temp}°C</span>
-                </div>
-                <div>
-                  <div class="fw-bold text-white fs-5">${w.condition}</div>
-                  <div class="d-flex align-items-center gap-2 flex-wrap text-white-50 mt-1" style="font-size: 12px;">
-                    <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1">Cảm giác: <strong class="text-white">${w.feels_like ?? w.temp}°C</strong></span>
-                    <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-droplet text-info me-1"></i>Độ ẩm: <strong class="text-white">${w.humidity ?? 75}%</strong></span>
-                    <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-wind text-success me-1"></i>Gió: <strong class="text-white">${w.windspeed} km/h</strong></span>
+          const adviceHtml = w.advice
+            ? `
+              <div class="row g-3 mb-3">
+                <div class="col-12">
+                  <div class="p-3 px-3.5 rounded-pill small d-flex align-items-center gap-2.5 shadow-sm" style="background: linear-gradient(90deg, rgba(155, 189, 85, 0.22) 0%, rgba(155, 189, 85, 0.10) 100%); color: #d6f296; border: 1px solid rgba(155, 189, 85, 0.4); backdrop-filter: blur(8px);">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 24px; height: 24px; background: #9bbd55; color: #182213;">
+                      <i class="bi bi-compass-fill" style="font-size: 12px;"></i>
+                    </span>
+                    <span class="fw-semibold">Gợi ý dã ngoại:</span>
+                    <span class="text-white text-opacity-90">${w.advice}</span>
                   </div>
                 </div>
               </div>
-              <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
-                <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" style="background: rgba(155, 189, 85, 0.16); border: 1px solid rgba(155, 189, 85, 0.35); color: #d4f291; font-size: 11.5px; font-weight: 500;">
-                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 8px #4ade80;"></span>
-                  Trạm khí tượng thực địa GPS
-                </span>
-              </div>
-            </div>
+            `
+            : '';
+
+          targetPanel.innerHTML = `
+            ${summaryHtml}
             ${envCardsHtml}
-            ${w.advice
-              ? `<div class="p-2.5 px-3 rounded-pill small mb-2 d-flex align-items-center gap-2 shadow-sm" style="background: linear-gradient(90deg, rgba(155, 189, 85, 0.22) 0%, rgba(155, 189, 85, 0.10) 100%); color: #d6f296; border: 1px solid rgba(155, 189, 85, 0.4); backdrop-filter: blur(8px);">
-                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 22px; height: 22px; background: #9bbd55; color: #182213;">
-                       <i class="bi bi-compass-fill" style="font-size: 11px;"></i>
-                     </span>
-                     <span class="fw-semibold">Gợi ý dã ngoại:</span>
-                     <span class="text-white text-opacity-90">${w.advice}</span>
-                   </div>`
-              : ''
-            }
+            ${adviceHtml}
             ${dailyHtml}
           `;
         }
