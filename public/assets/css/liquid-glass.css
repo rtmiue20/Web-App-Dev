@@ -1147,6 +1147,27 @@ select option {
     transform-origin: bottom right !important;
     animation: notifPanelSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
   }
+  .floating-bell-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.15rem !important;
+    background: rgba(34, 40, 31, 0.92) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  }
+  .floating-notifications-panel {
+    top: auto !important;
+    bottom: calc(100% + 0.75rem) !important;
+    right: 0 !important;
+    width: min(350px, calc(100vw - 2rem)) !important;
+    max-height: min(480px, calc(100vh - 120px)) !important;
+    transform-origin: bottom right !important;
+    animation: notifPanelSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+}
+
+@keyframes notifPanelSlideUp {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @keyframes notifPanelSlideUp {
