@@ -104,6 +104,8 @@ class App
 
         $router->post('/trips/{id}/delete', [OutdoorController::class, 'deleteTrip'], [AuthMiddleware::class]);
 
+        $router->post('/trips/{id}/contact', [OutdoorController::class, 'contactOrganizer']);
+
         $router->get('/places', [OutdoorController::class, 'map']);
 
         $router->get('/map', [OutdoorController::class, 'map']);

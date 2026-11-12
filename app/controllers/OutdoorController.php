@@ -4,6 +4,8 @@ require_once __DIR__ . '/../models/Checklist.php';
 require_once __DIR__ . '/../models/Trip.php';
 require_once __DIR__ . '/../models/PlaceReview.php';
 require_once __DIR__ . '/../models/Post.php';
+require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../models/Notification.php';
 
 class OutdoorController extends Controller
 {
@@ -425,6 +427,96 @@ class OutdoorController extends Controller
             Session::flash('error', 'Bạn không có quyền hủy chuyến đi này.');
             $this->redirect('/trips/' . $id);
         }
+    }
+
+    public function contactOrganizer(int $id): void
+    {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
+
+        if (!$this->verifyCsrfToken()) {
+            if ($isAjax) {
+                Response::json(false, null, 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang.', 419);
+                return;
+            }
+            Session::flash('error', 'Phiên làm việc đã hết hạn. Vui lòng thử lại.');
+            $this->redirect('/trips/' . $id);
+            return;
+        }
+
+        $trip = $this->trips->getById($id);
+        if (!$trip) {
+            if ($isAjax) {
+                Response::json(false, null, 'Không tìm thấy chuyến đi yêu cầu.', 404);
+                return;
+            }
+            Session::flash('error', 'Không tìm thấy chuyến đi yêu cầu.');
+            $this->redirect('/trips');
+            return;
+        }
+
+        $user = Auth::user();
+        $senderName = trim((string)($_POST['sender_name'] ?? ($user['username'] ?? '')));
+        $senderContact = trim((string)($_POST['sender_contact'] ?? ($user['email'] ?? '')));
+        $message = trim((string)($_POST['message'] ?? ''));
+
+        if ($senderName === '') {
+            $senderName = is_array($user) && !empty($user['username']) ? $user['username'] : 'Thành viên diễn đàn';
+        }
+
+        if (mb_strlen($message) < 5) {
+            $err = 'Nội dung thư/tin nhắn cần tối thiểu 5 ký tự.';
+            if ($isAjax) {
+                Response::json(false, null, $err, 422);
+                return;
+            }
+            Session::flash('error', $err);
+            $this->redirect('/trips/' . $id);
+            return;
+        }
+
+        $organizerId = (int)($trip['user_id'] ?? 0);
+        $senderId = is_array($user) && !empty($user['id']) ? (int)$user['id'] : 0;
+        $tripTitle = mb_substr((string)($trip['title'] ?? 'chuyến đi'), 0, 40);
+
+        // Tạo thông báo gửi đến Trưởng đoàn
+        if ($organizerId > 0 && class_exists('Notification')) {
+            $shortMsg = mb_substr($message, 0, 120);
+            $contactInfo = $senderContact !== '' ? " (Liên hệ: {$senderContact})" : '';
+            $notifContent = "📩 {$senderName} đã gửi thư trao đổi về chuyến '{$tripTitle}': \"{$shortMsg}\"{$contactInfo}";
+
+            Notification::send(
+                $organizerId,
+                $senderId > 0 ? $senderId : $organizerId,
+                'trip_contact',
+                $id,
+                $notifContent
+            );
+
+            // Ghi nhận xác nhận cho người gửi nếu đã đăng nhập
+            if ($senderId > 0 && $senderId !== $organizerId) {
+                Notification::send(
+                    $senderId,
+                    $senderId,
+                    'trip_contact_sent',
+                    $id,
+                    "Bạn đã gửi thư liên hệ tới trưởng đoàn {$trip['username']} về chuyến đi '{$tripTitle}'."
+                );
+            }
+        }
+
+        $successMsg = 'Đã gửi thư và thông báo thành công đến trưởng đoàn ' . ($trip['username'] ?? '') . '!';
+        if ($isAjax) {
+            Response::json(true, [
+                'trip_id' => $id,
+                'organizer' => $trip['username'] ?? '',
+                'sent_at' => date('H:i d/m/Y')
+            ], $successMsg, 200);
+            return;
+        }
+
+        Session::flash('success', $successMsg);
+        $this->redirect('/trips/' . $id);
     }
 
     public function map(): void
