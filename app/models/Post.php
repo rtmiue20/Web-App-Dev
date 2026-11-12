@@ -83,42 +83,66 @@ class Post extends Model {
     }
 
     /**
-     * Lấy danh sách bài viết có hỗ trợ lọc chuyên mục và sắp xếp theo Hot / Mới / Top
+     * Sinh mệnh đề ORDER BY trên SQL View `vw_post_details`:
+     * - 'new' (Mới nhất): Sắp xếp theo thời gian đăng mới nhất
+     * - 'top' (Top Vote): Sắp xếp theo tổng điểm vote (Upvote - Downvote) cao nhất
+     * - 'hot' (Thịnh hành): Sắp xếp theo hot_score (vote_score * 2 + comments_count * 3)
+     */
+    private function buildViewOrderByClause(string $sort): string {
+        $sort = self::normalizeSort($sort);
+        return match ($sort) {
+            'top' => " ORDER BY vote_score DESC, upvotes DESC, comments_count DESC, created_at DESC, id DESC",
+            'new' => " ORDER BY created_at DESC, id DESC",
+            default => " ORDER BY hot_score DESC, created_at DESC, id DESC",
+        };
+    }
+
+    /**
+     * Lấy danh sách bài viết từ SQL View `vw_post_details` có hỗ trợ lọc chuyên mục và sắp xếp theo Hot / Mới / Top
      * @param int|null $categoryId Lọc theo chuyên mục hoặc null nếu lấy tất cả
      * @param string $sort 'hot' | 'new' | 'top'
      * @return array Danh sách bài viết
      */
     public function getAll(?int $categoryId = null, string $sort = 'hot'): array {
-        $sql = "SELECT p.*, u.username, c.name AS category_name,
-                (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
-                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
-                (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-                FROM posts p 
-                JOIN users u ON p.user_id = u.id 
-                JOIN categories c ON p.category_id = c.id
-                WHERE p.status = 'published'";
         $params = [];
-
+        $viewSql = "SELECT * FROM vw_post_details WHERE status = 'published'";
         if ($categoryId !== null) {
-            $sql .= " AND p.category_id = :category_id";
+            $viewSql .= " AND category_id = :category_id";
             $params['category_id'] = $categoryId;
         }
-
-        $sql .= $this->buildOrderByClause($sort);
+        $viewSql .= $this->buildViewOrderByClause($sort);
 
         try {
-            return Database::query($sql, $params);
-        } catch (PDOException $ex) {
-            error_log('Error getting posts: ' . $ex->getMessage());
-            return [];
+            return Database::query($viewSql, $params);
+        } catch (PDOException $viewEx) {
+            // Fallback nếu View vw_post_details chưa được khởi tạo
+            $sql = "SELECT p.*, u.username, c.name AS category_name,
+                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                    FROM posts p 
+                    JOIN users u ON p.user_id = u.id 
+                    JOIN categories c ON p.category_id = c.id
+                    WHERE p.status = 'published'";
+            if ($categoryId !== null) {
+                $sql .= " AND p.category_id = :category_id";
+            }
+            $sql .= $this->buildOrderByClause($sort);
+
+            try {
+                return Database::query($sql, $params);
+            } catch (PDOException $ex) {
+                error_log('Error getting posts: ' . $ex->getMessage());
+                return [];
+            }
         }
     }
 
     /**
-     * Lấy danh sách bài viết theo chuyên mục, sắp xếp (hot/new/top) và phân trang
+     * Lấy danh sách bài viết từ SQL View `vw_post_details` theo chuyên mục, sắp xếp (hot/new/top) và phân trang
      * @param int|null $categoryId Lọc theo chuyên mục hoặc null nếu lấy tất cả
      * @param int $page Số trang hiện tại (bắt đầu từ 1)
      * @param int $limit Số lượng bài viết trên 1 trang
@@ -138,34 +162,20 @@ class Post extends Model {
             $offset = 0;
         }
 
-        $sql = "SELECT p.*, u.username, c.name AS category_name,
-                (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
-                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
-                (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-                FROM posts p 
-                JOIN users u ON p.user_id = u.id 
-                JOIN categories c ON p.category_id = c.id
-                WHERE 1=1";
-        
         $params = [];
-
+        $viewSql = "SELECT * FROM vw_post_details WHERE 1=1";
         if ($categoryId !== null) {
-            $sql .= " AND p.category_id = :category_id";
+            $viewSql .= " AND category_id = :category_id";
             $params['category_id'] = $categoryId;
         }
-
         if ($status !== null) {
-            $sql .= " AND p.status = :status";
+            $viewSql .= " AND status = :status";
             $params['status'] = $status;
         }
-
-        $sql .= $this->buildOrderByClause($sort) . " LIMIT :limit OFFSET :offset";
+        $viewSql .= $this->buildViewOrderByClause($sort) . " LIMIT :limit OFFSET :offset";
 
         try {
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->db->prepare($viewSql);
             foreach ($params as $paramKey => $paramVal) {
                 $stmt->bindValue(':' . $paramKey, $paramVal);
             }
@@ -173,9 +183,40 @@ class Post extends Model {
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $ex) {
-            error_log('Error getting paginated posts: ' . $ex->getMessage());
-            return [];
+        } catch (PDOException $viewEx) {
+            $sql = "SELECT p.*, u.username, c.name AS category_name,
+                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                    FROM posts p 
+                    JOIN users u ON p.user_id = u.id 
+                    JOIN categories c ON p.category_id = c.id
+                    WHERE 1=1";
+
+            if ($categoryId !== null) {
+                $sql .= " AND p.category_id = :category_id";
+            }
+            if ($status !== null) {
+                $sql .= " AND p.status = :status";
+            }
+            $sql .= $this->buildOrderByClause($sort) . " LIMIT :limit OFFSET :offset";
+
+            try {
+                $stmt = $this->db->prepare($sql);
+                foreach ($params as $paramKey => $paramVal) {
+                    $stmt->bindValue(':' . $paramKey, $paramVal);
+                }
+                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $ex) {
+                error_log('Error getting paginated posts: ' . $ex->getMessage());
+                return [];
+            }
         }
     }
 
@@ -251,34 +292,20 @@ class Post extends Model {
             $offset = 0;
         }
 
-        $sql = "SELECT p.*, u.username, c.name AS category_name,
-                (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
-                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
-                COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
-                (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-                FROM posts p 
-                JOIN users u ON p.user_id = u.id 
-                JOIN categories c ON p.category_id = c.id
-                WHERE 1=1";
-        
         $params = [];
-
+        $viewSql = "SELECT * FROM vw_post_details WHERE 1=1";
         if ($status !== null && $status !== '' && $status !== 'all') {
-            $sql .= " AND p.status = :status";
+            $viewSql .= " AND status = :status";
             $params['status'] = $status;
         }
-
         if ($categoryId !== null && $categoryId > 0) {
-            $sql .= " AND p.category_id = :category_id";
+            $viewSql .= " AND category_id = :category_id";
             $params['category_id'] = $categoryId;
         }
-
-        $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+        $viewSql .= " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
 
         try {
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->db->prepare($viewSql);
             foreach ($params as $paramKey => $paramVal) {
                 $stmt->bindValue(':' . $paramKey, $paramVal);
             }
@@ -286,9 +313,40 @@ class Post extends Model {
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $ex) {
-            error_log('Error getting posts for admin: ' . $ex->getMessage());
-            return [];
+        } catch (PDOException $viewEx) {
+            $sql = "SELECT p.*, u.username, c.name AS category_name,
+                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+                    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+                    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+                    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
+                    FROM posts p 
+                    JOIN users u ON p.user_id = u.id 
+                    JOIN categories c ON p.category_id = c.id
+                    WHERE 1=1";
+
+            if ($status !== null && $status !== '' && $status !== 'all') {
+                $sql .= " AND p.status = :status";
+            }
+            if ($categoryId !== null && $categoryId > 0) {
+                $sql .= " AND p.category_id = :category_id";
+            }
+            $sql .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
+
+            try {
+                $stmt = $this->db->prepare($sql);
+                foreach ($params as $paramKey => $paramVal) {
+                    $stmt->bindValue(':' . $paramKey, $paramVal);
+                }
+                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $ex) {
+                error_log('Error getting posts for admin: ' . $ex->getMessage());
+                return [];
+            }
         }
     }
 
@@ -534,7 +592,7 @@ class Post extends Model {
         }
         try {
             $sql = "UPDATE posts SET " . implode(', ', $fields) . " WHERE id = :id";
-            Database::query($sql, $params);
+            Database::execute($sql, $params);
             return true;
         } catch (PDOException $e) {
             error_log('Error updating trip data: ' . $e->getMessage());
@@ -546,20 +604,39 @@ class Post extends Model {
      * Xóa bài viết theo ID (Tuần 3 - Phúc)
      */
     public function delete(int $id): bool {
+        $deleted = false;
         try {
             Database::call('sp_post_delete', [$id]);
-            return true;
+            $deleted = true;
         } catch (PDOException $e) {
             error_log('Notice: sp_post_delete fallback query: ' . $e->getMessage());
 
             try {
                 $stmt = $this->db->prepare("DELETE FROM posts WHERE id = :id");
-                return $stmt->execute([':id' => $id]);
+                $deleted = $stmt->execute([':id' => $id]);
             } catch (PDOException $ex) {
                 error_log('Error deleting post: ' . $ex->getMessage());
                 return false;
             }
         }
+
+        if ($deleted) {
+            foreach (['post_bookmarks', 'post_products', 'post_tags', 'post_images', 'post_likes', 'place_reviews'] as $childTable) {
+                try {
+                    Database::execute("DELETE FROM {$childTable} WHERE post_id = :id", ['id' => $id]);
+                } catch (Throwable $cleanupEx) {
+                }
+            }
+            try {
+                Database::execute(
+                    "DELETE FROM notifications WHERE target_id = :id AND type IN ('create_post', 'admin_pending_post', 'like_post', 'comment_post', 'reply_comment', 'review_place', 'bookmark_post')",
+                    ['id' => $id]
+                );
+            } catch (Throwable $notifEx) {
+            }
+        }
+
+        return $deleted;
     }
 
     /**

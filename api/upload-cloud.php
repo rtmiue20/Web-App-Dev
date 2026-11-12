@@ -15,6 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Response::json(['success' => false, 'message' => 'Phương thức không hợp lệ.'], 405);
 }
 
+if (!Csrf::verify()) {
+    Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+}
+
 $service = new CloudUploadService();
 $uploaded = [];
 

@@ -8,6 +8,8 @@ Thumbs.db
 
 # Local config & credentials
 config.local.php
+config/secrets.php
+secrets.php
 .env
 
 # Uploads (giữ cấu trúc thư mục & ảnh mẫu seed ban đầu, bỏ qua ảnh người dùng đăng bài khi test)
@@ -31,7 +33,8 @@ public/uploads/products/*
 # Cache, locks & temporary files
 storage/cache/*
 !storage/cache/.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
 *.lock
 *.log
 temp_fix_test.txt
-

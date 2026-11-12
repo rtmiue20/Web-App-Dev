@@ -16,9 +16,15 @@ $filterQuery = $catQuery . $sortQuery;
             <p class="page-subtitle">Khám phá kinh nghiệm, cẩm nang và hành trình thực tế từ các phượt thủ.</p>
         </div>
         <div>
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-primary px-4 py-2" style="width: auto; height: 46px;">
-                <i class="bi bi-pencil-fill me-2"></i> Viết bài chia sẻ
-            </a>
+            <?php if (class_exists('Auth') && Auth::check() && Auth::isGuest()): ?>
+                <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1" style="background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.22); font-size: 13px; font-weight: 500;">
+                    <i class="bi bi-eye me-1"></i> Tài khoản Khách (Chỉ xem)
+                </span>
+            <?php else: ?>
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/create" class="nature-btn-primary px-4 py-2 w-100 w-sm-auto d-inline-flex justify-content-center align-items-center" style="height: 46px;">
+                    <i class="bi bi-pencil-fill me-2"></i> Viết bài chia sẻ
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -27,15 +33,15 @@ $filterQuery = $catQuery . $sortQuery;
         <div class="col-12 col-md-8 col-lg-7">
             <div class="search-autocomplete-wrapper position-relative">
                 <div class="input-group search-input-group shadow-sm">
-                    <span class="input-group-text bg-transparent border-end-0 ps-3" style="color: var(--color-moss, #9bbd55);">
+                    <span class="input-group-text bg-transparent border-0 ps-3" style="color: var(--color-moss, #9bbd55);">
                         <i class="bi bi-search"></i>
                     </span>
                     <input type="text" 
                            id="forumSearchInput" 
-                           class="form-control border-start-0 border-end-0 nature-search-input" 
-                           placeholder="Tìm nhanh bài viết, địa điểm (ví dụ: Tà Xùa, Đà Lạt, lều cắm trại...)" 
+                           class="form-control border-0 nature-search-input" 
+                           placeholder="Tìm nhanh bài viết, địa điểm (Tà Xùa, Đà Lạt, lều cắm trại...)" 
                            autocomplete="off">
-                    <span class="input-group-text bg-transparent border-start-0 pe-3" id="searchSpinner" style="display: none;">
+                    <span class="input-group-text bg-transparent border-0 pe-3" id="searchSpinner" style="display: none;">
                         <span class="spinner-border spinner-border-sm text-success" role="status"></span>
                     </span>
                 </div>
@@ -52,7 +58,7 @@ $filterQuery = $catQuery . $sortQuery;
                     <div class="category-slidebar-wrapper position-relative d-flex align-items-center">
                         <!-- Nút trượt sang trái -->
                         <button type="button" 
-                                class="category-slide-btn category-slide-prev me-2" 
+                                class="category-slide-btn category-slide-prev me-2 d-none d-md-flex" 
                                 id="catSlidePrev" 
                                 aria-label="Cuộn sang trái" 
                                 title="Xem các chuyên mục trước">
@@ -64,14 +70,14 @@ $filterQuery = $catQuery . $sortQuery;
                             <div class="category-slide-fade category-slide-fade-start" id="catFadeStart"></div>
                             
                             <!-- Track trượt ngang chứa các danh mục -->
-                            <div class="category-slidebar-track d-flex align-items-center gap-2" id="catSlideTrack">
+                            <div class="category-slidebar-track d-flex align-items-center gap-2" id="catSlideTrack" style="overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
                                 <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?sort=<?= urlencode($selectedSort) ?>" 
-                                   class="dock-pill <?= empty($selectedCategoryId) ? 'active' : '' ?>">
+                                   class="dock-pill text-nowrap flex-shrink-0 <?= empty($selectedCategoryId) ? 'active' : '' ?>">
                                     Tất cả
                                 </a>
                                 <?php foreach ($categories as $cat): ?>
                                     <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts?category=<?= (int)$cat['id'] ?>&sort=<?= urlencode($selectedSort) ?>" 
-                                       class="dock-pill <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
+                                       class="dock-pill text-nowrap flex-shrink-0 <?= ($selectedCategoryId ?? null) == $cat['id'] ? 'active' : '' ?>">
                                         <?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?>
                                     </a>
                                 <?php endforeach; ?>
@@ -82,7 +88,7 @@ $filterQuery = $catQuery . $sortQuery;
 
                         <!-- Nút trượt sang phải -->
                         <button type="button" 
-                                class="category-slide-btn category-slide-next ms-2" 
+                                class="category-slide-btn category-slide-next ms-2 d-none d-md-flex" 
                                 id="catSlideNext" 
                                 aria-label="Cuộn sang phải" 
                                 title="Xem thêm chuyên mục">
@@ -163,11 +169,11 @@ $filterQuery = $catQuery . $sortQuery;
                         <label class="nature-label text-white-50 small mb-1">Loại hình</label>
                         <select name="activity_type" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
                             <option value="">Tất cả loại hình</option>
-                            <option value="camping" <?= (($filters['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>🏕️ Cắm trại (Camping)</option>
-                            <option value="trekking" <?= (($filters['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>🥾 Trekking (Đi bộ)</option>
-                            <option value="leo_nui" <?= (($filters['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>⛰️ Leo núi (Hiking)</option>
-                            <option value="phuot" <?= (($filters['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>🏍️ Phượt đường dài</option>
-                            <option value="da_ngoai" <?= (($filters['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>🧺 Dã ngoại picnic</option>
+                            <option value="camping" <?= (($filters['activity_type'] ?? '') === 'camping') ? 'selected' : '' ?>>Cắm trại (Camping)</option>
+                            <option value="trekking" <?= (($filters['activity_type'] ?? '') === 'trekking') ? 'selected' : '' ?>>Đi bộ đường dài (Trekking)</option>
+                            <option value="leo_nui" <?= (($filters['activity_type'] ?? '') === 'leo_nui') ? 'selected' : '' ?>>Leo núi (Hiking / Mountain)</option>
+                            <option value="phuot" <?= (($filters['activity_type'] ?? '') === 'phuot') ? 'selected' : '' ?>>Phượt đường dài</option>
+                            <option value="da_ngoai" <?= (($filters['activity_type'] ?? '') === 'da_ngoai') ? 'selected' : '' ?>>Dã ngoại ngoài trời</option>
                         </select>
                     </div>
 
@@ -176,26 +182,35 @@ $filterQuery = $catQuery . $sortQuery;
                         <label class="nature-label text-white-50 small mb-1">Mức độ khó</label>
                         <select name="difficulty" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
                             <option value="">Tất cả độ khó</option>
-                            <option value="easy" <?= (($filters['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>🟢 Dễ (Người mới)</option>
-                            <option value="medium" <?= (($filters['difficulty'] ?? '') === 'medium') ? 'selected' : '' ?>>🟡 Trung bình</option>
-                            <option value="hard" <?= (($filters['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>🟠 Khó (Đồi dốc)</option>
-                            <option value="extreme" <?= (($filters['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>🔴 Thử thách cao</option>
+                            <option value="easy" <?= (($filters['difficulty'] ?? '') === 'easy') ? 'selected' : '' ?>>Dễ (Người mới, gia đình)</option>
+                            <option value="medium" <?= (($filters['difficulty'] ?? '') === 'medium') ? 'selected' : '' ?>>Trung bình (Cần thể lực cơ bản)</option>
+                            <option value="hard" <?= (($filters['difficulty'] ?? '') === 'hard') ? 'selected' : '' ?>>Khó (Đồi dốc, dài ngày)</option>
+                            <option value="extreme" <?= (($filters['difficulty'] ?? '') === 'extreme') ? 'selected' : '' ?>>Thử thách cao (Chuyên nghiệp)</option>
                         </select>
                     </div>
 
-                    <!-- Vùng miền -->
+                    <!-- Khu vực / Vùng miền -->
                     <div class="col-6 col-md-3">
-                        <label class="nature-label text-white-50 small mb-1">Vùng miền</label>
+                        <label class="nature-label text-white-50 small mb-1">Khu vực / Vùng miền</label>
                         <select name="region" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-50 rounded-pill">
-                            <option value="">Tất cả vùng miền</option>
-                            <option value="Tây Bắc" <?= (($filters['region'] ?? '') === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
-                            <option value="Đông Bắc" <?= (($filters['region'] ?? '') === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
-                            <option value="Bắc Bộ" <?= (($filters['region'] ?? '') === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
-                            <option value="Bắc Trung Bộ" <?= (($filters['region'] ?? '') === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
-                            <option value="Nam Trung Bộ" <?= (($filters['region'] ?? '') === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
-                            <option value="Tây Nguyên" <?= (($filters['region'] ?? '') === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
-                            <option value="Đông Nam Bộ" <?= (($filters['region'] ?? '') === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
-                            <option value="Tây Nam Bộ" <?= (($filters['region'] ?? '') === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            <option value="">Tất cả khu vực</option>
+                            <optgroup label="Việt Nam">
+                                <option value="Tây Bắc" <?= (($filters['region'] ?? '') === 'Tây Bắc') ? 'selected' : '' ?>>Tây Bắc</option>
+                                <option value="Đông Bắc" <?= (($filters['region'] ?? '') === 'Đông Bắc') ? 'selected' : '' ?>>Đông Bắc</option>
+                                <option value="Bắc Bộ" <?= (($filters['region'] ?? '') === 'Bắc Bộ') ? 'selected' : '' ?>>Miền Bắc</option>
+                                <option value="Bắc Trung Bộ" <?= (($filters['region'] ?? '') === 'Bắc Trung Bộ') ? 'selected' : '' ?>>Bắc Trung Bộ</option>
+                                <option value="Nam Trung Bộ" <?= (($filters['region'] ?? '') === 'Nam Trung Bộ') ? 'selected' : '' ?>>Nam Trung Bộ</option>
+                                <option value="Tây Nguyên" <?= (($filters['region'] ?? '') === 'Tây Nguyên') ? 'selected' : '' ?>>Tây Nguyên</option>
+                                <option value="Đông Nam Bộ" <?= (($filters['region'] ?? '') === 'Đông Nam Bộ') ? 'selected' : '' ?>>Đông Nam Bộ</option>
+                                <option value="Tây Nam Bộ" <?= (($filters['region'] ?? '') === 'Tây Nam Bộ') ? 'selected' : '' ?>>Tây Nam Bộ</option>
+                            </optgroup>
+                            <optgroup label="Quốc tế (Nước ngoài)">
+                                <option value="Đông Nam Á" <?= (($filters['region'] ?? '') === 'Đông Nam Á') ? 'selected' : '' ?>>Đông Nam Á</option>
+                                <option value="Châu Á" <?= (($filters['region'] ?? '') === 'Châu Á') ? 'selected' : '' ?>>Châu Á</option>
+                                <option value="Châu Âu" <?= (($filters['region'] ?? '') === 'Châu Âu') ? 'selected' : '' ?>>Châu Âu</option>
+                                <option value="Châu Mỹ" <?= (($filters['region'] ?? '') === 'Châu Mỹ') ? 'selected' : '' ?>>Châu Mỹ</option>
+                                <option value="Châu Úc & Khác" <?= (($filters['region'] ?? '') === 'Châu Úc & Khác') ? 'selected' : '' ?>>Châu Úc / Khác</option>
+                            </optgroup>
                         </select>
                     </div>
 

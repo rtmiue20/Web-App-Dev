@@ -131,7 +131,7 @@ $defaultImg = $baseUrl . '/assets/img/tent-forest.png';
                                     <form method="post"
                                           action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/admin/products/delete/<?= (int)$prod['id'] ?>"
                                           class="d-inline"
-                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa dụng cụ này không?');">
+                                          onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn xóa dụng cụ “<?= htmlspecialchars(addslashes($prod['name']), ENT_QUOTES, 'UTF-8') ?>” khỏi kho dụng cụ cộng đồng không? Hành động này sẽ gỡ dụng cụ này khỏi danh mục chung.', 'Xác nhận xóa', 'Xóa dụng cụ khỏi kho?');">
                                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                                         <button type="submit" class="admin-action-btn btn-delete" title="Xóa dụng cụ">
                                             <i class="bi bi-trash3"></i>

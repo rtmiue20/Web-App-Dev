@@ -259,7 +259,25 @@ class User extends Model
             throw new LogicException('User ID must be set before updating a profile.');
         }
 
-        Database::call('sp_user_update_profile', [$this->id, $username, $bio, $avatarPath]);
+        try {
+            Database::call('sp_user_update_profile', [$this->id, $username, $bio, $avatarPath]);
+        } catch (PDOException $e) {
+            // Nếu lỗi trùng username (SQLSTATE 23000) thì ném lại để Controller báo lỗi cho người dùng
+            if ((string)$e->getCode() === '23000') {
+                throw $e;
+            }
+            error_log('Notice: sp_user_update_profile fallback: ' . $e->getMessage());
+            Database::execute(
+                'UPDATE users SET username = :username, bio = :bio, avatar_path = :avatar WHERE id = :id',
+                [
+                    'username' => $username,
+                    'bio'      => $bio,
+                    'avatar'   => $avatarPath,
+                    'id'       => $this->id,
+                ]
+            );
+        }
+
         $this->username = $username;
         $this->bio = $bio;
         $this->avatarPath = $avatarPath;
@@ -271,7 +289,19 @@ class User extends Model
             throw new LogicException('User ID must be set before changing a password.');
         }
 
-        Database::call('sp_user_change_password', [$this->id, $passwordHash]);
+        try {
+            Database::call('sp_user_change_password', [$this->id, $passwordHash]);
+        } catch (PDOException $e) {
+            error_log('Notice: sp_user_change_password fallback: ' . $e->getMessage());
+            Database::execute(
+                'UPDATE users SET password_hash = :hash WHERE id = :id',
+                [
+                    'hash' => $passwordHash,
+                    'id'   => $this->id,
+                ]
+            );
+        }
+
         $this->passwordHash = $passwordHash;
     }
 

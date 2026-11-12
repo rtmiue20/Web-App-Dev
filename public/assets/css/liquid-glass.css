@@ -1,0 +1,1818 @@
+/*
+ * ========================================================================
+ *   OUTDOOR FORUM DESIGN SYSTEM  –  NATURE EDITION
+ *   Đồng bộ toàn diện giao diện diễn đàn với Bảng điều khiển Quản trị (Admin Dashboard)
+ *
+ *   Đặc trưng thiết kế:
+ *   1. Canvas nền: Màu xanh rêu ô-liu thiên nhiên sâu thẳm (Forest Olive Gradient)
+ *   2. Thẻ nội dung (Cards / Panels): Nền giấy kem / trắng tinh (#ffffff / #f6f7f2)
+ *      bo góc mềm mại 28px - 32px, bóng đổ tự nhiên, chữ mực đậm (#23261f) tương phản 100%
+ *   3. Ô nhập liệu (Input, Field, Textarea): Nền trắng sạch, viền tinh tế #dcdfd6, focus xanh rêu #9bbd55
+ *   4. Cửa sổ nổi (Modals): Đồng bộ thẻ trắng cao cấp, chữ đen rõ ràng, không bị mờ đục
+ *   5. Nút bấm (Pill buttons): Nút bo tròn dạng viên thuốc thanh lịch
+ * ========================================================================
+ */
+
+/* ── 1. Color Tokens & Biến chuẩn ────────────────────────────────────────── */
+:root {
+  --color-moss: #9bbd55;
+  --color-moss-dark: #7aab3a;
+  --color-moss-subtle: rgba(155, 189, 85, 0.15);
+  --color-scene: #4a4d44;
+  --color-scene-edge: #383b34;
+  --color-paper: #ffffff;
+  --color-paper-warm: #f6f7f2;
+  --color-ink: #23261f;
+  --color-ink-muted: #686d62;
+  --color-border-card: rgba(0, 0, 0, 0.07);
+  --card-radius: 28px;
+  --card-shadow: 0 20px 48px -12px rgba(20, 24, 16, 0.35), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* ── 2. Toàn bộ nền trang (Canvas giống hệt Admin Dashboard) ─────────────── */
+body {
+  background: radial-gradient(ellipse 120% 100% at 55% 45%, #4a4d44 0%, #464940 45%, #383b34 100%) fixed !important;
+  color: #ffffff !important;
+  min-height: 100vh;
+  font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Khung nội dung chung */
+.app-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 6.5rem 1.25rem 4rem 1.25rem;
+}
+
+/* ── 3. Tiêu đề ngoài nền tối (Giữ trắng sắc nét, tinh tế) ───────────────── */
+.page-title {
+  color: #ffffff !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.02em !important;
+  font-size: clamp(2rem, 3.5vw, 2.75rem) !important;
+  margin-bottom: 0.5rem !important;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+}
+
+.page-subtitle {
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-weight: 300 !important;
+  font-size: 1rem !important;
+  line-height: 1.55 !important;
+  max-width: 58ch;
+}
+
+/* Huy hiệu pill trên nền tối (như huy hiệu Khu vực Quản trị) */
+.nature-badge,
+.canvas-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.35rem 0.95rem !important;
+  border-radius: 9999px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  background: rgba(155, 189, 85, 0.16) !important;
+  color: #c4e482 !important;
+  border: 1px solid rgba(155, 189, 85, 0.32) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* ── 4. Thẻ nội dung chính (Cards / Panels) – TRẮNG SÁNG, RÕ RÀNG ──────── */
+.nature-card,
+.paper-card,
+.post-content-box,
+.fb-composer-card,
+.admin-stat-card,
+.checklist-card,
+.trip-card,
+.app-container .nature-card,
+.app-container article.nature-card {
+  background: #ffffff !important;
+  color: var(--color-ink, #23261f) !important;
+  border-radius: var(--card-radius, 28px) !important;
+  border: 1px solid var(--color-border-card, rgba(0, 0, 0, 0.07)) !important;
+  box-shadow: var(--card-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+}
+
+/* Hiệu ứng nổi nhẹ khi rê chuột lên thẻ bài viết / chuyên mục */
+.paper-card:hover,
+.app-container article.nature-card:hover,
+.checklist-card:hover,
+.trip-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 32px 64px -16px rgba(20, 24, 16, 0.45), 0 0 0 1.5px rgba(155, 189, 85, 0.35) !important;
+}
+
+/* ── 5. Màu chữ bên trong thẻ nội dung (Đậm đà, tương phản tuyệt đối) ────── */
+.nature-card h1,
+.nature-card h2,
+.nature-card h3,
+.nature-card h4,
+.nature-card h5,
+.nature-card h6,
+.paper-card h1,
+.paper-card h2,
+.paper-card h3,
+.paper-card h4,
+.paper-card h5,
+.paper-card h6,
+.post-content-box h1,
+.post-content-box h2,
+.post-content-box h3,
+.fb-composer-card h1,
+.fb-composer-card h2,
+.fb-composer-card h3,
+.app-container .nature-card h1,
+.app-container .nature-card h2,
+.app-container .nature-card h3,
+.app-container .nature-card h4,
+.app-container .nature-card h5 {
+  color: var(--color-ink, #23261f) !important;
+  font-weight: 600 !important;
+}
+
+.nature-card a,
+.paper-card a,
+.app-container .nature-card a {
+  color: var(--color-ink, #23261f);
+}
+
+.nature-card p,
+.paper-card p,
+.app-container .nature-card p {
+  color: #4a5043 !important;
+  line-height: 1.65;
+}
+
+/* Nhãn trường dữ liệu (Label in hoa tinh gọn) */
+.nature-label {
+  display: block !important;
+  color: #72776c !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* ── 6. Ô NHẬP LIỆU (Input, Textarea, Select) – Trắng sạch, bo góc mềm ────── */
+.nature-input,
+.nature-textarea,
+.form-control:not(.nature-search-input),
+.form-select,
+.app-container input[type="text"]:not(.nature-search-input),
+.app-container input[type="email"],
+.app-container input[type="password"],
+.app-container input[type="number"],
+.app-container input[type="date"],
+.app-container select,
+.app-container textarea {
+  background-color: #ffffff !important;
+  color: #23261f !important;
+  border: 1px solid #dcdfd6 !important;
+  border-radius: 14px !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 14.5px !important;
+  font-family: inherit !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+}
+
+/* Focus viền xanh rêu tỏa sáng (Signature Moss Glow) */
+.nature-input:focus,
+.nature-textarea:focus,
+.form-control:not(.nature-search-input):focus,
+.form-select:focus,
+.app-container input:not(.nature-search-input):focus,
+.app-container select:focus,
+.app-container textarea:focus {
+  background-color: #ffffff !important;
+  color: #23261f !important;
+  border-color: #9bbd55 !important;
+  box-shadow: 0 0 0 4px rgba(155, 189, 85, 0.22) !important;
+  outline: none !important;
+}
+
+::placeholder {
+  color: #9ea298 !important;
+  font-weight: 300 !important;
+  opacity: 0.8 !important;
+}
+
+/* Select options */
+select option {
+  background: #ffffff !important;
+  color: #23261f !important;
+}
+
+/* ── 7. CỬA SỔ NỔI (MODALS) – Thiết kế thẻ trắng sáng đồng bộ ────────────── */
+.modal-content {
+  background: #ffffff !important;
+  color: #23261f !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 32px 72px -16px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  overflow: hidden !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid #edf0e8 !important;
+  padding: 1.25rem 1.75rem !important;
+  background: #ffffff !important;
+}
+
+.modal-title {
+  color: #23261f !important;
+  font-weight: 700 !important;
+  font-size: 1.15rem !important;
+  letter-spacing: -0.01em !important;
+}
+
+.modal-body {
+  padding: 1.5rem 1.75rem !important;
+  color: #23261f !important;
+  background: #ffffff !important;
+}
+
+.modal-footer {
+  border-top: 1px solid #edf0e8 !important;
+  padding: 1rem 1.75rem !important;
+  background: #fafbfa !important;
+}
+
+/* Inputs bên trong modal → Trắng sạch, tương phản cao, bo góc mềm */
+.modal-content .form-control,
+.modal-content .form-select,
+.modal-content textarea,
+.modal-content .nature-input,
+.modal-content .nature-textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #dcdfd6 !important;
+  color: #23261f !important;
+  border-radius: 14px !important;
+  font-size: 14px !important;
+}
+
+.modal-content .form-control:focus,
+.modal-content .form-select:focus,
+.modal-content textarea:focus,
+.modal-content .nature-input:focus,
+.modal-content .nature-textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #9bbd55 !important;
+  color: #23261f !important;
+  box-shadow: 0 0 0 4px rgba(155, 189, 85, 0.22) !important;
+}
+
+.modal-content .btn-close {
+  filter: none !important;
+  opacity: 0.65 !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+.modal-content .btn-close:hover {
+  opacity: 1 !important;
+}
+
+.modal-content .form-control::placeholder,
+.modal-content textarea::placeholder,
+.modal-content .nature-input::placeholder,
+.modal-content .nature-textarea::placeholder {
+  color: #8f9488 !important;
+  opacity: 0.85 !important;
+}
+
+.modal-content select option,
+.modal-content select optgroup {
+  background: #ffffff !important;
+  color: #23261f !important;
+}
+
+/* Input group addon bên trong modal */
+.modal-content .input-group-text {
+  background: #f6f7f2 !important;
+  border: 1px solid #dcdfd6 !important;
+  color: #555a4e !important;
+}
+
+/* File input bên trong modal */
+.modal-content input[type="file"].form-control {
+  padding: 0.35rem 0.85rem !important;
+  line-height: normal;
+  cursor: pointer;
+  background-color: #ffffff !important;
+  color: #23261f !important;
+}
+
+.modal-content input[type="file"].form-control::file-selector-button {
+  background: #20251c;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 1rem;
+  margin-right: 0.85rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-content input[type="file"].form-control::file-selector-button:hover {
+  background: #2e3529;
+  color: #c4e482;
+}
+
+/* Switch toggle bên trong modal */
+.modal-content .form-check-input {
+  cursor: pointer;
+}
+
+.modal-content .form-check-input:checked {
+  background-color: #7aab3a !important;
+  border-color: #7aab3a !important;
+}
+
+/* Đảm bảo bo góc của input-group liền mạch hoàn toàn */
+.modal-content .input-group {
+  border-radius: 12px;
+}
+
+.modal-content .input-group>.form-control:first-child,
+.modal-content .input-group>.input-group-text:first-child {
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.modal-content .input-group>.form-control:last-child,
+.modal-content .input-group>.input-group-text:last-child {
+  border-top-right-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.modal-content .input-group> :not(:first-child) {
+  margin-left: -1px;
+}
+
+/* Backdrop */
+.modal-backdrop {
+  background-color: rgba(6, 10, 5, 0.70) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  animation: lg-backdrop-in 0.25s ease forwards;
+}
+
+/* Lớp phủ mờ phía sau modal (Backdrop) */
+.modal-backdrop {
+  background-color: rgba(22, 28, 19, 0.75) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.modal-backdrop.show {
+  opacity: 1 !important;
+}
+
+/* ── 8. NÚT BẤM (BUTTONS) – Dạng viên thuốc thanh lịch ───────────────────── */
+.nature-btn-primary,
+.btn-primary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  height: 48px !important;
+  padding: 0 1.6rem !important;
+  border-radius: 9999px !important;
+  background: #2d3328 !important;
+  color: #ffffff !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  border: none !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 12px 28px -8px rgba(45, 51, 40, 0.65) !important;
+  transition: all 0.22s ease !important;
+}
+
+.nature-btn-primary:hover,
+.btn-primary:hover {
+  background: #1c2118 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 32px -6px rgba(45, 51, 40, 0.8) !important;
+}
+
+/* Nút phụ trên nền tối */
+.nature-btn-secondary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  height: 44px !important;
+  padding: 0 1.25rem !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  color: #ffffff !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(8px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.nature-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Nút phụ bên trong thẻ bài viết trắng */
+.nature-card .nature-btn-secondary,
+.paper-card .nature-btn-secondary {
+  background: rgba(45, 51, 40, 0.05) !important;
+  border: 1px solid rgba(45, 51, 40, 0.12) !important;
+  color: #2d3328 !important;
+}
+
+.nature-card .nature-btn-secondary:hover,
+.paper-card .nature-btn-secondary:hover {
+  background: #2d3328 !important;
+  color: #ffffff !important;
+  border-color: #2d3328 !important;
+}
+
+/* ── 9. THANH ĐIỀU HƯỚNG (NAVBAR DOCK) ───────────────────────────────────── */
+.dock-header {
+  position: fixed;
+  inset-inline: 0;
+  top: 1rem;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  padding-inline: 1rem;
+  pointer-events: none;
+}
+
+.dock-nav {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(34, 40, 31, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  padding: 0.4rem 0.5rem;
+  border-radius: 9999px !important;
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   7. CATEGORY PAGE & OUTDOOR TRIPS – nature-card với chữ dark
+      Chỉ enhance shadow, border, shimmer
+   ════════════════════════════════════════════════════════════════════════════ */
+.app-container article.nature-card {
+  /* Giữ background gốc (var(--color-paper) = #f2f3ef) */
+  /* Chỉ nâng shadow và border */
+  box-shadow:
+    0 8px 32px -8px rgba(20, 24, 16, 0.25),
+    0 2px 0 rgba(255, 255, 255, 0.80) inset !important;
+  transition:
+    transform 350ms var(--lg-spring),
+    box-shadow 350ms var(--lg-spring) !important;
+  overflow: hidden;
+  position: relative;
+}
+
+.dock-pill:hover {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dock-pill.active {
+  background: #f2f3ef !important;
+  color: #23261f !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.20) !important;
+  font-weight: 600;
+}
+
+/* ── 10. BẢNG BIỂU (TABLES) – Sạch sẽ như Bảng Quản trị ─────────────────── */
+.admin-table,
+.nature-table-wrapper {
+  background: #ffffff !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Fix nút secondary và văn bản trên thẻ nền sáng (.nature-card) để không bị chữ trắng chìm */
+.nature-card .nature-btn-secondary {
+  background: rgba(32, 37, 28, 0.08) !important;
+  border: 1px solid rgba(32, 37, 28, 0.18) !important;
+  color: #1e241b !important;
+}
+
+.nature-card .nature-btn-secondary:hover {
+  background: rgba(32, 37, 28, 0.16) !important;
+  border-color: rgba(32, 37, 28, 0.3) !important;
+  color: #0d120a !important;
+  transform: translateY(-1px);
+}
+
+.nature-card .text-muted {
+  color: #586150 !important;
+}
+
+.nature-card h1,
+.nature-card h2,
+.nature-card h3,
+.nature-card h4,
+.nature-card h5,
+.nature-card h6 {
+  color: #1a2217 !important;
+}
+
+.nature-card .border-top {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Fix nút theo dõi tác giả trạng thái following */
+.follow-user-btn.following {
+  background: rgba(155, 189, 85, 0.20) !important;
+  border-color: rgba(155, 189, 85, 0.45) !important;
+  color: #274718 !important;
+  font-weight: 600 !important;
+}
+
+.follow-user-btn.following:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #b91c1c !important;
+}
+
+/* Fix nút secondary và văn bản trên thẻ nền sáng (.nature-card) để không bị chữ trắng chìm */
+.nature-card .nature-btn-secondary {
+  background: rgba(32, 37, 28, 0.08) !important;
+  border: 1px solid rgba(32, 37, 28, 0.18) !important;
+  color: #1e241b !important;
+}
+
+.nature-card .nature-btn-secondary:hover {
+  background: rgba(32, 37, 28, 0.16) !important;
+  border-color: rgba(32, 37, 28, 0.3) !important;
+  color: #0d120a !important;
+  transform: translateY(-1px);
+}
+
+.nature-card .text-muted {
+  color: #586150 !important;
+}
+
+.nature-card h1,
+.nature-card h2,
+.nature-card h3,
+.nature-card h4,
+.nature-card h5,
+.nature-card h6 {
+  color: #1a2217 !important;
+}
+
+.nature-card .border-top {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+
+.admin-table td,
+.table td {
+  padding: 1.1rem 1.25rem !important;
+  vertical-align: middle !important;
+  color: #2b3026 !important;
+  border-bottom: 1px solid #eef1ea !important;
+}
+
+.admin-table tr:hover td,
+.table tbody tr:hover td {
+  background-color: rgba(155, 189, 85, 0.08) !important;
+}
+
+/* ── 11. BÌNH LUẬN & THẢO LUẬN (COMMENTS) ────────────────────────────────── */
+.comment-card {
+  background: #ffffff !important;
+  border: 1px solid #e7eae2 !important;
+  border-radius: 20px !important;
+  padding: 1.25rem 1.5rem !important;
+  margin-bottom: 1rem !important;
+  color: #23261f !important;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.06) !important;
+}
+
+.comment-author {
+  font-weight: 600 !important;
+  color: #3f6620 !important;
+  font-size: 0.95rem !important;
+}
+
+.comment-time {
+  font-size: 0.8rem !important;
+  color: #8c9185 !important;
+}
+
+.comment-text {
+  margin-top: 0.5rem !important;
+  color: #2f3429 !important;
+  line-height: 1.6 !important;
+}
+
+.comment-reply-node>.comment-card {
+  background: #fbfcf9 !important;
+  border-left: 3px solid #9bbd55 !important;
+}
+
+/* ── 12. BỘ TÌM KIẾM (SEARCH INPUT GROUP) – Chìm sâu vào nền rêu tối ──────── */
+.search-input-group {
+  background: rgba(26, 32, 24, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.25s ease !important;
+}
+
+.search-input-group:hover {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+  background: rgba(26, 32, 24, 0.85) !important;
+}
+
+.search-input-group:focus-within {
+  border-color: #9bbd55 !important;
+  background: rgba(20, 26, 18, 0.95) !important;
+  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.22), 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+.search-input-group .input-group-text {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #9bbd55 !important;
+}
+
+.app-container .search-input-group input[type="text"].nature-search-input,
+.search-input-group input.nature-search-input,
+.nature-search-input {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-size: 0.95rem !important;
+  padding: 0.75rem 0.5rem !important;
+  outline: none !important;
+  border-radius: 0 !important;
+}
+
+.app-container .search-input-group input[type="text"].nature-search-input:focus,
+.search-input-group input.nature-search-input:focus,
+.nature-search-input:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  outline: none !important;
+}
+
+.nature-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.48) !important;
+}
+
+.search-autocomplete-dropdown {
+  background: rgba(26, 34, 23, 0.96) !important;
+  border: 1px solid rgba(155, 189, 85, 0.35) !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ── 12B. PHÂN TRANG CHUẨN NATURE GLASS (FORUM PAGINATION) ──────────────── */
+.forum-pagination {
+  gap: 0.35rem;
+}
+
+.forum-pagination .page-link {
+  background-color: rgba(34, 40, 31, 0.72) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  padding: 0.5rem 1rem !important;
+  margin: 0 !important;
+  border-radius: 9999px !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  transition: all 0.22s ease !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.forum-pagination .page-link:hover {
+  background-color: var(--color-moss, #9bbd55) !important;
+  color: #1a2217 !important;
+  border-color: var(--color-moss, #9bbd55) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(155, 189, 85, 0.35) !important;
+}
+
+.forum-pagination .page-item.active .page-link {
+  background-color: var(--color-moss, #9bbd55) !important;
+  color: #1a2217 !important;
+  border-color: var(--color-moss, #9bbd55) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 18px rgba(155, 189, 85, 0.45) !important;
+}
+
+.forum-pagination .page-item.disabled .page-link {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ── 13. TRANG TẠO BÀI VIẾT FACEBOOK COMPOSER ───────────────────────────── */
+.fb-composer-card {
+  background: #ffffff !important;
+  border-radius: 28px !important;
+  padding: 1.75rem !important;
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.45) !important;
+  color: #23261f !important;
+}
+
+.fb-composer-title-input {
+  font-size: 1.25rem !important;
+  font-weight: 500 !important;
+  color: #23261f !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #eef1ea !important;
+  border-radius: 0 !important;
+  padding: 0.5rem 0 !important;
+}
+
+.fb-composer-title-input:focus {
+  border-bottom-color: #9bbd55 !important;
+  box-shadow: none !important;
+}
+
+.fb-composer-content-input {
+  font-size: 1rem !important;
+  color: #23261f !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.75rem 0 !important;
+}
+
+.fb-composer-content-input:focus {
+  box-shadow: none !important;
+}
+
+.fb-composer-toolbar {
+  background: #f8faf5 !important;
+  border: 1px solid #e5eae0 !important;
+  border-radius: 18px !important;
+  padding: 0.65rem 1rem !important;
+}
+
+.fb-composer-tool-btn {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #4a5043 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.fb-composer-tool-btn:hover {
+  background: #ffffff !important;
+  border-color: #dcdfd6 !important;
+  color: #23261f !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── 14. BẢN ĐỒ DÃ NGOẠI (MAP FRAME) ────────────────────────────────────── */
+#places-map {
+  height: 480px !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.55) !important;
+  background: #1a2217 !important;
+}
+
+/* ── 15. TOAST THÔNG BÁO GÓC PHẢI ───────────────────────────────────────── */
+.app-toast {
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   16. FLOATING NOTIFICATION WIDGET – Chuông nổi cố định góc trên phải
+       Phong cách Nature Paper & Forest Canvas, đồng bộ Admin Dashboard
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Container tổng: fixed cạnh trên bên phải ─────────────────────────── */
+.floating-notification-widget {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.5rem;
+  z-index: 1060;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* ─── Nút chuông tròn 44×44 px, kính mờ Forest ─────────────────────────── */
+.floating-bell-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(34, 40, 31, 0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: rgba(241, 241, 236, 0.90);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.floating-bell-btn:hover {
+  background: rgba(47, 94, 46, 0.65);
+  border-color: rgba(155, 189, 85, 0.6);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(155, 189, 85, 0.20), 0 12px 32px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.floating-bell-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── Badge số đỏ nhấp nháy ─────────────────────────────────────────────── */
+.bell-badge-pulse {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: #e63946;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border: 2px solid rgba(34, 40, 31, 0.9);
+  animation: bellPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes bellPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.6);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(230, 57, 70, 0);
+  }
+}
+
+/* ─── Panel popup thông báo – Nature Paper Card ─────────────────────────── */
+.floating-notifications-panel {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  width: 360px;
+  max-width: calc(100vw - 2rem);
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.35),
+    0 2px 0 rgba(255, 255, 255, 0.90) inset;
+  overflow: hidden;
+  color: #23261f;
+  transform-origin: top right;
+  animation: notifPanelSlide 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes notifPanelSlide {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── Header panel ──────────────────────────────────────────────────────── */
+.floating-notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.15rem 0.75rem;
+  border-bottom: 1px solid #eef1ea;
+}
+
+.floating-notif-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(155, 189, 85, 0.15);
+  color: #4a7c59;
+  font-size: 0.85rem;
+}
+
+.floating-notif-title {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #1a2217;
+  letter-spacing: -0.01em;
+}
+
+.floating-notif-markall {
+  background: none;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #4a7c59;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.floating-notif-markall:hover {
+  background: rgba(155, 189, 85, 0.12);
+  color: #2f5e2e;
+}
+
+/* ─── Danh sách thông báo có cuộn ──────────────────────────────────────── */
+.notifications-list-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #dcdfd6 transparent;
+}
+
+.notifications-list-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notifications-list-scroll::-webkit-scrollbar-thumb {
+  background: #dcdfd6;
+  border-radius: 4px;
+}
+
+/* ─── Từng mục thông báo ────────────────────────────────────────────────── */
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1.15rem;
+  text-decoration: none;
+  color: #2f3429;
+  border-bottom: 1px solid #f2f3ef;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background: #f8faf5;
+  color: #1a2217;
+}
+
+.notification-item.unread {
+  background: #f4f8ef;
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #9bbd55;
+  border-radius: 0 2px 2px 0;
+}
+
+.notification-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 0.875rem;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-content .fw-medium {
+  font-size: 0.84rem;
+  color: #23261f;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #8c9185;
+  margin-top: 0.2rem;
+}
+
+/* ─── Footer panel ──────────────────────────────────────────────────────── */
+.floating-notif-footer {
+  padding: 0.65rem 1.15rem;
+  border-top: 1px solid #eef1ea;
+  background: #fbfcf9;
+}
+
+.floating-notif-link {
+  font-size: 0.8rem;
+  color: #4a7c59;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.floating-notif-link:hover {
+  color: #2f5e2e;
+}
+
+/* ─── Mobile: Floating Notification FAB góc dưới bên phải (Chuẩn Thumb Zone UX) ─── */
+@media (max-width: 991.98px) {
+  .floating-notification-widget {
+    top: auto !important;
+    bottom: 1.5rem !important;
+    right: 1.25rem !important;
+    display: flex !important;
+    z-index: 1060 !important;
+  }
+
+  .floating-bell-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.15rem !important;
+    background: rgba(34, 40, 31, 0.92) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .floating-notifications-panel {
+    top: auto !important;
+    bottom: calc(100% + 0.75rem) !important;
+    right: 0 !important;
+    width: min(350px, calc(100vw - 2rem)) !important;
+    max-height: min(480px, calc(100vh - 120px)) !important;
+    transform-origin: bottom right !important;
+    animation: notifPanelSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+
+  .floating-bell-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.15rem !important;
+    background: rgba(34, 40, 31, 0.92) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .floating-notifications-panel {
+    top: auto !important;
+    bottom: calc(100% + 0.75rem) !important;
+    right: 0 !important;
+    width: min(350px, calc(100vw - 2rem)) !important;
+    max-height: min(480px, calc(100vh - 120px)) !important;
+    transform-origin: bottom right !important;
+    animation: notifPanelSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+}
+
+@keyframes notifPanelSlideUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes notifPanelSlideUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ─── Badge trên mobile bell (mobileNavUnreadBadge) dùng lại bell-badge-pulse */
+#mobileNavUnreadBadge {
+  animation: bellPulse 2s ease-in-out infinite;
+}
+
+/* ─── Composer toolbar buttons ─────────────────────────────────────────── */
+.composer-toolbar-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.75rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 220ms var(--lg-spring);
+}
+
+.composer-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.composer-toolbar-btn i {
+  font-size: 1.25rem;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 189, 85, 0.35);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 189, 85, 0.55);
+}
+
+/* ─── Focus ring ────────────────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid rgba(155, 189, 85, 0.65) !important;
+  outline-offset: 2px !important;
+}
+
+/* ─── Reduced motion ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lg-iridescent::after {
+    animation: none;
+  }
+
+  .paper-card,
+  .paper-card:hover,
+  .app-container article.nature-card:hover {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .modal-content {
+    animation: none !important;
+  }
+}
+
+/* ─── Profile tabs & Avatar input (Nature / Liquid Glass) ───────────────── */
+#profileTabs .nav-link {
+  color: rgba(255, 255, 255, 0.70) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  font-weight: 500;
+  transition: all 0.25s ease !important;
+}
+
+#profileTabs .nav-link:hover:not(.active) {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(155, 189, 85, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+#profileTabs .nav-link.active {
+  color: #1a2217 !important;
+  background: linear-gradient(135deg, #c4e482 0%, #9bbd55 100%) !important;
+  border-color: #9bbd55 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 8px 24px -6px rgba(155, 189, 85, 0.50), 0 1px 0 rgba(255, 255, 255, 0.60) inset !important;
+}
+
+/* File input avatar căn giữa chuẩn */
+input[type="file"].nature-input {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem !important;
+  line-height: normal;
+  cursor: pointer;
+}
+
+input[type="file"].nature-input::file-selector-button {
+  background: #20251c;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.38rem 1rem;
+  margin-right: 0.85rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="file"].nature-input::file-selector-button:hover {
+  background: #2e3529;
+  color: #c4e482;
+}
+
+.dock-logo img {
+  width: 38px !important;
+  height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  object-fit: contain !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   27. OUTDOOR FORUM AI CHATBOT WIDGET (Di chuyển linh động & Tích hợp Gemini)
+   ════════════════════════════════════════════════════════════════════════════ */
+.outdoor-chatbot-launcher {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1040;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: grab;
+  transition: opacity 0.25s ease;
+}
+
+.outdoor-chatbot-launcher.is-dragging {
+  cursor: grabbing !important;
+}
+
+.outdoor-chatbot-launcher.is-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.outdoor-chatbot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 1.05rem 0.45rem 0.5rem;
+  background: linear-gradient(135deg, rgba(38, 48, 32, 0.94) 0%, rgba(20, 26, 17, 0.97) 100%) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #ffffff !important;
+  border: 1.5px solid rgba(155, 189, 85, 0.45) !important;
+  border-radius: 9999px !important;
+  cursor: grab;
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.6), 0 0 16px rgba(155, 189, 85, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+  position: relative;
+  outline: none;
+}
+
+.outdoor-chatbot-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: #9bbd55 !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.7), 0 0 24px rgba(155, 189, 85, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.outdoor-chatbot-launcher.is-dragging .outdoor-chatbot-btn {
+  transform: scale(1.06) !important;
+  border-color: #a4ce57 !important;
+  box-shadow: 0 20px 42px -6px rgba(0, 0, 0, 0.8), 0 0 30px rgba(164, 206, 87, 0.5) !important;
+}
+
+.outdoor-chatbot-btn.active {
+  background: linear-gradient(135deg, rgba(48, 62, 38, 0.96) 0%, rgba(26, 34, 22, 0.98) 100%) !important;
+  border-color: #a4ce57 !important;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 0 22px rgba(164, 206, 87, 0.45) !important;
+}
+
+/* Tay cầm kéo di chuyển */
+.chatbot-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(160, 180, 140, 0.45);
+  font-size: 0.95rem;
+  line-height: 1;
+  margin-right: -0.2rem;
+  cursor: grab;
+  transition: color 0.2s ease;
+}
+
+.outdoor-chatbot-btn:hover .chatbot-drag-handle {
+  color: #a4ce57;
+}
+
+/* Biểu tượng logo Celtic của app */
+.chatbot-brand-wrap {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chatbot-brand-img {
+  width: 32px;
+  height: 32px;
+  max-width: 32px;
+  max-height: 32px;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
+  background: #171d13;
+  padding: 1.5px;
+  border: 1px solid rgba(155, 189, 85, 0.35);
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+  transition: transform 0.25s ease;
+}
+
+.outdoor-chatbot-btn:hover .chatbot-brand-img {
+  transform: rotate(10deg) scale(1.05);
+}
+
+.chatbot-online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #34d399;
+  border: 2px solid #20271b;
+  box-shadow: 0 0 6px #34d399;
+  animation: chatbotDotPulse 2s infinite ease-in-out;
+}
+
+@keyframes chatbotDotPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.75;
+  }
+}
+
+.chatbot-brand-label {
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: #f4f7ee;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+.chatbot-sparkle-icon {
+  font-size: 0.95rem;
+  color: #c4e482;
+  transition: transform 0.3s ease, color 0.3s ease;
+  line-height: 1;
+}
+
+.outdoor-chatbot-btn:hover .chatbot-sparkle-icon {
+  transform: rotate(20deg) scale(1.2);
+  color: #dbff8f;
+}
+
+/* Hiệu ứng mở cửa sổ Chatbox */
+@keyframes lg-modal-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Cửa sổ Chatbox */
+.outdoor-chatbot-window {
+  position: fixed;
+  bottom: 85px !important;
+  right: 24px !important;
+  left: auto !important;
+  top: auto !important;
+  width: 390px !important;
+  max-width: calc(100vw - 24px);
+  height: 540px !important;
+  max-height: calc(100vh - 100px);
+  background: #ffffff !important;
+  color: #23261f !important;
+  border-radius: 26px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 28px 70px -15px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  z-index: 1045;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: lg-modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.outdoor-chatbot-header {
+  background: linear-gradient(135deg, #242a20 0%, #1a2016 100%) !important;
+  color: #ffffff !important;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chatbot-avatar-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(155, 189, 85, 0.15);
+  color: #c4e482;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px solid rgba(155, 189, 85, 0.4);
+  flex-shrink: 0;
+}
+
+.chatbot-header-logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
+}
+
+.chatbot-status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #242a20;
+}
+
+.chatbot-title {
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.chatbot-mini-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.12rem 0.4rem;
+  background: rgba(155, 189, 85, 0.2);
+  border: 1px solid rgba(155, 189, 85, 0.4);
+  border-radius: 6px;
+  color: #c4e482;
+  line-height: 1;
+}
+
+.chatbot-subtitle {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chatbot-header-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chatbot-header-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* Nội dung chat */
+.outdoor-chatbot-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.1rem 1rem;
+  background: #fafbfa !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.chat-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 90%;
+}
+
+.chat-msg-bot {
+  align-self: flex-start;
+}
+
+.chat-msg-user {
+  align-self: flex-end;
+  flex-direction: row;
+}
+
+.chat-msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2a3325;
+  color: #c4e482;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid rgba(155, 189, 85, 0.3);
+}
+
+.chat-bot-avatar-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
+}
+
+.chat-msg-avatar.user-avatar {
+  background: #9bbd55;
+  color: #1a2217;
+  border-color: #8baa45;
+}
+
+.chat-msg-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.chat-msg-bot .chat-msg-bubble {
+  background: #ffffff !important;
+  color: #23261f !important;
+  border: 1px solid #e5eae0 !important;
+  border-top-left-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.chat-msg-user .chat-msg-bubble {
+  background: linear-gradient(135deg, #9bbd55 0%, #7aab3a 100%) !important;
+  color: #162012 !important;
+  border-top-right-radius: 4px;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(155, 189, 85, 0.25);
+}
+
+/* Quick prompt pills */
+.quick-prompt-label {
+  font-size: 0.75rem;
+  color: #72776c;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quick-prompt-btn {
+  background: #f1f4ed;
+  border: 1px solid #dce2d6;
+  border-radius: 9999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #35422d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.quick-prompt-btn:hover {
+  background: #9bbd55;
+  border-color: #9bbd55;
+  color: #1a2217;
+  transform: translateY(-1px);
+}
+
+/* Typing Indicator */
+.outdoor-chatbot-typing {
+  background: #fafbfa;
+}
+
+.typing-bubble {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  background: #ffffff;
+  border: 1px solid #e5eae0;
+  border-radius: 16px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: #9bbd55;
+  border-radius: 50%;
+  margin-right: 3px;
+  animation: typingBounce 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+  margin-right: 0;
+}
+
+@keyframes typingBounce {
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Footer nhập tin nhắn (Dạng viên thuốc thanh lịch, cuộn mượt khi prompt dài) */
+.outdoor-chatbot-footer {
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border-top: 1px solid #edf0e8;
+}
+
+.chatbot-input {
+  background: #f6f8f3 !important;
+  border: 1px solid #dcdfd6 !important;
+  color: #23261f !important;
+  border-radius: 9999px !important;
+  padding: 0.6rem 1rem !important;
+  font-size: 0.88rem !important;
+  height: 42px !important;
+  white-space: nowrap !important;
+  overflow-x: auto !important;
+  box-sizing: border-box !important;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatbot-input::-webkit-scrollbar {
+  display: none;
+}
+
+.chatbot-input:focus {
+  background: #ffffff !important;
+  border-color: #9bbd55 !important;
+  box-shadow: 0 0 0 3px rgba(155, 189, 85, 0.2) !important;
+}
+
+.chatbot-send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50% !important;
+  background: #9bbd55 !important;
+  color: #1a2217 !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.chatbot-send-btn:hover {
+  background: #7aab3a !important;
+  transform: scale(1.05);
+}
+
+.chatbot-footer-caption small {
+  font-size: 0.68rem;
+  color: #969c8f;
+}
+
+/* Mobile responsive */
+@media (max-width: 576px) {
+  .outdoor-chatbot-launcher {
+    bottom: 80px;
+    right: 16px;
+  }
+
+  .outdoor-chatbot-window {
+    bottom: 140px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    height: 460px;
+  }
+}

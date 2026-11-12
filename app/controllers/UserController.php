@@ -64,7 +64,12 @@ class UserController extends Controller
 
         $sessionUser = Session::get('user', []);
         $sessionUser['username'] = $username;
+        $sessionUser['bio'] = $bio;
+        $sessionUser['avatar_path'] = $avatarPath;
         Session::set('user', $sessionUser);
+        if (class_exists('Notification')) {
+            Notification::send((int) $user->getId(), (int) $user->getId(), 'update_profile', (int) $user->getId(), 'Bạn đã cập nhật thông tin hồ sơ cá nhân thành công.');
+        }
         Session::flash('success', 'Cập nhật hồ sơ thành công.');
         $this->redirect('/profile');
     }
@@ -103,6 +108,9 @@ class UserController extends Controller
         }
 
         Session::regenerate();
+        if (class_exists('Notification')) {
+            Notification::send((int) $user->getId(), (int) $user->getId(), 'update_profile', (int) $user->getId(), 'Mật khẩu tài khoản của bạn đã được thay đổi thành công.');
+        }
         Session::flash('success', 'Đổi mật khẩu thành công.');
         $this->redirect('/profile');
     }

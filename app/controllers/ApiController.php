@@ -5,6 +5,7 @@ require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../services/WeatherService.php';
 require_once __DIR__ . '/../services/VietnamAddressService.php';
+require_once __DIR__ . '/../services/QrCodeService.php';
 require_once __DIR__ . '/../helpers/Session.php';
 require_once __DIR__ . '/../helpers/Auth.php';
 require_once __DIR__ . '/../helpers/Csrf.php';
@@ -24,6 +25,7 @@ class ApiController extends Controller
 {
     private WeatherService $weatherService;
     private VietnamAddressService $addressService;
+    private QrCodeService $qrCodeService;
     private Comment $comments;
     private Post $posts;
     private User $users;
@@ -32,21 +34,36 @@ class ApiController extends Controller
     {
         $this->weatherService = new WeatherService();
         $this->addressService = new VietnamAddressService();
+        $this->qrCodeService = new QrCodeService();
         $this->comments = new Comment();
         $this->posts = new Post();
         $this->users = new User();
     }
 
     /**
-     * GET /api/weather?lat=...&lng=...
-     * Gọi Web Service Open-Meteo lấy thời tiết hiện tại và dự báo 4 ngày
+     * GET /api/weather?lat=...&lng=...&date=...
+     * Gọi Web Service Open-Meteo lấy thời tiết hiện tại, chỉ số UV, chất lượng không khí (AQI/PM2.5) và dự báo 4 ngày
      */
     public function weather(): void
     {
         $lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float)$_GET['lat'] : 21.2833;
         $lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float)$_GET['lng'] : 104.3167;
+        $forecastDate = isset($_GET['date']) ? trim((string)$_GET['date']) : '';
 
-        $forecast = $this->weatherService->getForecast($lat, $lng);
+        if ($forecastDate !== '') {
+            $dateObj = DateTimeImmutable::createFromFormat('!Y-m-d', $forecastDate);
+            $today = new DateTimeImmutable('today');
+            if (!$dateObj || $dateObj->format('Y-m-d') !== $forecastDate) {
+                Response::json(['success' => false, 'message' => 'Ngày dự báo không hợp lệ.'], 400);
+                return;
+            }
+            if ($dateObj < $today || $dateObj > $today->modify('+15 days')) {
+                // Nếu ngày chuyến đi nằm ngoài khoảng 16 ngày tới, vẫn trả về thời tiết hiện tại của tọa độ kèm ghi chú
+                $forecastDate = '';
+            }
+        }
+
+        $forecast = $this->weatherService->getForecast($lat, $lng, $forecastDate);
         Response::json([
             'success' => true,
             'data'    => $forecast
@@ -83,12 +100,12 @@ class ApiController extends Controller
     }
 
     /**
-     * GET /api/comments?post_id=...
+     * GET /api/posts/{id}/comments (hoặc /api/comments?post_id=...)
      * Lấy danh sách bình luận của bài viết qua AJAX (FR07 - Hỗ trợ Realtime Polling)
      */
-    public function listComments(): void
+    public function listComments(?int $routePostId = null): void
     {
-        $postId = isset($_GET['post_id']) ? (int)$_GET['post_id'] : 0;
+        $postId = $routePostId ?? (isset($_GET['post_id']) ? (int)$_GET['post_id'] : 0);
         if ($postId <= 0) {
             Response::json(['success' => false, 'message' => 'Thiếu ID bài viết.'], 400);
             return;
@@ -128,13 +145,13 @@ class ApiController extends Controller
     }
 
     /**
-     * POST /api/comments (hoặc /api/comments.php)
+     * POST /api/posts/{id}/comments (hoặc /api/comments)
      * Thêm bình luận mới hoặc trả lời bình luận lồng nhau nhiều cấp bằng AJAX (FR07)
      */
-    public function createComment(): void
+    public function createComment(?int $routePostId = null): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để gửi bình luận.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('gửi bình luận')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -144,7 +161,7 @@ class ApiController extends Controller
             $json = [];
         }
 
-        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? 0);
+        $postId = $routePostId ?? (int)($json['post_id'] ?? $_POST['post_id'] ?? 0);
         $parentIdRaw = $json['parent_id'] ?? $_POST['parent_id'] ?? null;
         $parentId = ($parentIdRaw !== null && $parentIdRaw !== '' && (int)$parentIdRaw > 0) ? (int)$parentIdRaw : null;
         $content = trim((string)($json['content'] ?? $_POST['content'] ?? ''));
@@ -178,29 +195,46 @@ class ApiController extends Controller
         if ($commentId > 0) {
             $totalComments = $this->comments->countByPost($postId);
 
-            // Gửi thông báo đến chủ bài viết hoặc người được trả lời
+            // Gửi thông báo đến chủ bài viết, người được trả lời và lưu lịch sử cho chính người bình luận
             $post = $this->posts->getById($postId);
             $postTitleShort = $post ? mb_strimwidth($post['title'], 0, 35, '...') : 'bài viết';
+            $actorName = (string)($user['username'] ?? 'Một thành viên');
+            $parentAuthorId = 0;
+
             if ($parentId && $parentUsername) {
                 $parentRow = $this->comments->findById($parentId);
-                if ($parentRow && (int)($parentRow['user_id'] ?? 0) !== $userId) {
+                $parentAuthorId = (int)($parentRow['user_id'] ?? 0);
+                if ($parentAuthorId > 0 && $parentAuthorId !== $userId) {
                     Notification::send(
-                        (int)$parentRow['user_id'],
+                        $parentAuthorId,
                         $userId,
                         'reply_comment',
                         $postId,
-                        ($user['username'] ?? 'Một thành viên') . ' đã trả lời bình luận của bạn trong bài "' . $postTitleShort . '"'
+                        $actorName . ' đã trả lời bình luận của bạn trong bài "' . $postTitleShort . '".'
                     );
                 }
-            } elseif ($post && (int)$post['user_id'] !== $userId) {
+            }
+
+            if ($post && (int)$post['user_id'] !== $userId && (int)$post['user_id'] !== $parentAuthorId) {
                 Notification::send(
                     (int)$post['user_id'],
                     $userId,
                     'comment_post',
                     $postId,
-                    ($user['username'] ?? 'Một thành viên') . ' đã bình luận về bài viết "' . $postTitleShort . '" của bạn.'
+                    $actorName . ' đã bình luận về bài viết "' . $postTitleShort . '" của bạn.'
                 );
             }
+
+            // Lưu thông báo phản hồi cho chính người gửi bình luận
+            Notification::send(
+                $userId,
+                $userId,
+                $parentId ? 'reply_comment' : 'comment_post',
+                $postId,
+                $parentId
+                    ? 'Bạn đã trả lời bình luận của @' . ($parentUsername ?: 'thành viên') . ' trong bài "' . $postTitleShort . '".'
+                    : 'Bạn đã gửi bình luận tại bài viết "' . $postTitleShort . '".'
+            );
 
             Response::json([
                 'success' => true,
@@ -226,13 +260,13 @@ class ApiController extends Controller
     }
 
     /**
-     * POST /api/comments/delete
+     * DELETE /api/comments/{id} (hoặc POST /api/comments/delete)
      * Xóa bình luận của chính mình hoặc Admin qua AJAX (FR07)
      */
-    public function deleteComment(): void
+    public function deleteComment(?int $routeCommentId = null): void
     {
-        if (!Session::has('user')) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để thực hiện.'], 401);
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('xóa bình luận')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -242,7 +276,7 @@ class ApiController extends Controller
             $json = [];
         }
 
-        $commentId = (int)($json['comment_id'] ?? $_POST['comment_id'] ?? 0);
+        $commentId = $routeCommentId ?? (int)($json['comment_id'] ?? $_POST['comment_id'] ?? 0);
         $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? 0);
         $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
 
@@ -259,10 +293,33 @@ class ApiController extends Controller
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
         $canModerate = Auth::isModerator($user);
+        $targetCm = $this->comments->findById($commentId);
+        $cmPostId = $postId > 0 ? $postId : (int)($targetCm['post_id'] ?? 0);
+        $cmOwnerId = (int)($targetCm['user_id'] ?? 0);
 
         $deleted = $this->comments->delete($commentId, $userId, $canModerate);
         if ($deleted) {
-            $totalComments = $postId > 0 ? $this->comments->countByPost($postId) : 0;
+            $totalComments = $cmPostId > 0 ? $this->comments->countByPost($cmPostId) : 0;
+
+            if ($userId > 0) {
+                Notification::send(
+                    $userId,
+                    $userId,
+                    'activity',
+                    $cmPostId,
+                    'Bạn đã xóa một bình luận.'
+                );
+            }
+            if ($cmOwnerId > 0 && $cmOwnerId !== $userId) {
+                Notification::send(
+                    $cmOwnerId,
+                    $userId > 0 ? $userId : $cmOwnerId,
+                    'system',
+                    $cmPostId,
+                    'Ban quản trị đã xóa một bình luận của bạn do vi phạm quy tắc cộng đồng.'
+                );
+            }
+
             Response::json([
                 'success' => true,
                 'message' => 'Đã xóa bình luận.',
@@ -278,13 +335,13 @@ class ApiController extends Controller
     }
 
     /**
-     * POST /api/comments/like (hoặc /api/comments.php?action=like)
+     * POST /api/comments/{id}/like (hoặc /api/comments/like)
      * Thích hoặc Bỏ thích bình luận bằng AJAX không reload trang (FR07, FR08)
      */
-    public function likeComment(): void
+    public function likeComment(?int $routeCommentId = null): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để thích bình luận.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('thích bình luận')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -294,7 +351,7 @@ class ApiController extends Controller
             $json = [];
         }
 
-        $commentId = (int)($json['comment_id'] ?? $_POST['comment_id'] ?? 0);
+        $commentId = $routeCommentId ?? (int)($json['comment_id'] ?? $_POST['comment_id'] ?? 0);
         $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
 
         if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
@@ -314,12 +371,23 @@ class ApiController extends Controller
 
         if ($result['liked']) {
             $cm = $this->comments->getById($commentId);
-            if ($cm && (int)($cm['user_id'] ?? 0) !== $userId) {
+            $cmPostId = (int)($cm['post_id'] ?? 0);
+            $cmOwnerId = (int)($cm['user_id'] ?? 0);
+
+            Notification::send(
+                $userId,
+                $userId,
+                'like_comment',
+                $cmPostId,
+                'Bạn đã thích một bình luận trong bài thảo luận.'
+            );
+
+            if ($cm && $cmOwnerId > 0 && $cmOwnerId !== $userId) {
                 Notification::send(
-                    (int)$cm['user_id'],
+                    $cmOwnerId,
                     $userId,
                     'like_comment',
-                    (int)($cm['post_id'] ?? 0),
+                    $cmPostId,
                     ($user['username'] ?? 'Một thành viên') . ' đã thích bình luận của bạn.'
                 );
             }
@@ -336,14 +404,14 @@ class ApiController extends Controller
     }
 
     /**
-     * GET /api/check-user (hoặc /api/check-user.php)
+     * GET /api/check-email?e=... hoặc /api/check-user?username=...
      * Kiểm tra trùng username hoặc email ngay khi đăng ký bằng AJAX (FR01)
      */
     public function checkUserAvailability(): void
     {
         $field = trim((string)($_GET['field'] ?? ''));
-        $username = trim((string)($_GET['username'] ?? ''));
-        $email = trim((string)($_GET['email'] ?? ''));
+        $username = trim((string)($_GET['username'] ?? $_GET['u'] ?? ''));
+        $email = trim((string)($_GET['email'] ?? $_GET['e'] ?? ''));
 
         // 1. Kiểm tra username
         if ($username !== '' || $field === 'username') {
@@ -468,13 +536,13 @@ class ApiController extends Controller
     }
 
     /**
-     * POST /api/likes.php hoặc /api/votes
+     * POST /api/posts/{id}/like, POST /api/posts/{id}/vote (hoặc /api/likes.php)
      * Xử lý Upvote (+1) / Downvote (-1) bài viết qua AJAX
      */
-    public function votePost(): void
+    public function votePost(?int $routePostId = null): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('bình chọn (Upvote / Downvote) bài viết')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -484,7 +552,13 @@ class ApiController extends Controller
             $json = [];
         }
 
-        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
+        }
+
+        $postId = $routePostId ?? (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
         if ($postId <= 0) {
             Response::json(['success' => false, 'message' => 'Bài viết không hợp lệ.'], 400);
             return;
@@ -496,17 +570,35 @@ class ApiController extends Controller
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
         $voteData = $this->posts->vote($postId, $userId, $voteType);
+        $voteData['liked'] = ((int)($voteData['user_vote'] ?? 0) === 1);
+        $voteData['count'] = (int)($voteData['score'] ?? 0);
 
-        if ($voteData['user_vote'] === 1) {
+        if ((int)($voteData['user_vote'] ?? 0) !== 0) {
             $post = $this->posts->getById($postId);
-            if ($post && (int)($post['user_id'] ?? 0) !== $userId) {
+            if ($post) {
+                $shortTitle = mb_strimwidth((string)($post['title'] ?? 'bài viết'), 0, 35, '...');
+                $postOwnerId = (int)($post['user_id'] ?? 0);
+                $isUpvote = (int)($voteData['user_vote'] ?? 0) === 1;
+
                 Notification::send(
-                    (int)$post['user_id'],
+                    $userId,
                     $userId,
                     'like_post',
                     $postId,
-                    ($user['username'] ?? 'Một thành viên') . ' đã thích bài viết "' . mb_strimwidth($post['title'], 0, 35, '...') . '" của bạn.'
+                    $isUpvote
+                        ? 'Bạn đã thích (Upvote) bài viết "' . $shortTitle . '".'
+                        : 'Bạn đã đánh giá (Downvote) bài viết "' . $shortTitle . '".'
                 );
+
+                if ($postOwnerId > 0 && $postOwnerId !== $userId) {
+                    Notification::send(
+                        $postOwnerId,
+                        $userId,
+                        'like_post',
+                        $postId,
+                        ($user['username'] ?? 'Một thành viên') . ($isUpvote ? ' đã thích bài viết "' : ' đã bình chọn bài viết "') . $shortTitle . '" của bạn.'
+                    );
+                }
             }
         }
 
@@ -523,7 +615,7 @@ class ApiController extends Controller
     public function toggleBookmark(): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để lưu bài viết này.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('lưu bài viết vào bộ sưu tập')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -533,13 +625,13 @@ class ApiController extends Controller
             $json = [];
         }
 
-        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
-        $csrf = $json['_csrf'] ?? $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
-
-        if (!Csrf::verify(is_string($csrf) ? $csrf : null)) {
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
             Response::json(['success' => false, 'message' => 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'], 419);
             return;
         }
+
+        $postId = (int)($json['post_id'] ?? $_POST['post_id'] ?? $_GET['post_id'] ?? 0);
 
         if ($postId <= 0) {
             Response::json(['success' => false, 'message' => 'Bài viết không hợp lệ.'], 400);
@@ -547,8 +639,35 @@ class ApiController extends Controller
         }
 
         $userId = (int)Auth::id();
+        $user = Session::get('user');
         $bookmarkModel = new Bookmark();
         $res = $bookmarkModel->toggle($userId, $postId);
+
+        if (class_exists('Notification')) {
+            $post = $this->posts->getById($postId);
+            $shortTitle = $post ? mb_strimwidth((string)$post['title'], 0, 35, '...') : 'bài viết';
+            $postOwnerId = (int)($post['user_id'] ?? 0);
+
+            Notification::send(
+                $userId,
+                $userId,
+                'bookmark_post',
+                $postId,
+                $res['bookmarked']
+                    ? 'Bạn đã lưu bài viết "' . $shortTitle . '" vào bộ sưu tập.'
+                    : 'Bạn đã bỏ lưu bài viết "' . $shortTitle . '".'
+            );
+
+            if ($res['bookmarked'] && $postOwnerId > 0 && $postOwnerId !== $userId) {
+                Notification::send(
+                    $postOwnerId,
+                    $userId,
+                    'bookmark_post',
+                    $postId,
+                    ($user['username'] ?? 'Một thành viên') . ' đã lưu bài viết "' . $shortTitle . '" của bạn vào bộ sưu tập.'
+                );
+            }
+        }
 
         Response::json([
             'success' => true,
@@ -568,7 +687,7 @@ class ApiController extends Controller
     public function toggleUserFollow(): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để theo dõi thành viên này.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('theo dõi thành viên này')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -595,15 +714,30 @@ class ApiController extends Controller
         $followModel = new Follow();
         $res = $followModel->toggleUserFollow($followerId, $followingId);
 
-        if ($res['following']) {
+        if (class_exists('Notification')) {
             $user = Session::get('user');
+            $targetUser = $this->users->findById($followingId);
+            $targetName = $targetUser ? $targetUser->getUsername() : 'thành viên #' . $followingId;
+
             Notification::send(
-                $followingId,
+                $followerId,
                 $followerId,
                 'follow_user',
-                $followerId,
-                ($user['username'] ?? 'Một thành viên') . ' đã bắt đầu theo dõi bạn!'
+                $followingId,
+                $res['following']
+                    ? 'Bạn đã bắt đầu theo dõi thành viên ' . $targetName . '.'
+                    : 'Bạn đã hủy theo dõi thành viên ' . $targetName . '.'
             );
+
+            if ($res['following']) {
+                Notification::send(
+                    $followingId,
+                    $followerId,
+                    'follow_user',
+                    $followerId,
+                    ($user['username'] ?? 'Một thành viên') . ' đã bắt đầu theo dõi bạn!'
+                );
+            }
         }
 
         Response::json([
@@ -624,7 +758,7 @@ class ApiController extends Controller
     public function toggleCategoryFollow(): void
     {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để theo dõi chuyên mục.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('theo dõi chuyên mục')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -650,6 +784,21 @@ class ApiController extends Controller
         $userId = (int)Auth::id();
         $followModel = new Follow();
         $res = $followModel->toggleCategoryFollow($userId, $categoryId);
+
+        if (class_exists('Notification')) {
+            $catModel = new Category();
+            $cat = $catModel->findById($categoryId);
+            $catName = $cat ? mb_substr((string)($cat['name'] ?? 'Chuyên mục'), 0, 35) : 'Chuyên mục #' . $categoryId;
+            Notification::send(
+                $userId,
+                $userId,
+                'follow_category',
+                $categoryId,
+                $res['following']
+                    ? "Bạn đã theo dõi chuyên mục: '{$catName}'."
+                    : "Bạn đã hủy theo dõi chuyên mục: '{$catName}'."
+            );
+        }
 
         Response::json([
             'success' => true,
@@ -677,6 +826,14 @@ class ApiController extends Controller
         $list = $notifModel->getByUserId($userId, 15);
         $unreadCount = $notifModel->getUnreadCount($userId);
 
+        foreach ($list as &$n) {
+            $cleanContent = strip_tags(html_entity_decode((string)($n['content'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $cleanActor = strip_tags(html_entity_decode((string)($n['actor_username'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $n['content'] = $cleanContent;
+            $n['actor_username'] = $cleanActor;
+        }
+        unset($n);
+
         Response::json([
             'success' => true,
             'data'    => [
@@ -703,6 +860,12 @@ class ApiController extends Controller
             $json = [];
         }
 
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
+        }
+
         $userId = (int)Auth::id();
         $id = isset($json['id']) ? (int)$json['id'] : 0;
         $notifModel = new Notification();
@@ -726,8 +889,8 @@ class ApiController extends Controller
      */
     public function report(): void
     {
-        if (!Auth::check()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập để gửi báo cáo vi phạm.'], 401);
+        if (!Auth::isMember()) {
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('gửi báo cáo vi phạm')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -763,6 +926,22 @@ class ApiController extends Controller
         $reportId = $reportModel->create($reporterId, $targetType, $targetId, $reason, $details);
 
         if ($reportId > 0) {
+            if (class_exists('Notification')) {
+                $reporterUser = Session::get('user');
+                Notification::send(
+                    $reporterId,
+                    $reporterId,
+                    'system',
+                    $targetType === 'post' ? $targetId : 0,
+                    "Bạn đã gửi báo cáo vi phạm ({$reason}). Ban điều hành sẽ xem xét và xử lý sớm nhất."
+                );
+                Notification::notifyAdmins(
+                    $reporterId,
+                    'admin_report',
+                    $targetId,
+                    ($reporterUser['username'] ?? 'Thành viên') . " đã gửi báo cáo vi phạm ({$targetType} #{$targetId}): {$reason}."
+                );
+            }
             Response::json([
                 'success' => true,
                 'message' => 'Cảm ơn bạn đã gửi báo cáo. Ban điều hành (Moderator) sẽ xem xét và xử lý sớm nhất.'
@@ -772,5 +951,133 @@ class ApiController extends Controller
 
         Response::json(['success' => false, 'message' => 'Không thể gửi báo cáo. Vui lòng thử lại sau.'], 500);
     }
-}
 
+    /**
+     * GET /api/posts/{id}
+     * Chi tiết 1 bài viết dạng RESTful JSON (kèm ảnh, tags, dụng cụ, điểm vote)
+     */
+    public function showPost(int $id): void
+    {
+        if ($id <= 0) {
+            Response::fail('ID bài viết không hợp lệ.', 400);
+            return;
+        }
+
+        $post = $this->posts->getById($id);
+        if (!$post || (($post['status'] ?? 'published') !== 'published' && !Auth::isModerator())) {
+            Response::fail('Không tìm thấy bài viết.', 404);
+            return;
+        }
+
+        $post['tags']  = $this->posts->getTags($id);
+        $post['tools'] = $this->posts->getProducts($id);
+
+        Response::ok($post, 'Tải chi tiết bài viết thành công.');
+    }
+
+    /**
+     * GET /api/news
+     * Đọc tin tức Du lịch & Dã ngoại từ nguồn RSS (XML) chuyển đổi sang JSON (FR10)
+     */
+    public function news(): void
+    {
+        $limit = isset($_GET['limit']) ? max(1, min(20, (int)$_GET['limit'])) : 6;
+        $rssService = new RssService();
+        $data = $rssService->getOutdoorNews($limit);
+
+        Response::ok($data, 'Tải tin tức RSS (XML -> JSON) thành công.');
+    }
+
+    /**
+     * Kiểm tra quyền truy cập các endpoint thống kê (chỉ Moderator / Admin).
+     * Trả JSON 401 (chưa đăng nhập) hoặc 403 (không đủ quyền) thay vì redirect HTML như middleware.
+     */
+    private function requireModeratorJson(): void
+    {
+        if (!Auth::check()) {
+            Response::fail('Vui lòng đăng nhập để xem dữ liệu thống kê.', 401);
+        }
+        if (!Auth::isModerator()) {
+            Response::fail('Bạn không có quyền xem dữ liệu thống kê quản trị.', 403);
+        }
+    }
+
+    /**
+     * GET /api/stats  (chỉ Moderator / Admin)
+     * Thống kê tổng hợp hệ thống dạng JSON (gọi các Stored Procedures thống kê & SQL Views)
+     */
+    public function stats(): void
+    {
+        $this->requireModeratorJson();
+
+        $statsRepo = new StatsRepository();
+        $limit = isset($_GET['limit']) ? max(1, min(20, (int)$_GET['limit'])) : 5;
+
+        // Không trả email thành viên qua API thống kê (bảo vệ dữ liệu cá nhân)
+        $topUsers = array_map(static function (array $row): array {
+            unset($row['email']);
+            return $row;
+        }, $statsRepo->getTopUsers($limit));
+
+        Response::ok([
+            'summary'           => $statsRepo->getDashboardStats(),
+            'posts_by_category' => $statsRepo->getPostsByCategory(),
+            'top_posts'         => $statsRepo->getTopPosts($limit),
+            'top_users'         => $topUsers,
+            'posts_by_status'   => $statsRepo->getPostsByStatus(),
+        ], 'Tải dữ liệu thống kê thành công.');
+    }
+
+    /**
+     * GET /api/stats/daily?days=7|14|30  (chỉ Moderator / Admin)
+     * Số người dùng mới, bài viết mới, bình luận mới theo từng ngày — nguồn dữ liệu cho biểu đồ Chart.js
+     * ở Admin Dashboard (gọi Stored Procedure `sp_stats_daily_activity`).
+     */
+    public function dailyStats(): void
+    {
+        $this->requireModeratorJson();
+
+        $days = isset($_GET['days']) ? (int)$_GET['days'] : 7;
+        if (!in_array($days, [7, 14, 30], true)) {
+            $days = 7;
+        }
+
+        $rows = (new StatsRepository())->getDailyActivity($days);
+
+        Response::ok([
+            'days'         => $days,
+            'labels'       => array_column($rows, 'date_label'),
+            'dates'        => array_column($rows, 'stat_date'),
+            'new_users'    => array_column($rows, 'new_users'),
+            'new_posts'    => array_column($rows, 'new_posts'),
+            'new_comments' => array_column($rows, 'new_comments'),
+            'totals'       => [
+                'new_users'    => array_sum(array_column($rows, 'new_users')),
+                'new_posts'    => array_sum(array_column($rows, 'new_posts')),
+                'new_comments' => array_sum(array_column($rows, 'new_comments')),
+            ],
+        ], 'Tải thống kê hoạt động theo ngày thành công.');
+    }
+
+    /**
+     * GET /api/qr?url=...&title=...&type=trip|post|checklist&size=260
+     * Gọi Web Service QuickChart / GoQR API sinh mã QR chia sẻ chuyến đi và bài viết qua điện thoại
+     */
+    public function qrCode(): void
+    {
+        $targetUrl = isset($_GET['url']) ? trim((string)$_GET['url']) : '';
+        $title = isset($_GET['title']) ? trim((string)$_GET['title']) : 'Chia sẻ chuyến dã ngoại';
+        $type = isset($_GET['type']) ? trim((string)$_GET['type']) : 'trip';
+        $size = isset($_GET['size']) && is_numeric($_GET['size']) ? (int)$_GET['size'] : 260;
+
+        if ($targetUrl === '') {
+            $targetUrl = '/';
+        }
+
+        $qrData = $this->qrCodeService->generateQrData($targetUrl, $title, $type, $size);
+        Response::json([
+            'success' => true,
+            'data'    => $qrData
+        ]);
+    }
+}

@@ -113,6 +113,7 @@ CREATE TABLE post_tags (
 CREATE TABLE products (
   id          INT AUTO_INCREMENT PRIMARY KEY,                     -- PK
   category_id INT UNSIGNED NULL,                                  -- FK -> categories
+  user_id     INT UNSIGNED NULL,                                  -- FK -> users (Người chia sẻ dụng cụ)
   name        VARCHAR(150) NOT NULL,
   price       DECIMAL(10, 0) NOT NULL DEFAULT 0,
   image_url   VARCHAR(255) NULL,
@@ -120,7 +121,8 @@ CREATE TABLE products (
   link        TEXT NULL,
   is_shared   TINYINT(1) NOT NULL DEFAULT 1,                      -- 1: Vào kho cộng đồng, 0: Chỉ dùng riêng cho bài viết
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE post_products (
@@ -202,6 +204,99 @@ INSERT INTO posts (user_id, category_id, title, content, location) VALUES
   (3, 1, 'Chọn lều cho người mới', 'Nên chọn lều 2 lớp...', NULL);
 
 -- ==============================================================================
+-- FORUM DÃ NGOẠI - CÁC SQL VIEWS CHO TRUY VẤN HAY DÙNG (VIEWS)
+-- Tương thích: MariaDB / MySQL (XAMPP)
+-- ==============================================================================
+
+USE outdoor_forum;
+
+-- 1. View chi tiết bài viết tổng hợp (tác giả, chuyên mục, ảnh bìa, điểm vote, số bình luận, điểm hot)
+CREATE OR REPLACE VIEW vw_post_details AS
+SELECT
+    p.id,
+    p.user_id,
+    p.category_id,
+    p.title,
+    p.content,
+    p.location,
+    p.route,
+    p.trip_duration,
+    p.estimated_cost,
+    p.gear_needed,
+    p.difficulty,
+    p.region,
+    p.activity_type,
+    p.lat,
+    p.lng,
+    p.status,
+    p.created_at,
+    u.username,
+    u.avatar_path,
+    r.name AS role_name,
+    c.name AS category_name,
+    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
+    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
+    (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
+    COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS likes,
+    (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count,
+    (COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) * 2
+     + (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) * 3) AS hot_score
+FROM posts p
+INNER JOIN users u ON u.id = p.user_id
+INNER JOIN roles r ON r.id = u.role_id
+INNER JOIN categories c ON c.id = p.category_id;
+
+-- 2. View thống kê nhanh chuyên mục kèm tổng số bài, bài đã duyệt và bài chờ duyệt
+CREATE OR REPLACE VIEW vw_category_summary AS
+SELECT
+    c.id,
+    c.name,
+    c.description,
+    COUNT(p.id) AS post_count,
+    SUM(CASE WHEN p.status = 'published' THEN 1 ELSE 0 END) AS published_count,
+    SUM(CASE WHEN p.status = 'pending' THEN 1 ELSE 0 END) AS pending_count,
+    MAX(p.created_at) AS latest_post_at
+FROM categories c
+LEFT JOIN posts p ON p.category_id = c.id
+GROUP BY c.id, c.name, c.description;
+
+-- 3. View tổng hợp thông tin thành viên kèm vai trò, số bài đăng, bình luận và điểm uy tín (karma)
+CREATE OR REPLACE VIEW vw_user_summary AS
+SELECT
+    u.id,
+    u.username,
+    u.email,
+    u.role_id,
+    r.name AS role_name,
+    u.bio,
+    u.avatar_path,
+    u.created_at,
+    (SELECT COUNT(*) FROM posts p WHERE p.user_id = u.id) AS total_posts,
+    (SELECT COUNT(*) FROM posts p WHERE p.user_id = u.id AND p.status = 'published') AS published_posts,
+    (SELECT COUNT(*) FROM comments cm WHERE cm.user_id = u.id) AS total_comments,
+    COALESCE((
+        SELECT SUM(pl.vote)
+        FROM post_likes pl
+        INNER JOIN posts up ON up.id = pl.post_id
+        WHERE up.user_id = u.id
+    ), 0) AS total_karma
+FROM users u
+INNER JOIN roles r ON r.id = u.role_id;
+
+-- 4. View danh sách thẻ (tags) phổ biến kèm số lượng bài viết
+CREATE OR REPLACE VIEW vw_popular_tags AS
+SELECT
+    t.id,
+    t.name,
+    COUNT(pt.post_id) AS post_count
+FROM tags t
+INNER JOIN post_tags pt ON pt.tag_id = t.id
+GROUP BY t.id, t.name
+ORDER BY post_count DESC, t.name ASC;
+
+
+-- ==============================================================================
 -- FORUM DÃ NGOẠI - TỔNG HỢP CÁC STORED PROCEDURES (ROUTINES)
 -- Tương thích: MariaDB / MySQL (XAMPP)
 -- ==============================================================================
@@ -217,21 +312,17 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_category_list$$
 CREATE PROCEDURE sp_category_list()
 BEGIN
-    SELECT c.id, c.name, c.description, COUNT(p.id) AS post_count
-    FROM categories c
-    LEFT JOIN posts p ON p.category_id = c.id
-    GROUP BY c.id, c.name, c.description
-    ORDER BY c.id ASC;
+    SELECT id, name, description, post_count, published_count, pending_count
+    FROM vw_category_summary
+    ORDER BY id ASC;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_category_get$$
 CREATE PROCEDURE sp_category_get(IN p_id INT)
 BEGIN
-    SELECT c.id, c.name, c.description, COUNT(p.id) AS post_count
-    FROM categories c
-    LEFT JOIN posts p ON p.category_id = c.id
-    WHERE c.id = p_id
-    GROUP BY c.id, c.name, c.description
+    SELECT id, name, description, post_count, published_count, pending_count
+    FROM vw_category_summary
+    WHERE id = p_id
     LIMIT 1;
 END$$
 
@@ -382,13 +473,10 @@ END$$
 DROP PROCEDURE IF EXISTS sp_user_list$$
 CREATE PROCEDURE sp_user_list()
 BEGIN
-    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name, u.created_at,
-           COUNT(p.id) AS total_posts
-    FROM users u
-    INNER JOIN roles r ON r.id = u.role_id
-    LEFT JOIN posts p  ON p.user_id = u.id
-    GROUP BY u.id, u.username, u.email, u.role_id, r.name, u.created_at
-    ORDER BY u.id ASC;
+    SELECT id, username, email, role_id, role_name, created_at,
+           total_posts, published_posts, total_comments, total_karma
+    FROM vw_user_summary
+    ORDER BY id ASC;
 END$$
 
 
@@ -399,31 +487,19 @@ END$$
 DROP PROCEDURE IF EXISTS sp_post_list$$
 CREATE PROCEDURE sp_post_list(IN p_category_id INT)
 BEGIN
-    SELECT p.*, 
-           u.username, 
-           c.name AS category_name,
-           (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-           (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes,
-           (SELECT COUNT(*) FROM comments cm WHERE cm.post_id = p.id) AS comments_count
-    FROM posts p
-    JOIN users u      ON u.id = p.user_id
-    JOIN categories c ON c.id = p.category_id
-    WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
-    ORDER BY p.created_at DESC;
+    SELECT *
+    FROM vw_post_details
+    WHERE (p_category_id IS NULL OR category_id = p_category_id)
+    ORDER BY created_at DESC;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_post_get$$
 CREATE PROCEDURE sp_post_get(IN p_id INT)
 BEGIN
-    SELECT p.*, 
-           u.username, 
-           c.name AS category_name,
-           (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
-           (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes
-    FROM posts p
-    JOIN users u      ON u.id = p.user_id
-    JOIN categories c ON c.id = p.category_id
-    WHERE p.id = p_id;
+    SELECT *
+    FROM vw_post_details
+    WHERE id = p_id
+    LIMIT 1;
 END$$
 
 DROP PROCEDURE IF EXISTS sp_post_create$$
@@ -687,37 +763,161 @@ END$$
 
 
 -- ==============================================================================
--- 7. THỐNG KÊ & DASHBOARD (STATISTICS & REPORTS)
+-- 7. THỐNG KÊ & DASHBOARD (STATISTICS & REPORTS - STORED PROCEDURES)
 -- ==============================================================================
 
+-- 7.1 Thống kê tổng quan toàn hệ thống cho Admin Dashboard & Trang chủ
 DROP PROCEDURE IF EXISTS sp_dashboard_stats$$
 CREATE PROCEDURE sp_dashboard_stats()
 BEGIN
     SELECT 
         (SELECT COUNT(*) FROM users) AS total_users,
         (SELECT COUNT(*) FROM posts) AS total_posts,
+        (SELECT COUNT(*) FROM posts WHERE status = 'published') AS published_posts,
+        (SELECT COUNT(*) FROM posts WHERE status = 'pending') AS pending_posts,
         (SELECT COUNT(*) FROM categories) AS total_categories,
-        (SELECT COUNT(*) FROM comments) AS total_comments;
+        (SELECT COUNT(*) FROM comments) AS total_comments,
+        (SELECT COUNT(*) FROM products WHERE is_shared = 1) AS total_products;
 END$$
 
+-- 7.2 Thống kê Top bài viết nổi bật nhất (theo điểm tương tác hot_score, vote_score, số bình luận)
+DROP PROCEDURE IF EXISTS sp_stats_top_posts$$
+CREATE PROCEDURE sp_stats_top_posts(IN p_limit INT)
+BEGIN
+    DECLARE v_limit INT DEFAULT 5;
+    SET v_limit = IF(p_limit IS NULL OR p_limit <= 0, 5, p_limit);
+
+    SELECT
+        id,
+        user_id,
+        category_id,
+        title,
+        location,
+        status,
+        created_at,
+        username,
+        category_name,
+        image_url,
+        vote_score,
+        upvotes,
+        downvotes,
+        likes,
+        comments_count,
+        hot_score
+    FROM vw_post_details
+    WHERE status = 'published'
+    ORDER BY hot_score DESC, vote_score DESC, comments_count DESC, created_at DESC
+    LIMIT v_limit;
+END$$
+
+-- 7.3 Thống kê số lượng bài viết theo từng danh mục (kèm số bài đã duyệt & chờ duyệt)
+DROP PROCEDURE IF EXISTS sp_stats_posts_by_category$$
+CREATE PROCEDURE sp_stats_posts_by_category()
+BEGIN
+    SELECT
+        id,
+        name,
+        name AS category,
+        description,
+        post_count AS total_posts,
+        post_count,
+        published_count,
+        pending_count,
+        latest_post_at
+    FROM vw_category_summary
+    ORDER BY post_count DESC, id ASC;
+END$$
+
+-- Giữ lk_posts_incategory để tương thích ngược
 DROP PROCEDURE IF EXISTS lk_posts_incategory$$
 CREATE PROCEDURE lk_posts_incategory()
 BEGIN
-    SELECT c.id, c.name AS category, COUNT(p.id) AS total_posts
-    FROM categories c
-    LEFT JOIN posts p ON p.category_id = c.id
-    GROUP BY c.id, c.name
-    ORDER BY total_posts DESC;
+    CALL sp_stats_posts_by_category();
 END$$
 
+-- 7.4 Thống kê Top thành viên đóng góp nhiều bài viết & tương tác nhất
+DROP PROCEDURE IF EXISTS sp_stats_top_users$$
+CREATE PROCEDURE sp_stats_top_users(IN p_limit INT)
+BEGIN
+    DECLARE v_limit INT DEFAULT 5;
+    SET v_limit = IF(p_limit IS NULL OR p_limit <= 0, 5, p_limit);
+
+    SELECT
+        id,
+        username,
+        email,
+        role_name,
+        avatar_path,
+        created_at,
+        total_posts,
+        published_posts,
+        total_comments,
+        total_karma
+    FROM vw_user_summary
+    ORDER BY total_posts DESC, total_karma DESC, total_comments DESC, id ASC
+    LIMIT v_limit;
+END$$
+
+-- Giữ lk_posts_byuser để tương thích ngược
 DROP PROCEDURE IF EXISTS lk_posts_byuser$$
 CREATE PROCEDURE lk_posts_byuser()
 BEGIN
-    SELECT u.id, u.username, COUNT(p.id) AS total_posts
-    FROM users u
-    LEFT JOIN posts p ON p.user_id = u.id
-    GROUP BY u.id, u.username
-    ORDER BY total_posts DESC;
+    CALL sp_stats_top_users(10);
+END$$
+
+-- 7.5 Thống kê số bài viết theo từng trạng thái kiểm duyệt (published, pending, rejected, hidden)
+DROP PROCEDURE IF EXISTS sp_stats_posts_by_status$$
+CREATE PROCEDURE sp_stats_posts_by_status()
+BEGIN
+    SELECT
+        COUNT(*) AS total_all,
+        SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) AS total_published,
+        SUM(CASE WHEN status = 'pending'   THEN 1 ELSE 0 END) AS total_pending,
+        SUM(CASE WHEN status = 'rejected'  THEN 1 ELSE 0 END) AS total_rejected,
+        SUM(CASE WHEN status = 'hidden'    THEN 1 ELSE 0 END) AS total_hidden
+    FROM posts;
+END$$
+
+DROP PROCEDURE IF EXISTS sp_stats_daily_activity$$
+CREATE PROCEDURE sp_stats_daily_activity(IN p_days INT)
+BEGIN
+    DECLARE v_days INT DEFAULT 7;
+    SET v_days = IF(p_days IS NULL OR p_days <= 0, 7, IF(p_days > 30, 30, p_days));
+
+    SELECT
+        d.stat_date,
+        DATE_FORMAT(d.stat_date, '%d/%m') AS date_label,
+        COALESCE(u.new_users, 0) AS new_users,
+        COALESCE(p.new_posts, 0) AS new_posts,
+        COALESCE(c.new_comments, 0) AS new_comments
+    FROM (
+        SELECT DATE_SUB(CURDATE(), INTERVAL seq.n DAY) AS stat_date
+        FROM (
+            SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+            UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+            UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14
+            UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19
+            UNION ALL SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24
+            UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL SELECT 28 UNION ALL SELECT 29
+        ) AS seq
+        WHERE seq.n < v_days
+    ) AS d
+    LEFT JOIN (
+        SELECT DATE(created_at) AS reg_date, COUNT(*) AS new_users
+        FROM users
+        GROUP BY DATE(created_at)
+    ) AS u ON u.reg_date = d.stat_date
+    LEFT JOIN (
+        SELECT DATE(created_at) AS post_date, COUNT(*) AS new_posts
+        FROM posts
+        GROUP BY DATE(created_at)
+    ) AS p ON p.post_date = d.stat_date
+    LEFT JOIN (
+        SELECT DATE(created_at) AS comment_date, COUNT(*) AS new_comments
+        FROM comments
+        GROUP BY DATE(created_at)
+    ) AS c ON c.comment_date = d.stat_date
+    ORDER BY d.stat_date ASC;
 END$$
 
 -- ==============================================================================
@@ -727,10 +927,13 @@ END$$
 DROP PROCEDURE IF EXISTS sp_product_list_by_category$$
 CREATE PROCEDURE sp_product_list_by_category(IN p_category_id INT)
 BEGIN
-    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.is_shared, p.created_at,
-           c.name AS category_name
+    SELECT p.id, p.category_id, p.user_id, p.name, p.price, p.image_url, p.description, p.link, p.is_shared, p.created_at,
+           c.name AS category_name,
+           u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN users u ON u.id = p.user_id
+    LEFT JOIN roles r ON r.id = u.role_id
     WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
       AND p.is_shared = 1
     ORDER BY p.id DESC;
@@ -739,10 +942,13 @@ END$$
 DROP PROCEDURE IF EXISTS sp_product_get$$
 CREATE PROCEDURE sp_product_get(IN p_id INT)
 BEGIN
-    SELECT p.id, p.category_id, p.name, p.price, p.image_url, p.description, p.link, p.created_at,
-           c.name AS category_name
+    SELECT p.id, p.category_id, p.user_id, p.name, p.price, p.image_url, p.description, p.link, p.is_shared, p.created_at,
+           c.name AS category_name,
+           u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN users u ON u.id = p.user_id
+    LEFT JOIN roles r ON r.id = u.role_id
     WHERE p.id = p_id
     LIMIT 1;
 END$$
@@ -750,6 +956,7 @@ END$$
 DROP PROCEDURE IF EXISTS sp_product_create$$
 CREATE PROCEDURE sp_product_create(
     IN p_category_id INT,
+    IN p_user_id INT,
     IN p_name VARCHAR(150),
     IN p_price DECIMAL(10,0),
     IN p_image_url VARCHAR(255),
@@ -758,8 +965,8 @@ CREATE PROCEDURE sp_product_create(
     IN p_is_shared TINYINT
 )
 BEGIN
-    INSERT INTO products (category_id, name, price, image_url, description, link, is_shared)
-    VALUES (p_category_id, p_name, p_price, p_image_url, p_description, p_link, COALESCE(p_is_shared, 1));
+    INSERT INTO products (category_id, user_id, name, price, image_url, description, link, is_shared)
+    VALUES (p_category_id, p_user_id, p_name, p_price, p_image_url, p_description, p_link, COALESCE(p_is_shared, 1));
 
     SELECT LAST_INSERT_ID() AS product_id;
 END$$

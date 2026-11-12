@@ -1,14 +1,64 @@
 <?php
-$successMessage = $success ?? Session::flash('success');
-$errorMessage = $message ?? Session::flash('error');
+$successMessage = $success  ?? Session::flash('success');
+$errorMessage   = $message  ?? Session::flash('error');
+$warningMessage = Session::flash('warning');
+$infoMessage    = Session::flash('info');
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+
+// Đồng bộ thông báo Toast vào Chuông thông báo "Thông báo của bạn"
+$currentLoggedUser = Session::get('user');
+$currentLoggedUserId = is_array($currentLoggedUser) ? (int)($currentLoggedUser['id'] ?? 0) : 0;
+if ($currentLoggedUserId > 0 && class_exists('Notification')) {
+    if (!empty($successMessage)) {
+        Notification::recordFlashMessage($currentLoggedUserId, 'success', (string)$successMessage);
+    }
+    if (!empty($warningMessage)) {
+        Notification::recordFlashMessage($currentLoggedUserId, 'warning', (string)$warningMessage);
+    }
+    if (!empty($infoMessage)) {
+        Notification::recordFlashMessage($currentLoggedUserId, 'info', (string)$infoMessage);
+    }
+}
+
+// Helper: render 1 toast (guard chống redeclare khi layout được include nhiều lần)
+if (!function_exists('renderToast')) {
+function renderToast(string $type, string $title, string $icon, string $message): string {
+    $safeMsg = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+    return <<<HTML
+        <div class="app-toast app-toast-{$type}" role="alert">
+            <div class="toast-bubble-badge">
+                <i class="bi {$icon}"></i>
+            </div>
+            <div class="toast-decor-blobs" aria-hidden="true">
+                <span class="blob blob-1"></span>
+                <span class="blob blob-2"></span>
+                <span class="blob blob-3"></span>
+                <span class="blob blob-4"></span>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-title">{$title}</div>
+                <div class="toast-desc">{$safeMsg}</div>
+            </div>
+            <button type="button" class="toast-close-btn" onclick="window.dismissToast(this.closest('.app-toast'))" aria-label="Đóng">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="toast-progress-bar"></div>
+        </div>
+HTML;
+}
+} // end if !function_exists
 ?>
 <!doctype html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title><?= htmlspecialchars($title ?? 'Diễn đàn dã ngoại', ENT_QUOTES, 'UTF-8') ?> — Bước ra thiên nhiên</title>
+    <meta name="csrf-token" content="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+    <?php
+    $tabTitle = !empty($title) ? trim((string)$title) : 'Trang chủ';
+    $tabTitle = preg_replace('/\s*[-—]\s*(Bước ra thiên nhiên|Quản trị Forum Dã Ngoại|Outdoor Forum)$/ui', '', $tabTitle);
+    ?>
+    <title>Outdoor Forum - <?= htmlspecialchars($tabTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/icon-dark-32x32.png">
     <link rel="shortcut icon" href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/favicon.ico">
@@ -20,6 +70,8 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     
     <!-- Custom Design System & Animations -->
     <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/style.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/style.css') ?: time() ?>" rel="stylesheet">
+    <!-- Liquid Glass Design Layer -->
+    <link href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/css/liquid-glass.css?v=<?= @filemtime(__DIR__ . '/../../../public/assets/css/liquid-glass.css') ?: time() ?>" rel="stylesheet">
     
     <script>
         window.BASE_URL = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
@@ -29,50 +81,32 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
     <!-- Floating Dock Navbar -->
     <?php require __DIR__ . '/../partials/navbar.php'; ?>
 
-    <!-- Flash Toast Messages Container (Apple Liquid Glass ở góc phải) -->
-    <?php if ($successMessage || $errorMessage): ?>
+    <!-- Flash Toast Messages Container (góc trên bên phải) -->
+    <?php if ($successMessage || $errorMessage || $warningMessage || $infoMessage): ?>
         <div id="flash-toast-container">
             <?php if ($successMessage): ?>
-                <div class="app-toast app-toast-success shadow-lg" role="alert" id="toast-success">
-                    <div class="toast-body-row d-flex align-items-center gap-2">
-                        <div class="toast-icon-badge toast-icon-success flex-shrink-0">
-                            <i class="bi bi-check-lg"></i>
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="toast-title">Thành công!</div>
-                            <div class="toast-desc"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
-                        </div>
-                        <button type="button" 
-                                class="toast-glass-close flex-shrink-0" 
-                                onclick="window.dismissToast(this.closest('.app-toast'))" 
-                                aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
-                    </div>
-                    <div class="toast-progress-track"><div class="toast-progress-fill toast-progress-success"></div></div>
-                </div>
+                <?= renderToast('success', 'Thành công!', 'bi-check-lg', $successMessage) ?>
             <?php endif; ?>
             <?php if ($errorMessage): ?>
-                <div class="app-toast app-toast-error shadow-lg" role="alert" id="toast-error">
-                    <div class="toast-body-row d-flex align-items-center gap-2">
-                        <div class="toast-icon-badge toast-icon-error flex-shrink-0">
-                            <i class="bi bi-exclamation-lg"></i>
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="toast-title">Thông báo</div>
-                            <div class="toast-desc"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
-                        </div>
-                        <button type="button" 
-                                class="toast-glass-close flex-shrink-0" 
-                                onclick="window.dismissToast(this.closest('.app-toast'))" 
-                                aria-label="Đóng"><i class="bi bi-x-lg"></i></button>
-                    </div>
-                    <div class="toast-progress-track"><div class="toast-progress-fill toast-progress-error"></div></div>
-                </div>
+                <?= renderToast('error', 'Lỗi!', 'bi-x-lg', $errorMessage) ?>
+            <?php endif; ?>
+            <?php if ($warningMessage): ?>
+                <?= renderToast('warning', 'Cảnh báo!', 'bi-exclamation-lg', $warningMessage) ?>
+            <?php endif; ?>
+            <?php if ($infoMessage): ?>
+                <?= renderToast('info', 'Thông tin', 'bi-question-lg', $infoMessage) ?>
             <?php endif; ?>
         </div>
     <?php endif; ?>
 
     <!-- Main View Content -->
     <?= $content ?>
+
+    <!-- Modal Chia sẻ Mã QR (QuickChart / GoQR REST API) -->
+    <?php require __DIR__ . '/../partials/qr-share-modal.php'; ?>
+
+    <!-- Widget Trợ lý Dã ngoại AI (Google Gemini Chatbox) -->
+    <?php require __DIR__ . '/../partials/chatbot-widget.php'; ?>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

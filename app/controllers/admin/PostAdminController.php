@@ -1,92 +1,36 @@
 <?php
 require_once __DIR__ . '/../../core/Controller.php';
-require_once __DIR__ . '/../../models/Post.php';
-require_once __DIR__ . '/../../models/Category.php';
+require_once __DIR__ . '/../../services/PostService.php';
+require_once __DIR__ . '/../../repositories/PostRepository.php';
 
 /**
  * Controller PostAdminController - Quản trị bài viết diễn đàn (Tuần 4 - FR13 - Phúc)
- * Chức năng: Xem danh sách, Duyệt bài, Ẩn bài, Xóa bài
- * Bảo mật: Chỉ Quản trị viên (Admin) mới có quyền truy cập qua AdminMiddleware
+ * Ủy quyền xử lý nghiệp vụ kiểm duyệt cho PostService -> PostRepository.
  */
 class PostAdminController extends Controller
 {
-    private Post $posts;
-    private Category $categories;
+    private PostService $postService;
+    private PostRepository $postRepository;
 
-    public function __construct()
+    public function __construct(?PostService $postService = null, ?PostRepository $postRepository = null)
     {
-        $this->posts = new Post();
-        $this->categories = new Category();
+        $this->postService = $postService ?? new PostService();
+        $this->postRepository = $postRepository ?? new PostRepository();
     }
 
     /**
-     * Danh sách bài viết quản trị (/admin/posts)
+     * Danh sách bài viết quản trị (/admin/posts).
      */
     public function index(): void
     {
-        $status = null;
-        if (isset($_GET['status']) && $_GET['status'] !== '' && $_GET['status'] !== 'all') {
-            $status = (string)$_GET['status'];
-        }
+        $data = $this->postService->getAdminPostListing($_GET, 10);
+        $data['title'] = 'Quản lý Bài viết';
 
-        $categoryId = null;
-        if (isset($_GET['category']) && $_GET['category'] !== '') {
-            $categoryId = (int)$_GET['category'];
-            if ($categoryId <= 0) {
-                $categoryId = null;
-            }
-        }
-
-        $page = 1;
-        if (isset($_GET['page'])) {
-            $page = (int)$_GET['page'];
-            if ($page < 1) {
-                $page = 1;
-            }
-        }
-
-        $limit = 10; // 10 bài viết mỗi trang trong khu vực quản trị
-
-        $totalPosts = $this->posts->countForAdmin($status, $categoryId);
-        $totalPages = 1;
-        if ($totalPosts > 0) {
-            $totalPages = (int)ceil($totalPosts / $limit);
-        }
-
-        if ($page > $totalPages) {
-            $page = $totalPages;
-        }
-
-        $postsList = $this->posts->getAllForAdmin($status, $categoryId, $page, $limit);
-        $categoriesList = $this->categories->getAll();
-
-        // Đếm số lượng bài viết theo từng trạng thái để làm badge trên các tab bộ lọc
-        $countAll = $this->posts->count();
-        $countPublished = $this->posts->countFiltered(null, 'published');
-        $countPending = $this->posts->countFiltered(null, 'pending');
-        $countRejected = $this->posts->countFiltered(null, 'rejected');
-        $countHidden = $this->posts->countFiltered(null, 'hidden');
-
-        $this->render('admin/posts/index', [
-            'title' => 'Quản lý Bài viết',
-            'posts' => $postsList,
-            'categories' => $categoriesList,
-            'selectedStatus' => $status ?? 'all',
-            'selectedCategoryId' => $categoryId,
-            'currentPage' => $page,
-            'totalPages' => $totalPages,
-            'totalPosts' => $totalPosts,
-            'countAll' => $countAll,
-            'countPublished' => $countPublished,
-            'countPending' => $countPending,
-            'countRejected' => $countRejected,
-            'countHidden' => $countHidden
-        ], 'admin');
+        $this->render('admin/posts/index', $data, 'admin');
     }
 
     /**
-     * Chuyển trạng thái bài viết qua menu xổ xuống (POST /admin/posts/{id}/status)
-     * Hỗ trợ các trạng thái: pending (Chờ duyệt), published (Đã duyệt), rejected (Từ chối), hidden (Đã ẩn)
+     * Chuyển trạng thái bài viết qua menu xổ xuống (POST /admin/posts/{id}/status).
      */
     public function changeStatus($id): void
     {
@@ -96,17 +40,15 @@ class PostAdminController extends Controller
             return;
         }
 
-        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') 
-               || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+        $isAjax = $this->isAjaxRequest();
 
-        // Kiểm tra token CSRF
         if (!$this->verifyCsrfToken()) {
             if ($isAjax) {
                 http_response_code(419);
                 header('Content-Type: application/json; charset=UTF-8');
                 echo json_encode([
-                    'status' => 'error',
-                    'message' => 'Phiên làm việc hết hạn hoặc mã xác thực không hợp lệ.'
+                    'status'  => 'error',
+                    'message' => 'Phiên làm việc hết hạn hoặc mã xác thực không hợp lệ.',
                 ]);
                 return;
             }
@@ -115,88 +57,42 @@ class PostAdminController extends Controller
             return;
         }
 
-        $post = $this->posts->getById($id);
-        if (!$post) {
-            if ($isAjax) {
-                http_response_code(404);
-                header('Content-Type: application/json; charset=UTF-8');
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'Bài viết không tồn tại.'
-                ]);
-                return;
-            }
-            Session::flash('error', 'Bài viết không tồn tại.');
-            $this->redirect('/admin/posts');
-            return;
-        }
-
         $newStatus = trim((string)($_POST['status'] ?? ''));
-        $validStatuses = ['published', 'pending', 'rejected', 'hidden'];
-        if (!in_array($newStatus, $validStatuses, true)) {
-            if ($isAjax) {
-                http_response_code(400);
-                header('Content-Type: application/json; charset=UTF-8');
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'Trạng thái bài viết không hợp lệ.'
-                ]);
-                return;
-            }
-            Session::flash('error', 'Trạng thái bài viết không hợp lệ.');
-            $this->redirect('/admin/posts');
-            return;
-        }
+        $result = $this->postService->changeStatus($id, $newStatus);
 
-        $result = $this->posts->updateStatus($id, $newStatus);
-
-        $statusLabels = [
-            'published' => 'Đã duyệt (Approved)',
-            'pending'   => 'Chờ duyệt (Pending)',
-            'rejected'  => 'Từ chối (Reject)',
-            'hidden'    => 'Đã ẩn (Hidden)',
-        ];
-        $label = $statusLabels[$newStatus] ?? $newStatus;
-
-        if ($result) {
-            $msg = 'Đã chuyển trạng thái bài viết "' . $post['title'] . '" sang "' . $label . '" thành công.';
+        if ($result['success']) {
+            $payload = $result['data'];
             if ($isAjax) {
                 header('Content-Type: application/json; charset=UTF-8');
                 echo json_encode([
-                    'status' => 'success',
-                    'message' => $msg,
-                    'post_id' => $id,
-                    'new_status' => $newStatus,
-                    'new_label' => $label,
-                    'counts' => [
-                        'all' => $this->posts->count(),
-                        'published' => $this->posts->countFiltered(null, 'published'),
-                        'pending' => $this->posts->countFiltered(null, 'pending'),
-                        'rejected' => $this->posts->countFiltered(null, 'rejected'),
-                        'hidden' => $this->posts->countFiltered(null, 'hidden'),
-                    ]
+                    'status'     => 'success',
+                    'message'    => $result['message'],
+                    'post_id'    => $payload['post_id'],
+                    'new_status' => $payload['new_status'],
+                    'new_label'  => $payload['new_label'],
+                    'counts'     => $payload['counts'],
                 ]);
                 return;
             }
-            Session::flash('success', $msg);
+            Session::flash('success', $result['message']);
         } else {
             if ($isAjax) {
-                http_response_code(500);
+                http_response_code((int)($result['status'] ?? 400));
                 header('Content-Type: application/json; charset=UTF-8');
                 echo json_encode([
-                    'status' => 'error',
-                    'message' => 'Không thể cập nhật trạng thái bài viết. Vui lòng thử lại.'
+                    'status'  => 'error',
+                    'message' => $result['message'],
                 ]);
                 return;
             }
-            Session::flash('error', 'Không thể cập nhật trạng thái bài viết. Vui lòng thử lại.');
+            Session::flash('error', $result['message']);
         }
 
         $this->redirect('/admin/posts');
     }
 
     /**
-     * Duyệt bài viết (POST /admin/posts/{id}/approve) - FR13
+     * Duyệt bài viết (POST /admin/posts/{id}/approve) - FR13.
      */
     public function approve(int $id): void
     {
@@ -205,32 +101,25 @@ class PostAdminController extends Controller
             return;
         }
 
-        // Kiểm tra token CSRF
         if (!$this->verifyCsrfToken()) {
             Session::flash('error', 'Phiên làm việc hết hạn hoặc mã xác thực không hợp lệ.');
             $this->redirect('/admin/posts');
             return;
         }
 
-        $post = $this->posts->getById($id);
-        if (!$post) {
-            Session::flash('error', 'Bài viết không tồn tại.');
-            $this->redirect('/admin/posts');
-            return;
-        }
-
-        $result = $this->posts->updateStatus($id, 'published');
-        if ($result) {
+        $result = $this->postService->changeStatus($id, 'published');
+        if ($result['success']) {
+            $post = $result['data']['post'];
             Session::flash('success', 'Đã duyệt bài viết "' . $post['title'] . '" thành công.');
         } else {
-            Session::flash('error', 'Không thể duyệt bài viết. Vui lòng thử lại.');
+            Session::flash('error', $result['message']);
         }
 
         $this->redirect('/admin/posts');
     }
 
     /**
-     * Ẩn bài viết khỏi diễn đàn (POST /admin/posts/{id}/hide) - FR13
+     * Ẩn bài viết khỏi diễn đàn (POST /admin/posts/{id}/hide) - FR13.
      */
     public function hide(int $id): void
     {
@@ -239,32 +128,25 @@ class PostAdminController extends Controller
             return;
         }
 
-        // Kiểm tra token CSRF
         if (!$this->verifyCsrfToken()) {
             Session::flash('error', 'Phiên làm việc hết hạn hoặc mã xác thực không hợp lệ.');
             $this->redirect('/admin/posts');
             return;
         }
 
-        $post = $this->posts->getById($id);
-        if (!$post) {
-            Session::flash('error', 'Bài viết không tồn tại.');
-            $this->redirect('/admin/posts');
-            return;
-        }
-
-        $result = $this->posts->updateStatus($id, 'hidden');
-        if ($result) {
+        $result = $this->postService->changeStatus($id, 'hidden');
+        if ($result['success']) {
+            $post = $result['data']['post'];
             Session::flash('success', 'Đã ẩn bài viết "' . $post['title'] . '" khỏi diễn đàn.');
         } else {
-            Session::flash('error', 'Không thể ẩn bài viết. Vui lòng thử lại.');
+            Session::flash('error', $result['message']);
         }
 
         $this->redirect('/admin/posts');
     }
 
     /**
-     * Xóa bài viết vĩnh viễn (POST /admin/posts/{id}/delete) - FR13
+     * Xóa bài viết vĩnh viễn (POST /admin/posts/{id}/delete) - FR13.
      */
     public function delete(int $id): void
     {
@@ -273,22 +155,31 @@ class PostAdminController extends Controller
             return;
         }
 
-        // Kiểm tra token CSRF
         if (!$this->verifyCsrfToken()) {
             Session::flash('error', 'Phiên làm việc hết hạn hoặc mã xác thực không hợp lệ.');
             $this->redirect('/admin/posts');
             return;
         }
 
-        $post = $this->posts->getById($id);
+        $post = $this->postRepository->findById($id);
         if (!$post) {
             Session::flash('error', 'Bài viết không tồn tại.');
             $this->redirect('/admin/posts');
             return;
         }
 
-        $result = $this->posts->delete($id);
-        if ($result) {
+        if ($this->postRepository->delete($id)) {
+            if (class_exists('Notification')) {
+                $adminId = (int)Auth::id();
+                $authorId = (int)($post['user_id'] ?? 0);
+                $shortTitle = mb_substr((string)($post['title'] ?? 'bài viết'), 0, 38);
+                if ($adminId > 0) {
+                    Notification::send($adminId, $adminId, 'admin_action', 0, "Bạn đã xóa vĩnh viễn bài viết: '{$shortTitle}'.");
+                }
+                if ($authorId > 0 && $authorId !== $adminId) {
+                    Notification::send($authorId, $adminId > 0 ? $adminId : $authorId, 'post_rejected', 0, "Ban quản trị đã xóa bài viết '{$shortTitle}' của bạn.");
+                }
+            }
             Session::flash('success', 'Đã xóa bài viết "' . $post['title'] . '" vĩnh viễn.');
         } else {
             Session::flash('error', 'Không thể xóa bài viết. Vui lòng thử lại.');

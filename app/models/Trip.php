@@ -3,22 +3,30 @@ require_once __DIR__ . '/../core/Model.php';
 
 class Trip extends Model
 {
-    public function getAll(): array
+    public function getAll(string $filter = 'upcoming', ?int $userId = null): array
     {
-        return Database::query(
-            "SELECT t.*, u.username,
-                    (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = t.id) AS participant_count
-             FROM trips t
-             JOIN users u ON u.id = t.user_id
-             WHERE t.starts_at >= NOW()
-             ORDER BY t.starts_at"
-        );
+        $sql = "SELECT t.*, u.username, u.avatar_path,
+                       (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = t.id) AS participant_count
+                FROM trips t
+                JOIN users u ON u.id = t.user_id";
+        $params = [];
+
+        if ($filter === 'upcoming') {
+            $sql .= " WHERE t.starts_at >= NOW()";
+        } elseif ($filter === 'mine' && $userId !== null) {
+            $sql .= " WHERE (t.user_id = :uid OR t.id IN (SELECT trip_id FROM trip_participants WHERE user_id = :uid2))";
+            $params['uid'] = $userId;
+            $params['uid2'] = $userId;
+        }
+
+        $sql .= " ORDER BY t.starts_at ASC";
+        return Database::query($sql, $params);
     }
 
     public function getById(int $id): array|false
     {
         $trips = Database::query(
-            "SELECT t.*, u.username,
+            "SELECT t.*, u.username, u.avatar_path,
                     (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = t.id) AS participant_count
              FROM trips t
              JOIN users u ON u.id = t.user_id
@@ -27,6 +35,20 @@ class Trip extends Model
             ['id' => $id]
         );
         return $trips[0] ?? false;
+    }
+
+    public function getParticipants(int $tripId): array
+    {
+        return Database::query(
+            "SELECT u.id, u.username, u.avatar_path, tp.joined_at,
+                    (u.id = t.user_id) AS is_organizer
+             FROM trip_participants tp
+             JOIN users u ON u.id = tp.user_id
+             JOIN trips t ON t.id = tp.trip_id
+             WHERE tp.trip_id = :trip_id
+             ORDER BY is_organizer DESC, tp.joined_at ASC",
+            ['trip_id' => $tripId]
+        );
     }
 
     public function hasJoined(int $tripId, int $userId): bool
@@ -126,5 +148,46 @@ class Trip extends Model
                 $this->db->rollBack();
             }
         }
+    }
+
+    public function leave(int $tripId, int $userId): bool
+    {
+        $trip = $this->getById($tripId);
+        // Organizer cannot leave (they must delete/cancel the trip)
+        if (!$trip || (int) $trip['user_id'] === $userId) {
+            return false;
+        }
+        return Database::execute(
+            'DELETE FROM trip_participants WHERE trip_id = :trip_id AND user_id = :user_id',
+            ['trip_id' => $tripId, 'user_id' => $userId]
+        ) > 0;
+    }
+
+    public function delete(int $tripId, int $userId, bool $isAdmin = false): bool
+    {
+        if ($isAdmin) {
+            $deleted = Database::execute('DELETE FROM trips WHERE id = :id', ['id' => $tripId]) > 0;
+        } else {
+            $deleted = Database::execute(
+                'DELETE FROM trips WHERE id = :id AND user_id = :user_id',
+                ['id' => $tripId, 'user_id' => $userId]
+            ) > 0;
+        }
+
+        if ($deleted) {
+            try {
+                Database::execute('DELETE FROM trip_participants WHERE trip_id = :id', ['id' => $tripId]);
+            } catch (Throwable $e) {
+            }
+            try {
+                Database::execute(
+                    "DELETE FROM notifications WHERE type IN ('create_trip', 'join_trip', 'trip_new_member') AND target_id = :id",
+                    ['id' => $tripId]
+                );
+            } catch (Throwable $e) {
+            }
+        }
+
+        return $deleted;
     }
 }

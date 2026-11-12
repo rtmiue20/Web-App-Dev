@@ -8,6 +8,7 @@ require_once __DIR__ . '/../models/Product.php';
 require_once __DIR__ . '/../helpers/Upload.php';
 require_once __DIR__ . '/../helpers/Response.php';
 require_once __DIR__ . '/../helpers/Auth.php';
+require_once __DIR__ . '/../services/PostService.php';
 
 /**
  * Controller PostController - Quản lý chức năng bài viết (Tuần 2 & Tuần 3 - Phúc)
@@ -19,102 +20,33 @@ class PostController extends Controller {
     private Category $categories;
     private Comment $comments;
     private Product $products;
+    private PostService $postService;
 
     public function __construct() {
         $this->posts = new Post();
         $this->categories = new Category();
         $this->comments = new Comment();
         $this->products = new Product();
+        $this->postService = new PostService();
     }
 
     /**
      * Danh sách bài viết theo chuyên mục, tìm kiếm nâng cao (Fulltext & Bộ lọc) và phân trang (Tuần 4 - Phúc)
      */
     public function index(): void {
-        $categoryId = null;
-        if (isset($_GET['category']) && $_GET['category'] !== '') {
-            $categoryId = (int)$_GET['category'];
-            if ($categoryId <= 0) {
-                $categoryId = null;
-            }
-        }
+        $feedData = $this->postService->getPublicFeed($_GET, 6);
+        $feedData['title'] = 'Bài viết dã ngoại';
 
-        $page = 1;
-        if (isset($_GET['page'])) {
-            $page = (int)$_GET['page'];
-            if ($page < 1) {
-                $page = 1;
-            }
-        }
-
-        $limit = 6; // 6 bài viết mỗi trang cho người dùng
-        $selectedSort = Post::normalizeSort($_GET['sort'] ?? 'hot');
-
-        // Bộ lọc nâng cao (Tìm kiếm full-text, loại hình, độ khó, vùng miền, tag)
-        $keyword = trim((string)($_GET['q'] ?? $_GET['keyword'] ?? ''));
-        $difficulty = trim((string)($_GET['difficulty'] ?? ''));
-        $region = trim((string)($_GET['region'] ?? ''));
-        $activityType = trim((string)($_GET['activity_type'] ?? ''));
-        $tagName = trim((string)($_GET['tag'] ?? ''));
-
-        $filters = [
-            'keyword'       => $keyword,
-            'category_id'   => $categoryId,
-            'difficulty'    => $difficulty,
-            'region'        => $region,
-            'activity_type' => $activityType,
-            'tag_name'      => $tagName,
-            'sort'          => $selectedSort,
-        ];
-
-        $hasAdvancedFilter = ($keyword !== '' || $difficulty !== '' || $region !== '' || $activityType !== '' || $tagName !== '');
-
-        if ($hasAdvancedFilter) {
-            $totalPosts = $this->posts->countAdvancedSearch($filters);
-            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
-            if ($page > $totalPages) {
-                $page = $totalPages;
-            }
-            $postsList = $this->posts->advancedSearch($filters, $page, $limit);
-        } else {
-            $totalPosts = $this->posts->countFiltered($categoryId, 'published');
-            $totalPages = $totalPosts > 0 ? (int)ceil($totalPosts / $limit) : 1;
-            if ($page > $totalPages) {
-                $page = $totalPages;
-            }
-            $postsList = $this->posts->getPaginated($categoryId, $page, $limit, 'published', $selectedSort);
-        }
-
-        $categoriesList = $this->categories->getAll();
-
-        // Lấy danh sách tag phổ biến cho bộ lọc
-        $popularTags = [];
-        try {
-            $popularTags = Database::query("SELECT t.id, t.name, COUNT(pt.post_id) AS post_count FROM tags t JOIN post_tags pt ON pt.tag_id = t.id GROUP BY t.id, t.name ORDER BY post_count DESC LIMIT 12");
-        } catch (Exception $e) {}
-
-        $this->render('posts/index', [
-            'title'              => 'Bài viết dã ngoại',
-            'posts'              => $postsList,
-            'categories'         => $categoriesList,
-            'popularTags'        => $popularTags,
-            'selectedCategoryId' => $categoryId,
-            'selectedSort'       => $selectedSort,
-            'filters'            => $filters,
-            'currentPage'        => $page,
-            'totalPages'         => $totalPages,
-            'totalPosts'         => $totalPosts,
-            'limit'              => $limit
-        ]);
+        $this->render('posts/index', $feedData);
     }
 
     /**
      * Giao diện tạo bài viết mới
      */
     public function create(): void {
-        if (!Session::has('user')) {
-            Session::flash('error', 'Vui lòng đăng nhập để viết bài chia sẻ.');
-            $this->redirect('/login');
+        if (!Auth::isMember()) {
+            Session::flash('error', Auth::denyGuestMessage('viết bài chia sẻ'));
+            $this->redirect(Auth::check() ? '/posts' : '/login');
             return;
         }
 
@@ -134,9 +66,9 @@ class PostController extends Controller {
      * Xử lý lưu bài viết mới vào CSDL
      */
     public function store(): void {
-        if (!Session::has('user')) {
-            Session::flash('error', 'Vui lòng đăng nhập để viết bài.');
-            $this->redirect('/login');
+        if (!Auth::isMember()) {
+            Session::flash('error', Auth::denyGuestMessage('viết bài chia sẻ'));
+            $this->redirect(Auth::check() ? '/posts' : '/login');
             return;
         }
 
@@ -231,13 +163,19 @@ class PostController extends Controller {
         // Khi Moderator hoặc Admin đăng thì được 'published' trực tiếp.
         $status = $canPublishDirectly ? 'published' : 'pending';
 
+        $regionInput = trim((string)($_POST['region'] ?? ''));
+        $customRegion = trim((string)($_POST['custom_region'] ?? ''));
+        if ($regionInput === 'Quốc tế khác') {
+            $regionInput = $customRegion !== '' ? $customRegion : 'Quốc tế';
+        }
+
         $tripData = [
             'route'          => trim((string)($_POST['route'] ?? '')),
             'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
             'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
             'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
             'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
-            'region'         => trim((string)($_POST['region'] ?? '')),
+            'region'         => $regionInput,
             'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
         ];
 
@@ -269,6 +207,29 @@ class PostController extends Controller {
                 $this->products->syncPostProducts($postId, $selectedProductIds);
             }
 
+            if (class_exists('Notification')) {
+                $shortTitle = mb_substr($title, 0, 35);
+                $authorName = (string)($user['username'] ?? 'Thành viên');
+                Notification::send(
+                    $userId,
+                    $userId,
+                    'create_post',
+                    $postId,
+                    $status === 'pending'
+                        ? "Bài viết '{$shortTitle}' đã được gửi và đang chờ duyệt."
+                        : "Bạn đã đăng bài viết mới: '{$shortTitle}'."
+                );
+                if ($status === 'pending') {
+                    Notification::notifyAdmins(
+                        $userId,
+                        'admin_pending_post',
+                        $postId,
+                        "{$authorName} vừa gửi bài viết mới chờ duyệt: '{$shortTitle}'."
+                    );
+                } else {
+                    Notification::notifyFollowersOnNewPost($userId, $authorName, $categoryId, $postId, $title);
+                }
+            }
             if ($status === 'pending') {
                 Session::flash('success', 'Đăng bài viết thành công! Bài viết của bạn đang ở trạng thái Chờ duyệt (Pending) và sẽ được hiển thị công khai sau khi Quản trị viên phê duyệt.');
             } else {
@@ -500,13 +461,19 @@ class PostController extends Controller {
             return;
         }
 
+        $regionInput = trim((string)($_POST['region'] ?? ''));
+        $customRegion = trim((string)($_POST['custom_region'] ?? ''));
+        if ($regionInput === 'Quốc tế khác') {
+            $regionInput = $customRegion !== '' ? $customRegion : 'Quốc tế';
+        }
+
         $tripData = [
             'route'          => trim((string)($_POST['route'] ?? '')),
             'trip_duration'  => trim((string)($_POST['trip_duration'] ?? '')),
             'estimated_cost' => trim((string)($_POST['estimated_cost'] ?? '')),
             'gear_needed'    => trim((string)($_POST['gear_needed'] ?? '')),
             'difficulty'     => trim((string)($_POST['difficulty'] ?? 'medium')),
-            'region'         => trim((string)($_POST['region'] ?? '')),
+            'region'         => $regionInput,
             'activity_type'  => trim((string)($_POST['activity_type'] ?? '')),
         ];
 
@@ -538,6 +505,30 @@ class PostController extends Controller {
 
             // Cập nhật danh sách dụng cụ của bài viết trong post_products
             $this->products->syncPostProducts($id, $selectedProductIds);
+
+            if (class_exists('Notification')) {
+                $currentUserId = (int)Auth::id();
+                $postAuthorId = (int)($post['user_id'] ?? 0);
+                $shortTitle = mb_substr($title, 0, 38);
+                if ($currentUserId > 0) {
+                    Notification::send(
+                        $currentUserId,
+                        $currentUserId,
+                        'update_post',
+                        $id,
+                        "Bạn đã cập nhật bài viết: '{$shortTitle}'."
+                    );
+                }
+                if ($postAuthorId > 0 && $postAuthorId !== $currentUserId) {
+                    Notification::send(
+                        $postAuthorId,
+                        $currentUserId > 0 ? $currentUserId : $postAuthorId,
+                        'system',
+                        $id,
+                        "Ban quản trị đã cập nhật nội dung bài viết '{$shortTitle}' của bạn."
+                    );
+                }
+            }
 
             Session::flash('success', 'Cập nhật bài viết thành công!');
             $this->redirect('/posts/' . $id);
@@ -589,6 +580,29 @@ class PostController extends Controller {
 
         $deleted = $this->posts->delete($id);
         if ($deleted) {
+            if (class_exists('Notification')) {
+                $currentUserId = (int)Auth::id();
+                $postAuthorId = (int)($post['user_id'] ?? 0);
+                $shortTitle = mb_substr((string)($post['title'] ?? 'bài viết'), 0, 38);
+                if ($currentUserId > 0) {
+                    Notification::send(
+                        $currentUserId,
+                        $currentUserId,
+                        'delete_post',
+                        0,
+                        "Bạn đã xóa bài viết: '{$shortTitle}'."
+                    );
+                }
+                if ($postAuthorId > 0 && $postAuthorId !== $currentUserId) {
+                    Notification::send(
+                        $postAuthorId,
+                        $currentUserId > 0 ? $currentUserId : $postAuthorId,
+                        'post_rejected',
+                        0,
+                        "Ban quản trị đã xóa bài viết '{$shortTitle}' của bạn."
+                    );
+                }
+            }
             Session::flash('success', 'Đã xóa bài viết thành công!');
             $this->redirect('/posts');
         } else {
@@ -602,7 +616,7 @@ class PostController extends Controller {
      */
     public function like(int $id): void {
         if (!Auth::isMember()) {
-            Response::json(['success' => false, 'message' => 'Vui lòng đăng nhập tài khoản Thành viên để bình chọn (Upvote / Downvote) bài viết.'], 401);
+            Response::json(['success' => false, 'message' => Auth::denyGuestMessage('bình chọn (Upvote / Downvote) bài viết')], Auth::denyGuestStatusCode());
             return;
         }
 
@@ -612,12 +626,47 @@ class PostController extends Controller {
             $json = [];
         }
 
+        $csrfToken = (string)($json['_csrf'] ?? $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if (!Csrf::verify($csrfToken)) {
+            Response::json(['success' => false, 'message' => 'CSRF token không hợp lệ. Vui lòng tải lại trang.'], 403);
+            return;
+        }
+
         $voteRaw = $json['vote'] ?? $_POST['vote'] ?? 1;
         $voteType = ((int)$voteRaw < 0) ? -1 : 1;
 
         $user = Session::get('user');
         $userId = (int)($user['id'] ?? 0);
         $voteData = $this->posts->vote($id, $userId, $voteType);
+
+        if (class_exists('Notification') && (int)($voteData['user_vote'] ?? 0) !== 0) {
+            $post = $this->posts->getById($id);
+            if ($post) {
+                $shortTitle = mb_substr((string)($post['title'] ?? 'bài viết'), 0, 35);
+                $postAuthorId = (int)($post['user_id'] ?? 0);
+                $isUpvote = (int)($voteData['user_vote'] ?? 0) === 1;
+
+                Notification::send(
+                    $userId,
+                    $userId,
+                    'like_post',
+                    $id,
+                    $isUpvote
+                        ? "Bạn đã thích (Upvote) bài viết: '{$shortTitle}'."
+                        : "Bạn đã đánh giá (Downvote) bài viết: '{$shortTitle}'."
+                );
+
+                if ($postAuthorId > 0 && $postAuthorId !== $userId) {
+                    Notification::send(
+                        $postAuthorId,
+                        $userId,
+                        'like_post',
+                        $id,
+                        ($user['username'] ?? 'Một thành viên') . ($isUpvote ? " đã thích bài viết '{$shortTitle}' của bạn." : " đã bình chọn bài viết '{$shortTitle}' của bạn.")
+                    );
+                }
+            }
+        }
 
         Response::json([
             'success' => true,
@@ -687,6 +736,7 @@ class PostController extends Controller {
                 $imgUrl = 'assets/img/tent-forest.png';
             }
 
+            $currentUserId = Auth::id();
             $newId = $this->products->create(
                 $categoryId > 0 ? $categoryId : null,
                 $name,
@@ -694,7 +744,8 @@ class PostController extends Controller {
                 $imgUrl,
                 $desc ?: 'Dụng cụ được chia sẻ bởi người đăng bài',
                 $link !== '' ? $link : null,
-                $isShared
+                $isShared,
+                $currentUserId
             );
 
             if ($newId > 0) {

@@ -15,14 +15,25 @@ class PlaceReview extends Model
 
     public function getByPost(int $postId): array
     {
-        return Database::query(
-            'SELECT r.*, u.username
-             FROM place_reviews r
-             JOIN users u ON u.id = r.user_id
-             WHERE r.post_id = :post_id
-             ORDER BY r.created_at DESC',
-            ['post_id' => $postId]
-        );
+        try {
+            return Database::query(
+                'SELECT r.*, u.username, u.avatar_path
+                 FROM place_reviews r
+                 JOIN users u ON u.id = r.user_id
+                 WHERE r.post_id = :post_id
+                 ORDER BY r.created_at DESC',
+                ['post_id' => $postId]
+            );
+        } catch (Throwable $e) {
+            return Database::query(
+                'SELECT r.*, u.username
+                 FROM place_reviews r
+                 JOIN users u ON u.id = r.user_id
+                 WHERE r.post_id = :post_id
+                 ORDER BY r.created_at DESC',
+                ['post_id' => $postId]
+            );
+        }
     }
 
     public function save(int $postId, int $userId, int $rating, string $review): void
@@ -39,12 +50,14 @@ class PlaceReview extends Model
     {
         return Database::query(
             "SELECT p.id, p.title, p.location, p.lat, p.lng,
+                    (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    (SELECT c.name FROM categories c WHERE c.id = p.category_id) AS category_name,
                     COALESCE(ROUND(AVG(r.rating), 1), 0) AS average_rating,
                     COUNT(DISTINCT r.id) AS review_count
              FROM posts p
              LEFT JOIN place_reviews r ON r.post_id = p.id
              WHERE p.status = 'published' AND p.lat IS NOT NULL AND p.lng IS NOT NULL
-             GROUP BY p.id, p.title, p.location, p.lat, p.lng
+             GROUP BY p.id, p.title, p.location, p.lat, p.lng, p.category_id
              ORDER BY review_count DESC, average_rating DESC, MAX(p.created_at) DESC"
         );
     }
