@@ -285,6 +285,17 @@ class PostController extends Controller {
             return;
         }
 
+        // Tăng số mắt xem (views_count) khi bài viết đã xuất bản (tránh spam F5 trong cùng phiên làm việc)
+        if ($postStatus === 'published') {
+            $viewedPosts = (array)Session::get('viewed_posts', []);
+            if (!in_array($id, $viewedPosts, true)) {
+                $this->posts->incrementViews($id);
+                $viewedPosts[] = $id;
+                Session::set('viewed_posts', $viewedPosts);
+                $post['views_count'] = ((int)($post['views_count'] ?? 0)) + 1;
+            }
+        }
+
         $currentUserId = Auth::check() ? (int)Auth::id() : 0;
         $commentsTree = $this->comments->getTreeByPostId($id, $currentUserId);
         $totalComments = $this->comments->countByPost($id);

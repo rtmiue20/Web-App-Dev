@@ -279,6 +279,14 @@ $galleryCount = count($galleryImages);
 
             </span>
 
+            <span>
+
+                <i class="bi bi-eye me-1"></i>
+
+                <?= number_format((int)($post['views_count'] ?? 0)) ?> lượt xem
+
+            </span>
+
             <span class="ms-auto d-flex align-items-center flex-wrap gap-2">
 
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">

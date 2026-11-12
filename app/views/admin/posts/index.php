@@ -288,6 +288,7 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
                                 </td>
                                 <td class="text-center small text-muted">
                                     <div class="d-inline-flex align-items-center gap-2">
+                                        <span title="Lượt xem"><i class="bi bi-eye-fill text-secondary me-1"></i><?= number_format((int)($post['views_count'] ?? 0)) ?></span>
                                         <span title="Lượt thích"><i class="bi bi-heart-fill text-danger me-1"></i><?= (int)($post['likes'] ?? 0) ?></span>
                                         <span title="Bình luận"><i class="bi bi-chat-dots-fill text-primary me-1"></i><?= (int)($post['comments_count'] ?? 0) ?></span>
                                     </div>

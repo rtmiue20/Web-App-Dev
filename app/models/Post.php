@@ -425,6 +425,21 @@ class Post extends Model {
     }
 
     /**
+     * Tăng số mắt xem (views_count) cho bài viết khi có người truy cập
+     * @param int $id ID bài viết
+     * @return bool
+     */
+    public function incrementViews(int $id): bool {
+        try {
+            $stmt = $this->db->prepare("UPDATE posts SET views_count = COALESCE(views_count, 0) + 1 WHERE id = :id");
+            return $stmt->execute([':id' => $id]);
+        } catch (PDOException $e) {
+            error_log('Error incrementing post views: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Tạo bài viết mới (gọi routine sp_post_create)
      */
     public function create(

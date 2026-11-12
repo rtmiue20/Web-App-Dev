@@ -31,6 +31,7 @@ $defaultImages = [
                 : $defaultImages[$idx % count($defaultImages)];
             $voteScore = (int)($post['vote_score'] ?? $post['likes'] ?? 0);
             $commentsCount = (int)($post['comments_count'] ?? 0);
+            $viewsCount = (int)($post['views_count'] ?? 0);
         ?>
             <div class="col-12 col-md-6 col-lg-4">
                 <article class="paper-card h-100 d-flex flex-column" <?= $isPending ? 'style="border: 2px solid rgba(245, 158, 11, 0.6) !important; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);"' : '' ?>>
@@ -113,6 +114,12 @@ $defaultImages = [
                                title="Số bình luận">
                                 <i class="bi bi-chat-dots me-1"></i><?= $commentsCount ?>
                             </a>
+
+                            <span class="text-muted d-inline-flex align-items-center px-2 py-1 rounded-pill"
+                                  style="background: rgba(34, 40, 31, 0.05); font-size: 0.8rem;"
+                                  title="Số lượt xem bài viết">
+                                <i class="bi bi-eye me-1"></i><?= number_format($viewsCount) ?>
+                            </span>
                         </div>
 
                         <div class="d-flex align-items-center gap-1.5 text-truncate">
