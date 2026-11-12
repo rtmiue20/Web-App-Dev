@@ -26,11 +26,35 @@ class OutdoorController extends Controller
         $userId = is_array($user) ? (int) $user['id'] : null;
         $tripType = trim((string) ($_GET['type'] ?? ''));
 
+        $allChecklists = $this->checklists->getVisibleForUser($userId, $tripType ?: null);
+
+        // Phân trang 2 checklist / trang theo yêu cầu
+        $currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+        if ($currentPage < 1) {
+            $currentPage = 1;
+        }
+        $perPage = 2;
+        $totalChecklists = count($allChecklists);
+        $totalPages = (int) ceil($totalChecklists / $perPage);
+        if ($totalPages < 1) {
+            $totalPages = 1;
+        }
+        if ($currentPage > $totalPages && $totalChecklists > 0) {
+            $currentPage = $totalPages;
+        }
+
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedChecklists = array_slice($allChecklists, $offset, $perPage);
+
         $this->render('outdoor/checklists', [
             'title' => 'Checklist dã ngoại — Danh sách trang bị',
-            'checklists' => $this->checklists->getVisibleForUser($userId, $tripType ?: null),
+            'checklists' => $paginatedChecklists,
             'tripTypes' => $this->checklists->getTripTypes(),
             'currentType' => $tripType,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+            'totalChecklists' => $totalChecklists,
+            'perPage' => $perPage,
             'errors' => [],
             'old' => [],
         ]);
@@ -68,11 +92,16 @@ class OutdoorController extends Controller
         }
 
         if ($errors !== []) {
+            $allChecklists = $this->checklists->getVisibleForUser((int) $user['id']);
             $this->render('outdoor/checklists', [
                 'title' => 'Checklist dã ngoại — Danh sách trang bị',
-                'checklists' => $this->checklists->getVisibleForUser((int) $user['id']),
+                'checklists' => array_slice($allChecklists, 0, 2),
                 'tripTypes' => $this->checklists->getTripTypes(),
                 'currentType' => '',
+                'currentPage' => 1,
+                'totalPages' => max(1, (int) ceil(count($allChecklists) / 2)),
+                'totalChecklists' => count($allChecklists),
+                'perPage' => 2,
                 'errors' => $errors,
                 'old' => $_POST,
             ]);

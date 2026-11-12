@@ -205,6 +205,51 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </div>
         <?php endforeach; ?>
     </div>
+
+    <!-- Phân trang Checklist (2 ô / trang) -->
+    <?php if (isset($totalPages) && $totalPages > 1): ?>
+        <?php
+        $typeParam = (!empty($currentType) && $currentType !== 'all') ? 'type=' . urlencode($currentType) . '&' : '';
+        $currentPage = isset($currentPage) ? (int)$currentPage : 1;
+        ?>
+        <nav aria-label="Điều hướng phân trang checklist" class="mt-5 mb-4">
+            <ul class="pagination forum-pagination justify-content-center flex-wrap">
+                <!-- Nút trang trước -->
+                <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                    <a class="page-link rounded-pill" 
+                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists?<?= $typeParam ?>page=<?= max(1, $currentPage - 1) ?>" 
+                       tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
+                       aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
+                        <i class="bi bi-chevron-left me-1"></i> Trước
+                    </a>
+                </li>
+
+                <!-- Danh sách số trang -->
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists?<?= $typeParam ?>page=<?= $i ?>">
+                            <?= $i ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
+
+                <!-- Nút trang sau -->
+                <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                    <a class="page-link rounded-pill" 
+                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists?<?= $typeParam ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
+                       tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
+                       aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
+                        Sau <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="text-center text-white-50 small mt-2">
+                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị 2 checklist / trang • Tổng số <?= $totalChecklists ?? count($checklists) ?> checklist)
+            </div>
+        </nav>
+    <?php endif; ?>
 </main>
 
 <script>

@@ -978,7 +978,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* â”€â”€ Weather Widget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Weather Widget ────────────────────────────────────────── */
 .weather-widget {
   display: inline-flex;
   align-items: center;
@@ -988,6 +988,29 @@ body {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #ffffff;
+}
+
+/* ── Weather Forecast Safety Card (Đồng bộ tỷ lệ, không dính viền) ── */
+.weather-forecast-card {
+  padding: 1.75rem 1.5rem 2rem !important;
+  border-radius: 28px !important;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .weather-forecast-card {
+    padding: 2.25rem 2.25rem 2.5rem !important;
+  }
+}
+.weather-forecast-content {
+  width: 100%;
+}
+.weather-forecast-content .row {
+  margin-left: -0.625rem;
+  margin-right: -0.625rem;
+}
+.weather-forecast-content .row > * {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
 }
 
 /* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

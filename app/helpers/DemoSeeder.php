@@ -271,25 +271,7 @@ class DemoSeeder
                     self::markSeeded($k);
                 }
 
-                // Khắc phục lỗi 3 checklist mẫu (id 1, 2, 3) bị tự động sinh lại ngay sau khi người dùng vừa xóa hết:
-                try {
-                    $reseededRows = Database::query(
-                        "SELECT id FROM trip_checklists
-                         WHERE id IN (1, 2, 3)
-                           AND title IN (
-                               'Checklist Trekking Tà Năng – Phan Dũng 2 ngày 1 đêm',
-                               'Checklist Cắm trại gia đình & bạn bè cuối tuần bên hồ',
-                               'Checklist Săn mây Đồi Đa Phú – Đà Lạt ấm áp'
-                           )"
-                    );
-                    if (count($reseededRows) === 3) {
-                        Database::execute('DELETE FROM checklist_items WHERE checklist_id IN (1, 2, 3)');
-                        Database::execute('DELETE FROM trip_checklists WHERE id IN (1, 2, 3)');
-                        Database::execute("DELETE FROM notifications WHERE type = 'create_checklist' AND target_id IN (1, 2, 3)");
-                    }
-                } catch (Throwable $cleanupEx) {
-                }
-
+                // Đánh dấu migration legacy locks
                 self::markSeeded('legacy_locks_migrated_v1');
             }
 

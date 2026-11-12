@@ -366,13 +366,15 @@ class App
 
 
         // Phân tích URL và điều phối qua Router
+        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        if ($requestPath !== null && $requestPath !== '' && $requestPath !== '/' && $requestPath !== '/index.php') {
+            $url = $requestPath;
+        } else {
+            $url = $_GET['url'] ?? $requestPath ?? '/';
+        }
 
-        $url = $_GET['url'] ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-
-        if (!isset($_GET['url']) && BASE_URL !== '' && str_starts_with((string)$url, BASE_URL)) {
-
+        if (BASE_URL !== '' && str_starts_with((string)$url, BASE_URL)) {
             $url = substr((string)$url, strlen(BASE_URL));
-
         }
 
 

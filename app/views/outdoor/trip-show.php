@@ -201,7 +201,7 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
         </div>
 
         <?php if ($hasCoordinates): ?>
-            <div id="trip-weather-panel" class="p-3.5 rounded-4 mb-3" style="background: rgba(20, 28, 17, 0.88); border: 1px solid rgba(155, 189, 85, 0.3); border-radius: 20px !important;">
+            <div id="trip-weather-panel" class="p-4 p-md-5 rounded-4 mb-3" style="background: rgba(20, 28, 17, 0.88); border: 1px solid rgba(155, 189, 85, 0.3); border-radius: 28px !important;">
                 <div class="d-flex align-items-center gap-2 text-white">
                     <span class="spinner-border spinner-border-sm text-success" role="status"></span>
                     <span style="font-size: 14px;">Đang tải dữ liệu thời tiết thực địa tại <?= $escape($trip['location']) ?>...</span>
