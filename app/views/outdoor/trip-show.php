@@ -30,7 +30,9 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
             <div class="d-flex align-items-center flex-wrap gap-2">
                 <button type="button"
                         class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1.5 px-3 py-2 fw-semibold shadow-sm"
-                        onclick="ForumAjax.openQrShareModal('/trips/<?= (int) $trip['id'] ?>', '<?= $escape(addslashes($trip['title'])) ?>', 'trip')"
+                        data-bs-toggle="modal"
+                        data-bs-target="#qrShareModal"
+                        onclick="if(window.ForumAjax) ForumAjax.openQrShareModal('/trips/<?= (int) $trip['id'] ?>', <?= htmlspecialchars(json_encode((string)($trip['title'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, 'trip')"
                         style="background: linear-gradient(135deg, #233d2c 0%, #192b1f 100%); color: #b7e4c7; border: 1px solid rgba(132, 204, 22, 0.4); font-size: 13.5px; transition: all 0.2s ease;"
                         title="Mở mã QR chia sẻ chuyến đi bằng điện thoại">
                     <i class="bi bi-qr-code-scan" style="color: #a3e635;"></i>

@@ -282,7 +282,9 @@ $escape = static function ($value): string {
                         <div class="d-flex align-items-center gap-2">
                             <button type="button"
                                     class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1 px-2.5 py-1 fw-semibold"
-                                    onclick="ForumAjax.openQrShareModal('/trips/<?= (int) $trip['id'] ?>', '<?= $escape(addslashes($trip['title'])) ?>', 'trip')"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#qrShareModal"
+                                    onclick="if(window.ForumAjax) ForumAjax.openQrShareModal('/trips/<?= (int) $trip['id'] ?>', <?= htmlspecialchars(json_encode((string)($trip['title'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, 'trip')"
                                     style="background: rgba(35, 61, 44, 0.09); color: #233d2c; border: 1px solid rgba(35, 61, 44, 0.24); font-size: 12px; height: 32px;"
                                     title="Mã QR chia sẻ nhanh chuyến đi bằng điện thoại">
                                 <i class="bi bi-qr-code-scan text-success"></i> Mã QR chia sẻ

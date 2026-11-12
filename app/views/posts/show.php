@@ -431,7 +431,9 @@ $galleryCount = count($galleryImages);
                 <button type="button"
                         class="btn btn-sm rounded-pill border px-3 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold"
                         id="btnQrSharePost"
-                        onclick="ForumAjax.openQrShareModal('/posts/<?= (int)$post['id'] ?>', '<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>', 'post')"
+                        data-bs-toggle="modal"
+                        data-bs-target="#qrShareModal"
+                        onclick="if(window.ForumAjax) ForumAjax.openQrShareModal('/posts/<?= (int)$post['id'] ?>', <?= htmlspecialchars(json_encode((string)($post['title'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, 'post')"
                         title="Sinh mã QR chia sẻ bài viết nhanh qua điện thoại"
                         style="background: rgba(35, 61, 44, 0.08); color: #1f4d32; border-color: rgba(35, 61, 44, 0.25) !important;">
                     <i class="bi bi-qr-code-scan text-success"></i>

@@ -199,7 +199,9 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                             </button>
                             <button type="button" class="btn btn-sm rounded-pill py-1 px-2.5 fw-semibold"
                                     style="font-size: 11.5px; background: rgba(35, 61, 44, 0.08); color: #233d2c; border: 1px solid rgba(35, 61, 44, 0.22);"
-                                    onclick="ForumAjax.openQrShareModal('/checklists#checklist-card-<?= (int)$checklist['id'] ?>', '<?= $escape(addslashes($checklist['title'])) ?>', 'checklist')"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#qrShareModal"
+                                    onclick="if(window.ForumAjax) ForumAjax.openQrShareModal('/checklists#checklist-card-<?= (int)$checklist['id'] ?>', <?= htmlspecialchars(json_encode((string)($checklist['title'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, 'checklist')"
                                     title="Mã QR chia sẻ checklist qua điện thoại">
                                 <i class="bi bi-qr-code-scan text-success me-1"></i>Mã QR chia sẻ
                             </button>

@@ -1790,10 +1790,32 @@ const ForumAjax = {
       loadingEl.style.display = 'flex';
     }
 
-    // Mở Bootstrap Modal
+    // Mở Bootstrap Modal (kèm fallback thuần CSS nếu Bootstrap CDN bị chậm hoặc chưa tải xong)
     if (window.bootstrap && window.bootstrap.Modal) {
-      const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-      bsModal.show();
+      try {
+        const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show();
+      } catch (eModal) {
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+      }
+    } else {
+      modalEl.classList.add('show');
+      modalEl.style.display = 'block';
+      modalEl.removeAttribute('aria-hidden');
+      modalEl.setAttribute('aria-modal', 'true');
+      let bd = document.getElementById('qrModalFallbackBackdrop');
+      if (!bd) {
+        bd = document.createElement('div');
+        bd.id = 'qrModalFallbackBackdrop';
+        bd.className = 'modal-backdrop fade show';
+        bd.onclick = function () {
+          modalEl.classList.remove('show');
+          modalEl.style.display = 'none';
+          bd.remove();
+        };
+        document.body.appendChild(bd);
+      }
     }
 
     // Tải ảnh QR siêu tốc ngay tức thì từ Web Service QuickChart mã hóa effectiveQrUrl
@@ -2006,15 +2028,6 @@ const ForumAjax = {
 
     if (window.ForumAjax && window.ForumAjax.showToast) {
       window.ForumAjax.showToast('Đã tạo mã QR cho đường dẫn tùy chỉnh!', 'success');
-    }
-  },
-        btnStandard.style.color = '#3a4235';
-      } else {
-        btnStandard.style.background = '#2f5e2e';
-        btnStandard.style.color = '#ffffff';
-        btnLan.style.background = 'transparent';
-        btnLan.style.color = '#3a4235';
-      }
     }
   },
 
