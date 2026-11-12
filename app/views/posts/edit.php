@@ -491,11 +491,12 @@ if (empty($editImages) && !empty($post['image_url'])) {
                                 <div class="accordion-body p-3" style="background: rgba(0,0,0,0.015);">
                                     <!-- Filter search box -->
                                     <div class="mb-3">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
+                                        <div class="admin-search-pill">
+                                            <i class="bi bi-search admin-search-icon"></i>
                                             <input type="text" 
                                                    id="toolSearchInput" 
-                                                   class="form-control form-control-sm border-start-0 rounded-end-pill" 
+                                                   class="admin-search-input" 
+                                                   style="padding-top: 0.45rem !important; padding-bottom: 0.45rem !important; font-size: 13px !important;"
                                                    placeholder="Tìm nhanh dụng cụ (ví dụ: lều, balo, bếp, gậy leo núi, đèn pin...)" 
                                                    oninput="filterToolsList(this.value)">
                                         </div>
