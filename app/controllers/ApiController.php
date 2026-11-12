@@ -1065,7 +1065,7 @@ class ApiController extends Controller
      */
     public function qrCode(): void
     {
-        $targetUrl = isset($_GET['url']) ? trim((string)$_GET['url']) : '';
+        $targetUrl = isset($_GET['target_url']) ? trim((string)$_GET['target_url']) : (isset($_GET['url']) ? trim((string)$_GET['url']) : '');
         $title = isset($_GET['title']) ? trim((string)$_GET['title']) : 'Chia sẻ chuyến dã ngoại';
         $type = isset($_GET['type']) ? trim((string)$_GET['type']) : 'trip';
         $size = isset($_GET['size']) && is_numeric($_GET['size']) ? (int)$_GET['size'] : 260;

@@ -1753,7 +1753,7 @@ const ForumAjax = {
     try {
       const apiUrl =
         baseUrl +
-        '/api/qr.php?url=' +
+        '/api/qr?target_url=' +
         encodeURIComponent(fullTargetUrl) +
         '&title=' +
         encodeURIComponent(title || '') +
