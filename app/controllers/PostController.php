@@ -215,6 +215,15 @@ class PostController extends Controller {
             // Lưu liên kết dụng cụ của chuyến đi vào bảng post_products
             if (!empty($selectedProductIds)) {
                 $this->products->syncPostProducts($postId, $selectedProductIds);
+                if ($status === 'published') {
+                    $idListStr = implode(',', array_map('intval', $selectedProductIds));
+                    if ($idListStr !== '') {
+                        try {
+                            Database::execute("UPDATE products SET is_shared = 1 WHERE id IN ({$idListStr})");
+                        } catch (Throwable $e) {
+                        }
+                    }
+                }
             }
 
             if (class_exists('Notification')) {
@@ -541,6 +550,15 @@ class PostController extends Controller {
 
             // Cập nhật danh sách dụng cụ của bài viết trong post_products
             $this->products->syncPostProducts($id, $selectedProductIds);
+            if (($post['status'] ?? '') === 'published') {
+                $idListStr = implode(',', array_map('intval', $selectedProductIds));
+                if ($idListStr !== '') {
+                    try {
+                        Database::execute("UPDATE products SET is_shared = 1 WHERE id IN ({$idListStr})");
+                    } catch (Throwable $e) {
+                    }
+                }
+            }
 
             if (class_exists('Notification')) {
                 $currentUserId = (int)Auth::id();
@@ -735,7 +753,7 @@ class PostController extends Controller {
 
         $count = count($names);
         for ($i = 0; $i < $count; $i++) {
-            $name = trim((string)($names[$i] ?? ''));
+            $name = trim(trim((string)($names[$i] ?? '')), " \t\n\r\0\x0B,;");
             if ($name === '') {
                 continue;
             }
@@ -750,7 +768,7 @@ class PostController extends Controller {
 
             $desc = trim((string)($descs[$i] ?? ''));
             $imgUrl = trim((string)($imageUrls[$i] ?? ''));
-            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+            $isShared = (!isset($sharedList[$i]) || (string)$sharedList[$i] === '1' || $sharedList[$i] === 1) ? 1 : 0;
 
             // Kiểm tra upload file ảnh từ máy
             if (!empty($_FILES['custom_tool_file']['name'][$i]) && ($_FILES['custom_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
@@ -819,7 +837,7 @@ class PostController extends Controller {
                 continue;
             }
 
-            $name = trim((string)($names[$i] ?? ''));
+            $name = trim(trim((string)($names[$i] ?? '')), " \t\n\r\0\x0B,;");
             if ($name === '') {
                 continue;
             }
@@ -834,7 +852,7 @@ class PostController extends Controller {
 
             $desc = trim((string)($descs[$i] ?? ''));
             $imgUrl = trim((string)($imageUrls[$i] ?? ''));
-            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+            $isShared = (!isset($sharedList[$i]) || (string)$sharedList[$i] === '1' || $sharedList[$i] === 1) ? 1 : 0;
 
             if (!empty($_FILES['existing_tool_file']['name'][$i]) && ($_FILES['existing_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
                 $singleFile = [

@@ -58,3 +58,4 @@ echo "[✓ PASS] PostController ghi nhận lượt xem bài viết có cơ chế
 
 echo "\n============================================\n";
 echo "🎉 TẤT CẢ TEST SỐ MẮT XEM (VIEWS COUNT) ĐỀU PASS 100%!\n";
+

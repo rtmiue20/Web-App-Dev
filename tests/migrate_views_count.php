@@ -71,3 +71,4 @@ $row = $pdo->query("SELECT id, title, views_count FROM vw_post_details LIMIT 3")
 foreach ($row as $r) {
     echo "  Post #{$r['id']}: {$r['title']} -> {$r['views_count']} views\n";
 }
+

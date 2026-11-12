@@ -32,18 +32,23 @@ class ProductRepository extends BaseRepository
                     LEFT JOIN categories c ON c.id = p.category_id
                     LEFT JOIN users u ON u.id = p.user_id
                     LEFT JOIN roles r ON r.id = u.role_id
-                    WHERE p.is_shared = 1
-                      AND (
-                          r.name IN (\'admin\', \'moderator\')
-                          OR p.user_id IS NULL
-                          OR EXISTS (
-                              SELECT 1
-                              FROM post_products pp
-                              INNER JOIN posts po ON po.id = pp.post_id
-                              WHERE pp.product_id = p.id
-                                AND po.status = \'published\'
-                          )
-                      )';
+                    WHERE (
+                        EXISTS (
+                            SELECT 1
+                            FROM post_products pp
+                            INNER JOIN posts po ON po.id = pp.post_id
+                            WHERE pp.product_id = p.id
+                              AND po.status = \'published\'
+                        )
+                        OR (
+                            p.is_shared = 1
+                            AND (
+                                r.name IN (\'admin\', \'moderator\')
+                                OR p.user_id IS NULL
+                                OR NOT EXISTS (SELECT 1 FROM post_products pp2 WHERE pp2.product_id = p.id)
+                            )
+                        )
+                    )';
             $params = [];
 
             if ($categoryId !== null && $categoryId > 0) {
@@ -58,18 +63,23 @@ class ProductRepository extends BaseRepository
                 $sql2 = 'SELECT p.*, c.name AS category_name
                          FROM products p
                          LEFT JOIN categories c ON c.id = p.category_id
-                         WHERE p.is_shared = 1
-                           AND (
-                               p.user_id IS NULL
-                               OR p.user_id IN (SELECT u2.id FROM users u2 INNER JOIN roles r2 ON r2.id = u2.role_id WHERE r2.name IN (\'admin\', \'moderator\'))
-                               OR EXISTS (
-                                   SELECT 1
-                                   FROM post_products pp
-                                   INNER JOIN posts po ON po.id = pp.post_id
-                                   WHERE pp.product_id = p.id
-                                     AND po.status = \'published\'
-                               )
-                           )';
+                         WHERE (
+                             EXISTS (
+                                 SELECT 1
+                                 FROM post_products pp
+                                 INNER JOIN posts po ON po.id = pp.post_id
+                                 WHERE pp.product_id = p.id
+                                   AND po.status = \'published\'
+                             )
+                             OR (
+                                 p.is_shared = 1
+                                 AND (
+                                     p.user_id IS NULL
+                                     OR p.user_id IN (SELECT u2.id FROM users u2 INNER JOIN roles r2 ON r2.id = u2.role_id WHERE r2.name IN (\'admin\', \'moderator\'))
+                                     OR NOT EXISTS (SELECT 1 FROM post_products pp2 WHERE pp2.product_id = p.id)
+                                 )
+                             )
+                         )';
                 $params2 = [];
                 if ($categoryId !== null && $categoryId > 0) {
                     $sql2 .= ' AND p.category_id = :category_id';

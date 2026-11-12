@@ -41,3 +41,4 @@ FROM posts p
 INNER JOIN users u ON u.id = p.user_id
 INNER JOIN roles r ON r.id = u.role_id
 INNER JOIN categories c ON c.id = p.category_id;
+
