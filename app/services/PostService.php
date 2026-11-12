@@ -196,6 +196,18 @@ class PostService extends BaseService
             return $this->failure('Không thể cập nhật trạng thái bài viết. Vui lòng thử lại.', [], 500);
         }
 
+        // Khi duyệt bài viết sang published, tự động kích hoạt is_shared = 1 cho tất cả dụng cụ đính kèm
+        if ($newStatus === 'published') {
+            try {
+                Database::execute(
+                    'UPDATE products SET is_shared = 1 WHERE id IN (SELECT product_id FROM post_products WHERE post_id = :post_id)',
+                    ['post_id' => $postId]
+                );
+            } catch (Throwable $syncEx) {
+                error_log('Sync products is_shared on post approval error: ' . $syncEx->getMessage());
+            }
+        }
+
         $statusLabels = [
             'published' => 'Đã duyệt (Approved)',
             'pending'   => 'Chờ duyệt (Pending)',

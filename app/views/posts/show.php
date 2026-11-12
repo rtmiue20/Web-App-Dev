@@ -42,21 +42,12 @@ if (!empty($post['images']) && is_array($post['images'])) {
 }
 
 if (empty($galleryImages) && !empty($post['image_url'])) {
-
     $url = $post['image_url'];
-
     $galleryImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
-
 }
 
-if (empty($galleryImages)) {
-
-    $galleryImages[] = $baseUrl . '/assets/img/ta-xua-trek.png';
-
-}
-
+// Chỉ hiển thị ảnh nếu tác giả thực sự có tải ảnh lên (không tự động gán ảnh placeholder giả)
 $galleryCount = count($galleryImages);
-
 ?>
 
 <div class="app-container" style="max-width: 900px;">
@@ -76,25 +67,57 @@ $galleryCount = count($galleryImages);
 
 
     <?php 
-
     $currentPostStatus = $post['status'] ?? 'published';
-
     if ($currentPostStatus === 'pending'): ?>
-
-        <div class="alert alert-warning d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-warning" role="alert">
-
-            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
-
-            <div>
-
-                <strong class="d-block mb-1">Bài viết đang chờ duyệt (Pending)</strong>
-
-                <span class="small text-muted">Bài viết này hiện chưa hiển thị công khai trên diễn đàn. Chỉ bạn (tác giả) và Quản trị viên mới có thể xem được nội dung này cho đến khi được duyệt.</span>
-
+        <div class="user-pending-alert-banner mb-4 p-4 rounded-4 shadow-sm" 
+             style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%); border: 2px solid rgba(245, 158, 11, 0.5); backdrop-filter: blur(12px);" 
+             role="alert">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" 
+                          style="background: #f59e0b; color: #1e1e1e; font-weight: 700; font-size: 13px;">
+                        <i class="bi bi-hourglass-split"></i> TRẠNG THÁI: CHỜ DUYỆT (PENDING)
+                    </span>
+                    <span class="badge text-bg-dark border border-warning border-opacity-50 text-warning px-2.5 py-1" style="font-size: 11px;">
+                        Chỉ bạn &amp; Ban Quản Trị thấy
+                    </span>
+                </div>
+                <?php if ($canManage): ?>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/edit" 
+                           class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1 text-decoration-none" 
+                           style="font-size: 13px;">
+                            <i class="bi bi-pencil"></i> Chỉnh sửa bài viết
+                        </a>
+                        <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile?tab=posts" 
+                           class="btn btn-sm btn-outline-light rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1 text-decoration-none" 
+                           style="font-size: 13px;">
+                            <i class="bi bi-folder2-open"></i> Quản lý trong Hồ sơ
+                        </a>
+                        <form method="post" 
+                              action="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= (int)$post['id'] ?>/delete" 
+                              class="d-inline m-0" 
+                              onsubmit="return window.confirmFormSubmit(event, this, 'Bạn có chắc chắn muốn hủy bỏ và xóa bài viết đang chờ duyệt “<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>” không? Hành động này không thể hoàn tác.', 'Xác nhận xóa', 'Hủy bỏ bài viết chờ duyệt?');">
+                            <input type="hidden" name="_csrf" value="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="redirect" value="profile">
+                            <button type="submit" 
+                                    class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1" 
+                                    style="font-size: 13px;"
+                                    title="Hủy bỏ và xóa bài viết này">
+                                <i class="bi bi-trash3"></i> Hủy / Xóa bài viết
+                            </button>
+                        </form>
+                    </div>
+                <?php endif; ?>
             </div>
-
+            <p class="text-white mb-2" style="font-size: 14px; opacity: 0.95; line-height: 1.5;">
+                Bài viết này đã được tiếp nhận an toàn và đang nằm trong danh sách kiểm duyệt của <strong>Ban Quản Trị</strong>. Ngay sau khi được phê duyệt, bài viết sẽ tự động xuất hiện công khai trên diễn đàn cho tất cả thành viên.
+            </p>
+            <div class="d-flex align-items-center gap-2 text-white-50 small">
+                <i class="bi bi-info-circle text-warning"></i>
+                <span>Bạn vẫn có thể bổ sung hình ảnh và chỉnh sửa lại nội dung bài viết bất cứ lúc nào trước khi Admin duyệt.</span>
+            </div>
         </div>
-
     <?php elseif ($currentPostStatus === 'rejected'): ?>
 
         <div class="alert alert-danger d-flex align-items-center gap-3 rounded-4 shadow-sm mb-4 p-3 border-danger" role="alert">
@@ -129,147 +152,76 @@ $galleryCount = count($galleryImages);
 
     <?php endif; ?>
 
-
-
+    <?php if (!empty($galleryImages)): ?>
     <!-- ══════════════════════════════════════════
-
-         IMAGE CAROUSEL
-
+         INSTAGRAM-STYLE IMAGE CAROUSEL
     ══════════════════════════════════════════ -->
-
-    <div class="post-carousel-wrap mb-4" id="postCarousel">
-
-
-
+    <div class="insta-carousel-wrap mb-4" id="postCarousel">
         <!-- Slide viewport -->
-
-        <div class="pc-viewport" id="pcViewport"
-
+        <div class="insta-viewport" id="pcViewport"
              ontouchstart="CarouselLB.touchStart(event)"
-
              ontouchmove="CarouselLB.touchMove(event)"
-
              ontouchend="CarouselLB.touchEnd(event)">
-
-            <?php foreach ($galleryImages as $idx => $imgUrl): ?>
-
-                <div class="pc-slide <?= $idx === 0 ? 'active' : '' ?>" data-index="<?= $idx ?>">
-
-                    <img src="<?= htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8') ?>"
-
-                         alt="Ảnh <?= $idx + 1 ?> / <?= $galleryCount ?>"
-
-                         class="pc-img"
-
-                         onclick="CarouselLB.openLightbox(<?= $idx ?>)"
-
-                         title="Bấm để xem toàn màn hình">
-
-                </div>
-
-            <?php endforeach; ?>
-
+            
+            <div class="insta-track" id="pcTrack">
+                <?php foreach ($galleryImages as $idx => $imgUrl): ?>
+                    <div class="insta-slide" data-index="<?= $idx ?>">
+                        <img src="<?= htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8') ?>"
+                             alt="Ảnh <?= $idx + 1 ?> / <?= $galleryCount ?>"
+                             class="insta-img"
+                             onclick="CarouselLB.openLightbox(<?= $idx ?>)"
+                             title="Bấm để xem toàn màn hình">
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
-
-
 
         <?php if ($galleryCount > 1): ?>
-
-        <!-- Prev / Next arrows -->
-
-        <button class="pc-btn pc-btn-prev" onclick="CarouselLB.prev()" aria-label="Ảnh trước">
-
-            <i class="bi bi-chevron-compact-left"></i>
-
-        </button>
-
-        <button class="pc-btn pc-btn-next" onclick="CarouselLB.next()" aria-label="Ảnh sau">
-
-            <i class="bi bi-chevron-compact-right"></i>
-
-        </button>
-
-
-
-        <!-- Counter & play/pause -->
-
-        <div class="pc-footer">
-
-            <span class="pc-counter" id="pcCounter">1 / <?= $galleryCount ?></span>
-
-            <button class="pc-playpause" id="pcPlayPause" onclick="CarouselLB.togglePlay()" title="Tự động / Dừng">
-
-                <i class="bi bi-pause-circle-fill" id="pcPlayIcon"></i>
-
-            </button>
-
+        <!-- Instagram Counter Badge (Top-Right) -->
+        <div class="insta-counter-badge" id="pcCounter">
+            <i class="bi bi-images me-1"></i><span>1/<?= $galleryCount ?></span>
         </div>
 
+        <!-- Instagram Circular Prev / Next Navigation Buttons -->
+        <button type="button" class="insta-nav-btn insta-prev-btn d-none" id="pcPrevBtn" onclick="CarouselLB.prev()" aria-label="Ảnh trước" title="Ảnh trước">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <button type="button" class="insta-nav-btn insta-next-btn" id="pcNextBtn" onclick="CarouselLB.next()" aria-label="Ảnh sau" title="Ảnh sau">
+            <i class="bi bi-chevron-right"></i>
+        </button>
 
-
-        <!-- Dot indicators -->
-
-        <div class="pc-dots" id="pcDots">
-
+        <!-- Instagram Dot Indicators (Bottom-Center) -->
+        <div class="insta-dots-bar" id="pcDots">
             <?php for ($i = 0; $i < $galleryCount; $i++): ?>
-
-                <span class="pc-dot <?= $i === 0 ? 'active' : '' ?>"
-
+                <span class="insta-dot <?= $i === 0 ? 'active' : '' ?>"
                       onclick="CarouselLB.goTo(<?= $i ?>)"
-
-                      aria-label="Ảnh <?= $i + 1 ?>"></span>
-
+                      aria-label="Đến ảnh <?= $i + 1 ?>"></span>
             <?php endfor; ?>
-
         </div>
-
         <?php endif; ?>
-
     </div>
-
-
 
     <!-- ══════════════════════════════════════════
-
          LIGHTBOX MODAL
-
     ══════════════════════════════════════════ -->
-
     <div class="lb-overlay" id="lbOverlay" onclick="CarouselLB.closeLightbox()" style="display:none;">
-
         <div class="lb-box" onclick="event.stopPropagation()">
-
             <button class="lb-close" onclick="CarouselLB.closeLightbox()" aria-label="Đóng">
-
                 <i class="bi bi-x-lg"></i>
-
             </button>
-
             <?php if ($galleryCount > 1): ?>
-
             <button class="lb-nav lb-nav-prev" onclick="CarouselLB.lbPrev()" aria-label="Ảnh trước">
-
-                <i class="bi bi-chevron-compact-left"></i>
-
+                <i class="bi bi-chevron-left"></i>
             </button>
-
             <button class="lb-nav lb-nav-next" onclick="CarouselLB.lbNext()" aria-label="Ảnh sau">
-
-                <i class="bi bi-chevron-compact-right"></i>
-
+                <i class="bi bi-chevron-right"></i>
             </button>
-
             <?php endif; ?>
-
             <img src="" alt="" id="lbImg" class="lb-img">
-
             <div class="lb-caption" id="lbCaption"></div>
-
         </div>
-
     </div>
-
-
+    <?php endif; /* end if !empty($galleryImages) */ ?>
 
     <!-- Article Content Box -->
 
@@ -291,7 +243,7 @@ $galleryCount = count($galleryImages);
 
                     <i class="bi bi-geo-alt-fill me-1"></i><?= htmlspecialchars($post['location'] ?: 'Địa điểm bài viết', ENT_QUOTES, 'UTF-8') ?>
 
-                    <span id="weather-info" class="ms-2"></span>
+                    <span id="weather-info" class="ms-2"><?php if (!empty($initialWeather['temp'])): ?> · <?= (int)$initialWeather['temp'] ?>°C · <?= htmlspecialchars($initialWeather['condition'] ?? '', ENT_QUOTES, 'UTF-8') ?><?php endif; ?></span>
 
                 </span>
 
@@ -324,6 +276,14 @@ $galleryCount = count($galleryImages);
                 <i class="bi bi-calendar-event me-1"></i>
 
                 <?= !empty($post['created_at']) ? date('d/m/Y H:i', strtotime($post['created_at'])) : '' ?>
+
+            </span>
+
+            <span>
+
+                <i class="bi bi-eye me-1"></i>
+
+                <?= number_format((int)($post['views_count'] ?? 0)) ?> lượt xem
 
             </span>
 
@@ -471,7 +431,9 @@ $galleryCount = count($galleryImages);
                 <button type="button"
                         class="btn btn-sm rounded-pill border px-3 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold"
                         id="btnQrSharePost"
-                        onclick="ForumAjax.openQrShareModal('/posts/<?= (int)$post['id'] ?>', '<?= htmlspecialchars(addslashes($post['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>', 'post')"
+                        data-bs-toggle="modal"
+                        data-bs-target="#qrShareModal"
+                        onclick="if(window.ForumAjax) ForumAjax.openQrShareModal('/posts/<?= (int)$post['id'] ?>', <?= htmlspecialchars(json_encode((string)($post['title'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, 'post')"
                         title="Sinh mã QR chia sẻ bài viết nhanh qua điện thoại"
                         style="background: rgba(35, 61, 44, 0.08); color: #1f4d32; border-color: rgba(35, 61, 44, 0.25) !important;">
                     <i class="bi bi-qr-code-scan text-success"></i>
@@ -722,14 +684,149 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <div id="weather-forecast-panel" class="weather-forecast-content pt-1">
+            <div id="weather-forecast-panel" class="weather-forecast-content pt-1" <?php if (!empty($initialWeather['temp'])): ?>data-loaded="true"<?php endif; ?>>
+                <?php if (!empty($initialWeather['temp'])): ?>
+                    <?php
+                        $w = $initialWeather;
+                        $uv = $w['uv'] ?? [];
+                        $aq = $w['air_quality'] ?? [];
+                    ?>
+                    <!-- Row 1: Thẻ tóm tắt khí tượng hiện tại -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3.5 px-4 rounded-4" style="background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px !important;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="display-5 fw-bold mb-0 d-flex align-items-center gap-2 text-white" style="text-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                                        <i class="bi <?= htmlspecialchars($w['icon'] ?? 'bi-cloud-sun-fill text-warning') ?>"></i>
+                                        <span><?= (int)$w['temp'] ?>°C</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-white fs-5"><?= htmlspecialchars($w['condition'] ?? 'Thời tiết ôn hòa') ?></div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap text-white-50 mt-1" style="font-size: 12px;">
+                                            <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1">Cảm giác: <strong class="text-white"><?= (int)($w['feels_like'] ?? $w['temp']) ?>°C</strong></span>
+                                            <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-droplet text-info me-1"></i>Độ ẩm: <strong class="text-white"><?= (int)($w['humidity'] ?? 75) ?>%</strong></span>
+                                            <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-wind text-success me-1"></i>Gió: <strong class="text-white"><?= htmlspecialchars((string)($w['windspeed'] ?? 8)) ?> km/h</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
+                                    <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" style="background: rgba(155, 189, 85, 0.16); border: 1px solid rgba(155, 189, 85, 0.35); color: #d4f291; font-size: 11.5px; font-weight: 500;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 8px #4ade80;"></span>
+                                        Trạm khí tượng thực địa GPS
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="text-center py-4 text-white small" style="opacity: 0.85;">
+                    <!-- Row 2: UV Index & Chất lượng không khí AQI -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
+                                        <div class="d-flex align-items-center gap-2 text-white fw-bold" style="font-size: 14.5px;">
+                                            <i class="bi <?= htmlspecialchars($uv['icon'] ?? 'bi-brightness-high-fill') ?>" style="color: <?= htmlspecialchars($uv['color'] ?? '#facc15') ?>;"></i>
+                                            <span>Chỉ số Tia UV (Bức xạ tia cực tím)</span>
+                                        </div>
+                                        <span class="badge rounded-pill px-2.5 py-1" style="background: <?= htmlspecialchars($uv['badge_bg'] ?? 'rgba(250,204,21,0.16)') ?>; color: <?= htmlspecialchars($uv['color'] ?? '#facc15') ?>; border: 1px solid <?= htmlspecialchars($uv['badge_border'] ?? 'rgba(250,204,21,0.4)') ?>; font-size: 11px;">
+                                            <?= htmlspecialchars($uv['level'] ?? 'Trung bình') ?>
+                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                                        <span class="display-6 fw-bold text-white"><?= htmlspecialchars((string)($uv['index'] ?? '5.0')) ?></span>
+                                        <span class="text-white-50 small">/ Đỉnh ngày: <strong class="text-white"><?= htmlspecialchars((string)($uv['max_daily'] ?? '6.5')) ?> UV</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.12); border-radius: 99px;">
+                                        <div class="progress-bar" role="progressbar" style="width: <?= min(100, max(5, (int)($uv['percent'] ?? 40))) ?>%; background: <?= htmlspecialchars($uv['color'] ?? '#facc15') ?>; border-radius: 99px;"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2.5 border-top border-white border-opacity-10 text-white-50 small" style="font-size: 11.5px; line-height: 1.45;">
+                                    <i class="bi bi-shield-check text-success me-1"></i><?= htmlspecialchars($uv['advice'] ?? 'Nên đội mũ rộng vành và thoa kem chống nắng khi di chuyển.') ?>
+                                </div>
+                            </div>
+                        </div>
 
-                    <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu thời tiết thực địa...
+                        <div class="col-12 col-md-6">
+                            <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
+                                        <div class="d-flex align-items-center gap-2 text-white fw-bold" style="font-size: 14.5px;">
+                                            <i class="bi <?= htmlspecialchars($aq['icon'] ?? 'bi-wind') ?>" style="color: <?= htmlspecialchars($aq['color'] ?? '#4ade80') ?>;"></i>
+                                            <span>Chất lượng không khí (US AQI)</span>
+                                        </div>
+                                        <span class="badge rounded-pill px-2.5 py-1" style="background: <?= htmlspecialchars($aq['badge_bg'] ?? 'rgba(74,222,128,0.16)') ?>; color: <?= htmlspecialchars($aq['color'] ?? '#4ade80') ?>; border: 1px solid <?= htmlspecialchars($aq['badge_border'] ?? 'rgba(74,222,128,0.4)') ?>; font-size: 11px;">
+                                            <?= htmlspecialchars($aq['level'] ?? 'Rất trong lành') ?>
+                                        </span>
+                                    </div>
+                                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                                        <span class="display-6 fw-bold text-white"><?= (int)($aq['aqi'] ?? 20) ?></span>
+                                        <span class="text-white-50 small">AQI · Bụi PM2.5: <strong class="text-white"><?= htmlspecialchars((string)($aq['pm2_5'] ?? '5.0')) ?> µg/m³</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.12); border-radius: 99px;">
+                                        <div class="progress-bar" role="progressbar" style="width: <?= min(100, max(5, (int)($aq['percent'] ?? 15))) ?>%; background: <?= htmlspecialchars($aq['color'] ?? '#4ade80') ?>; border-radius: 99px;"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2.5 border-top border-white border-opacity-10 text-white-50 small" style="font-size: 11.5px; line-height: 1.45;">
+                                    <i class="bi bi-flower1 text-success me-1"></i><?= htmlspecialchars($aq['advice'] ?? 'Không khí vùng núi rất trong lành, lý tưởng cho dã ngoại.') ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                </div>
+                    <!-- Row 3: Lời khuyên dã ngoại -->
+                    <?php if (!empty($w['advice'])): ?>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="p-3 px-3.5 rounded-pill small d-flex align-items-center gap-2.5 shadow-sm" style="background: linear-gradient(90deg, rgba(155, 189, 85, 0.22) 0%, rgba(155, 189, 85, 0.10) 100%); color: #d6f296; border: 1px solid rgba(155, 189, 85, 0.4); backdrop-filter: blur(8px);">
+                                <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 24px; height: 24px; background: #9bbd55; color: #182213;">
+                                    <i class="bi bi-compass-fill" style="font-size: 12px;"></i>
+                                </span>
+                                <span class="fw-semibold">Gợi ý dã ngoại:</span>
+                                <span class="text-white text-opacity-90"><?= htmlspecialchars($w['advice']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
+                    <!-- Row 4: Dự báo 4 ngày -->
+                    <?php if (!empty($w['daily']) && is_array($w['daily'])): ?>
+                    <div class="d-flex align-items-center justify-content-between mt-3 mb-2.5 pt-3 border-top border-white border-opacity-10 flex-wrap gap-2 px-1">
+                        <span class="small fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
+                            <i class="bi bi-calendar3 text-success"></i>Dự báo khí tượng &amp; chỉ số UV 4 ngày tới
+                        </span>
+                        <span class="text-white-50 small" style="font-size: 11.5px;">Cập nhật theo chu kỳ vệ tinh Open-Meteo</span>
+                    </div>
+                    <div class="row row-cols-2 row-cols-md-4 g-3 mb-1">
+                        <?php foreach ($w['daily'] as $d): ?>
+                        <div class="col">
+                            <div class="p-3.5 text-center h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(160deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.12); min-height: 165px;">
+                                <div>
+                                    <div class="fw-bold text-white mb-0" style="font-size: 13px;"><?= htmlspecialchars($d['day_label'] ?? '') ?></div>
+                                    <div class="text-white-50 mb-1" style="font-size: 11px;"><?= htmlspecialchars($d['date'] ?? '') ?></div>
+                                    <div class="my-2 fs-3"><i class="bi <?= htmlspecialchars($d['icon'] ?? 'bi-cloud-sun-fill text-warning') ?>"></i></div>
+                                    <div class="fw-bold text-white mt-1" style="font-size: 13px;">
+                                        <?= (int)($d['temp_max'] ?? 25) ?>° <span class="text-white-50 fw-normal" style="font-size: 11.5px;">/ <?= (int)($d['temp_min'] ?? 18) ?>°C</span>
+                                    </div>
+                                </div>
+                                <div class="mt-2.5 pt-2 border-top border-white border-opacity-10 d-flex align-items-center justify-content-center gap-1.5 flex-wrap">
+                                    <span class="badge rounded-pill px-2 py-1" style="background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.32); font-size: 10px;">
+                                        <i class="bi bi-droplet-fill me-0.5"></i><?= (int)($d['rain_prob'] ?? 10) ?>%
+                                    </span>
+                                    <span class="badge rounded-pill px-2 py-1" style="background: rgba(250, 204, 21, 0.16); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.35); font-size: 10px;">
+                                        UV <?= htmlspecialchars((string)($d['uv_max'] ?? '5.0')) ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="text-center py-4 text-white small" style="opacity: 0.85;">
+                        <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu thời tiết thực địa...
+                    </div>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -1090,10 +1187,9 @@ $galleryCount = count($galleryImages);
 
 
 
-                                        <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?>">
-
-                                            <span class="tool-title-inner"><?= htmlspecialchars($tool['name'], ENT_QUOTES, 'UTF-8') ?></span>
-
+                                        <?php $cleanToolName = ltrim((string)($tool['name'] ?? ''), " \t\n\r\0\x0B,"); ?>
+                                        <div class="tool-title-marquee fw-semibold mb-1" style="color: var(--color-ink); font-size: 0.95rem;" title="<?= htmlspecialchars($cleanToolName, ENT_QUOTES, 'UTF-8') ?>">
+                                            <span class="tool-title-inner"><?= htmlspecialchars($cleanToolName, ENT_QUOTES, 'UTF-8') ?></span>
                                         </div>
 
 
@@ -1276,21 +1372,29 @@ $galleryCount = count($galleryImages);
 
             <?php elseif ($isLoggedIn && Auth::isGuest()): ?>
 
-                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
-                    <i class="bi bi-eye-fill text-muted fs-5"></i>
-                    <span class="small text-muted">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên không thể gửi đánh giá địa điểm.</span>
+                <div class="d-flex align-items-center gap-2 mt-3 mb-0 p-3 rounded-4" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.28);">
+                    <i class="bi bi-eye-fill fs-5" style="color: var(--color-moss);"></i>
+                    <span class="small" style="color: var(--color-ink);">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong> nên không thể gửi đánh giá địa điểm.</span>
                 </div>
 
             <?php elseif ($isLoggedIn && $isAuthorOfPost && !$isCurAdmin): ?>
 
-                <div class="alert alert-secondary d-flex align-items-center gap-2 mt-3 mb-0 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
+                <div class="d-flex align-items-center gap-2 mt-3 mb-0 p-3 rounded-4" style="background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);">
                     <i class="bi bi-info-circle-fill text-muted fs-5"></i>
                     <span class="small text-muted">Bạn là tác giả bài viết này nên không thể tự đánh giá địa điểm của chính mình. Chỉ Admin và các thành viên khác mới có thể gửi đánh giá.</span>
                 </div>
 
             <?php else: ?>
 
-                <p class="mt-3 mb-0"><a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login">Đăng nhập</a> để đánh giá địa điểm.</p>
+                <div class="p-3 mt-3 mb-0 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.28);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill fs-5" style="color: var(--color-moss);"></i>
+                        <span class="small" style="color: var(--color-ink);">Đăng nhập tài khoản để đánh giá địa điểm dã ngoại này.</span>
+                    </div>
+                    <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/login" class="nature-btn-primary py-1 px-3 d-inline-flex align-items-center gap-1" style="width: auto; height: 34px; font-size: 12.5px;">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập
+                    </a>
+                </div>
 
             <?php endif; ?>
 
@@ -1302,11 +1406,20 @@ $galleryCount = count($galleryImages);
 
                     <article class="border-top py-3">
 
-                        <div class="d-flex justify-content-between gap-2">
+                        <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
 
-                            <strong><?= htmlspecialchars($review['username'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            <div class="d-flex align-items-center gap-2">
+                                <?php if (!empty($review['avatar_path'])): ?>
+                                    <img src="<?= htmlspecialchars(upload_url($review['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="28" height="28">
+                                <?php else: ?>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0" style="width: 28px; height: 28px; background: #9bbd55; font-size: 13px;">
+                                        <?= strtoupper(mb_substr($review['username'] ?? 'U', 0, 1)) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <strong><?= htmlspecialchars($review['username'], ENT_QUOTES, 'UTF-8') ?></strong>
+                            </div>
 
-                            <span>★ <?= (int) $review['rating'] ?>/5</span>
+                            <span class="text-warning fw-semibold">★ <?= (int) $review['rating'] ?>/5</span>
 
                         </div>
 
@@ -1471,9 +1584,14 @@ $galleryCount = count($galleryImages);
 
                             <div class="d-flex align-items-center flex-wrap">
 
-                                <span class="comment-author">
+                                <span class="comment-author d-inline-flex align-items-center gap-1.5">
 
-                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?>
+                                    <?php if (!empty($cm['avatar_path'])): ?>
+                                        <img src="<?= htmlspecialchars(upload_url($cm['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="22" height="22">
+                                    <?php else: ?>
+                                        <i class="bi bi-person-fill me-1"></i>
+                                    <?php endif; ?>
+                                    <span><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?></span>
 
                                 </span>
 
@@ -1725,262 +1843,152 @@ $galleryCount = count($galleryImages);
 
 <style>
 
-/* ── Carousel Wrapper ── */
-
-.post-carousel-wrap {
-
+/* ── Instagram-Style Carousel ── */
+.insta-carousel-wrap {
     position: relative;
-
     width: 100%;
-
-    border-radius: 32px;
-
+    border-radius: 28px;
     overflow: hidden;
-
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-
-    background: #0d0d0d;
-
+    background: #0d110d;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     user-select: none;
-
 }
 
-
-
-/* ── Viewport ── */
-
-.pc-viewport {
-
+.insta-viewport {
     position: relative;
-
     width: 100%;
-
-    aspect-ratio: 16/9;
-
+    max-height: 600px;
+    aspect-ratio: 16/10;
     overflow: hidden;
-
     cursor: grab;
-
-}
-
-.pc-viewport:active { cursor: grabbing; }
-
-
-
-/* ── Slides ── */
-
-.pc-slide {
-
-    position: absolute;
-
-    inset: 0;
-
     display: flex;
-
     align-items: center;
-
-    justify-content: center;
-
-    opacity: 0;
-
-    transform: translateX(60px);
-
-    transition: opacity 0.4s ease, transform 0.4s ease;
-
-    pointer-events: none;
-
+    background: #050705;
+}
+.insta-viewport:active {
+    cursor: grabbing;
 }
 
-.pc-slide.active {
-
-    opacity: 1;
-
-    transform: translateX(0);
-
-    pointer-events: auto;
-
-}
-
-.pc-slide.slide-out-left {
-
-    opacity: 0;
-
-    transform: translateX(-60px);
-
-}
-
-.pc-slide.slide-out-right {
-
-    opacity: 0;
-
-    transform: translateX(60px);
-
-}
-
-.pc-img {
-
+.insta-track {
+    display: flex;
     width: 100%;
-
     height: 100%;
-
-    object-fit: contain;
-
-    display: block;
-
-    cursor: zoom-in;
-
+    transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
 }
 
-
-
-/* ── Prev / Next Buttons ── */
-
-.pc-btn {
-
-    position: absolute;
-
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    background: rgba(0,0,0,0.55);
-
-    border: none;
-
-    color: #fff;
-
-    font-size: 1.6rem;
-
-    width: 44px;
-
-    height: 64px;
-
-    border-radius: 12px;
-
-    cursor: pointer;
-
-    z-index: 10;
-
+.insta-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
-    transition: background 0.2s, transform 0.15s;
-
+    position: relative;
+    background: #050705;
 }
 
-.pc-btn:hover { background: rgba(0,0,0,0.8); transform: translateY(-50%) scale(1.08); }
+.insta-img {
+    max-width: 100%;
+    max-height: 600px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+}
 
-.pc-btn-prev { left: 10px; }
-
-.pc-btn-next { right: 10px; }
-
-
-
-/* ── Footer (counter + play/pause) ── */
-
-.pc-footer {
-
+/* Instagram Counter Badge (Top-Right) */
+.insta-counter-badge {
     position: absolute;
-
-    bottom: 48px;
-
+    top: 14px;
     right: 14px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    z-index: 10;
-
-}
-
-.pc-counter {
-
-    background: rgba(0,0,0,0.6);
-
-    color: #fff;
-
-    font-size: 0.78rem;
-
-    padding: 3px 10px;
-
+    background: rgba(18, 22, 16, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
     border-radius: 20px;
-
-    font-variant-numeric: tabular-nums;
-
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    z-index: 15;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
 }
 
-.pc-playpause {
-
-    background: none;
-
-    border: none;
-
-    color: rgba(255,255,255,0.85);
-
-    font-size: 1.25rem;
-
-    cursor: pointer;
-
-    padding: 0;
-
-    line-height: 1;
-
-    transition: color 0.2s, transform 0.15s;
-
-}
-
-.pc-playpause:hover { color: #fff; transform: scale(1.15); }
-
-
-
-/* ── Dot Indicators ── */
-
-.pc-dots {
-
+/* Instagram Circular Navigation Buttons */
+.insta-nav-btn {
     position: absolute;
-
-    bottom: 14px;
-
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    display: flex;
-
-    gap: 6px;
-
-    z-index: 10;
-
-}
-
-.pc-dot {
-
-    width: 8px;
-
-    height: 8px;
-
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-
-    background: rgba(255,255,255,0.4);
-
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #1a1e17;
+    font-size: 1.15rem;
     cursor: pointer;
-
-    transition: background 0.2s, transform 0.2s;
-
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity: 0.92;
+}
+.insta-nav-btn:hover {
+    background: #ffffff;
+    color: #000;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+}
+.insta-prev-btn {
+    left: 14px;
+}
+.insta-next-btn {
+    right: 14px;
+}
+.insta-nav-btn.d-none {
+    display: none !important;
 }
 
-.pc-dot.active {
-
-    background: #fff;
-
-    transform: scale(1.35);
-
+/* Instagram Dots Indicator (Bottom-Center) */
+.insta-dots-bar {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 15;
+}
+.insta-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.insta-dot.active {
+    width: 18px;
+    border-radius: 3px;
+    background: #9bbd55;
+    box-shadow: 0 0 8px rgba(155, 189, 85, 0.8);
 }
 
 
@@ -2223,335 +2231,157 @@ $galleryCount = count($galleryImages);
 
 
     const IMAGES  = <?= json_encode($galleryImages, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-
     const TOTAL   = IMAGES.length;
 
-    const AUTO_MS = 1000; // 1 second auto-cycle
+    if (TOTAL === 0) {
+        window.CarouselLB = {
+            goTo: function() {}, next: function() {}, prev: function() {},
+            openLightbox: function() {}, closeLightbox: function() {},
+            lbNext: function() {}, lbPrev: function() {}, touchStart: function() {},
+            touchMove: function() {}, touchEnd: function() {}
+        };
+        return;
+    }
 
-
-
-    let current   = 0;
-
-    let playing   = TOTAL > 1;
-
-    let timer     = null;
-
-    let touchX0   = 0;
-
+    let current = 0;
+    let touchX0 = 0;
     let isDragging = false;
 
-
-
-    // ── DOM refs ──────────────────────────────────────────────────
-
-    const slides    = document.querySelectorAll('.pc-slide');
-
-    const dots      = document.querySelectorAll('.pc-dot');
-
+    // DOM references
+    const track     = document.getElementById('pcTrack');
+    const prevBtn   = document.getElementById('pcPrevBtn');
+    const nextBtn   = document.getElementById('pcNextBtn');
+    const dots      = document.querySelectorAll('.insta-dot');
     const counter   = document.getElementById('pcCounter');
-
-    const playIcon  = document.getElementById('pcPlayIcon');
-
     const viewport  = document.getElementById('pcViewport');
-
     const lbOverlay = document.getElementById('lbOverlay');
-
     const lbImg     = document.getElementById('lbImg');
-
     const lbCaption = document.getElementById('lbCaption');
 
+    function updateUiState() {
+        if (track) {
+            track.style.transform = 'translateX(-' + (current * 100) + '%)';
+        }
 
-
-    // ── Core: go to slide index ───────────────────────────────────
-
-    function goToSlide(next, dir) {
-
-        if (TOTAL <= 1) return;
-
-        if (next === current) return;
-
-
-
-        const outClass = dir === 'left' ? 'slide-out-left' : 'slide-out-right';
-
-
-
-        // Animate out current
-
-        slides[current].classList.remove('active');
-
-        slides[current].classList.add(outClass);
-
-        setTimeout(function() {
-
-            if (slides[current]) {
-
-                slides[current].classList.remove(outClass);
-
+        // Instagram button behavior: Hide prev at index 0, hide next at last index
+        if (prevBtn) {
+            if (current <= 0) {
+                prevBtn.classList.add('d-none');
+            } else {
+                prevBtn.classList.remove('d-none');
             }
+        }
+        if (nextBtn) {
+            if (current >= TOTAL - 1) {
+                nextBtn.classList.add('d-none');
+            } else {
+                nextBtn.classList.remove('d-none');
+            }
+        }
 
-        }, 450);
+        // Instagram counter badge: e.g. "1/4"
+        if (counter) {
+            counter.innerHTML = '<i class="bi bi-images me-1"></i><span>' + (current + 1) + '/' + TOTAL + '</span>';
+        }
 
-
-
-        current = (next + TOTAL) % TOTAL;
-
-
-
-        // Animate in next
-
-        slides[current].classList.add('active');
-
-
-
-        // Update dots + counter
-
+        // Instagram dots indicator
         dots.forEach(function(d, i) {
-
             d.classList.toggle('active', i === current);
-
         });
-
-        if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
-
     }
 
-
-
-    // ── Public API (called from onclick) ──────────────────────────
+    // Initialize state
+    updateUiState();
 
     window.CarouselLB = {
-
-
-
-        goTo(idx) {
-
-            const dir = idx > current ? 'left' : 'right';
-
-            goToSlide(idx, dir);
-
+        goTo: function(idx) {
+            if (idx < 0) idx = 0;
+            if (idx >= TOTAL) idx = TOTAL - 1;
+            current = idx;
+            updateUiState();
         },
 
-
-
-        next() {
-
-            goToSlide(current + 1, 'left');
-
-        },
-
-
-
-        prev() {
-
-            goToSlide(current - 1, 'right');
-
-        },
-
-
-
-        togglePlay() {
-
-            playing = !playing;
-
-            if (playIcon) {
-
-                playIcon.className = playing
-
-                    ? 'bi bi-pause-circle-fill'
-
-                    : 'bi bi-play-circle-fill';
-
+        next: function() {
+            if (current < TOTAL - 1) {
+                current++;
+                updateUiState();
             }
-
-            if (playing) startTimer(); else stopTimer();
-
         },
 
+        prev: function() {
+            if (current > 0) {
+                current--;
+                updateUiState();
+            }
+        },
 
-
-        // ── Lightbox ──
-
-        openLightbox(idx) {
-
+        // Lightbox
+        openLightbox: function(idx) {
             if (!lbOverlay || !lbImg) return;
-
             current = (idx + TOTAL) % TOTAL;
-
             lbImg.src = IMAGES[current];
-
             lbImg.alt = 'Ảnh ' + (current + 1) + ' / ' + TOTAL;
-
             if (lbCaption) lbCaption.textContent = TOTAL > 1 ? (current + 1) + ' / ' + TOTAL : '';
-
             lbOverlay.style.display = 'flex';
-
             document.body.style.overflow = 'hidden';
-
-            // Pause auto-play while lightbox is open
-
-            stopTimer();
-
+            updateUiState();
         },
 
-
-
-        closeLightbox() {
-
+        closeLightbox: function() {
             if (!lbOverlay) return;
-
             lbOverlay.style.display = 'none';
-
             document.body.style.overflow = '';
-
-            if (playing) startTimer();
-
         },
 
-
-
-        lbPrev() {
-
+        lbPrev: function() {
             current = (current - 1 + TOTAL) % TOTAL;
-
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
-
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
-
-            // Sync carousel
-
-            dots.forEach(function(d, i) {
-
-                d.classList.toggle('active', i === current);
-
-            });
-
-            if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
-
+            updateUiState();
         },
 
-
-
-        lbNext() {
-
+        lbNext: function() {
             current = (current + 1) % TOTAL;
-
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
-
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
-
-            dots.forEach(function(d, i) {
-
-                d.classList.toggle('active', i === current);
-
-            });
-
-            if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
-
+            updateUiState();
         },
 
-
-
-        // ── Touch/swipe handlers ──
-
-        touchStart(e) {
-
+        // Touch & Swipe handlers
+        touchStart: function(e) {
+            if (TOTAL <= 1) return;
             touchX0 = e.touches[0].clientX;
-
             isDragging = true;
-
         },
 
-        touchMove(e) {
-
-            if (!isDragging) return;
-
-            e.preventDefault();
-
+        touchMove: function(e) {
+            // Passive touch move
         },
 
-        touchEnd(e) {
-
-            if (!isDragging) return;
-
+        touchEnd: function(e) {
+            if (!isDragging || TOTAL <= 1) return;
             isDragging = false;
-
             const delta = e.changedTouches[0].clientX - touchX0;
-
             if (Math.abs(delta) > 40) {
-
-                delta < 0 ? CarouselLB.next() : CarouselLB.prev();
-
+                if (delta < 0) {
+                    CarouselLB.next();
+                } else {
+                    CarouselLB.prev();
+                }
             }
-
         }
-
     };
 
-
-
-    // ── Auto-play timer ───────────────────────────────────────────
-
-    function startTimer() {
-
-        stopTimer();
-
-        if (TOTAL <= 1) return;
-
-        timer = setInterval(function() {
-
-            goToSlide(current + 1, 'left');
-
-        }, AUTO_MS);
-
-    }
-
-
-
-    function stopTimer() {
-
-        if (timer) { clearInterval(timer); timer = null; }
-
-    }
-
-
-
-    // ── Pause on hover ────────────────────────────────────────────
-
-    if (viewport) {
-
-        viewport.addEventListener('mouseenter', stopTimer);
-
-        viewport.addEventListener('mouseleave', function() {
-
-            if (playing) startTimer();
-
-        });
-
-    }
-
-
-
-    // ── Keyboard navigation ───────────────────────────────────────
-
+    // Keyboard navigation
     document.addEventListener('keydown', function(e) {
-
         if (lbOverlay && lbOverlay.style.display !== 'none') {
-
             if (e.key === 'ArrowLeft')  CarouselLB.lbPrev();
-
             if (e.key === 'ArrowRight') CarouselLB.lbNext();
-
             if (e.key === 'Escape')     CarouselLB.closeLightbox();
-
-        } else {
-
+        } else if (TOTAL > 1) {
             if (e.key === 'ArrowLeft')  CarouselLB.prev();
-
             if (e.key === 'ArrowRight') CarouselLB.next();
-
         }
-
     });
 
 

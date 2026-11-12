@@ -33,11 +33,9 @@ $defaultImg = $baseUrl . '/assets/img/tent-forest.png';
     <div class="nature-card mb-4" style="border-radius: 24px; padding: 1.25rem 1.75rem;">
         <div class="row align-items-center g-3">
             <div class="col-12 col-md-5">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3 text-muted">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" id="productSearchInput" class="form-control border-start-0 rounded-end-pill py-2 shadow-none" placeholder="Tìm nhanh theo tên dụng cụ...">
+                <div class="admin-search-pill">
+                    <i class="bi bi-search admin-search-icon"></i>
+                    <input type="text" id="productSearchInput" class="admin-search-input" placeholder="Tìm nhanh theo tên dụng cụ...">
                 </div>
             </div>
             <div class="col-12 col-md-4">

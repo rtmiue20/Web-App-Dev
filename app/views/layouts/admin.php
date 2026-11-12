@@ -299,8 +299,13 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             </a>
 
             <!-- Admin Profile / Name -->
-            <div class="d-none d-lg-inline-flex align-items-center gap-1 text-white-50 small px-2">
-                <i class="bi bi-person-circle"></i>
+            <div class="d-none d-lg-inline-flex align-items-center gap-1.5 text-white-50 small px-2">
+                <?php if (!empty($currentUser['avatar_path'])): ?>
+                    <img src="<?= htmlspecialchars(upload_url($currentUser['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" 
+                         alt="" class="rounded-circle object-fit-cover shadow-sm border" width="22" height="22">
+                <?php else: ?>
+                    <i class="bi bi-person-circle"></i>
+                <?php endif; ?>
                 <span class="text-white fw-normal"><?= htmlspecialchars($currentUser['username'] ?? 'Admin', ENT_QUOTES, 'UTF-8') ?></span>
             </div>
 
@@ -381,7 +386,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
     <!-- Footer -->
     <footer class="py-4 text-center text-white-50 small mt-auto border-top border-white-10" style="background: rgba(0,0,0,0.15);">
         <div class="container">
-            <span>Quản trị Hệ thống Diễn đàn Dã Ngoại &copy; <?= date('Y') ?> &bull; Phiên bản tuần 3</span>
+            <span>Quản trị Hệ thống Diễn đàn Dã Ngoại &copy; <?= date('Y') ?></span>
         </div>
     </footer>
 

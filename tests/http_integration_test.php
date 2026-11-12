@@ -3,11 +3,12 @@
  * Self-contained HTTP integration test for Week 3 Leader
  * Starts PHP's built-in dev server, runs tests, then stops it.
  */
-define('PROJECT_ROOT', 'C:/Users/MinhTrieu/UEH/WebDev/Project');
-define('PHP_BIN', 'D:/xampp/php/php.exe');
+define('PROJECT_ROOT', dirname(__DIR__));
+define('PHP_BIN', PHP_BINARY);
 define('HOST', '127.0.0.1');
 define('PORT', '7654');
 define('BASE', 'http://' . HOST . ':' . PORT);
+require_once PROJECT_ROOT . '/app/core/Database.php';
 
 $pass = 0; $fail = 0; $results = [];
 
@@ -165,10 +166,10 @@ $loginPage = httpGet(BASE . '/login', true, $adminCookie);
 $csrf = getCsrfToken($loginPage['body']);
 $loginResult = httpPost(BASE . '/login', [
     'email' => 'admin@forum.local',
-    'password' => 'admin123',
+    'password' => '123456',
     '_csrf' => $csrf,
 ], $adminCookie);
-assert_http("POST /login admin@forum.local/admin123", $loginResult['code'], [303]);
+assert_http("POST /login admin@forum.local/123456", $loginResult['code'], [303]);
 $adminOk = $loginResult['code'] === 303;
 
 echo "\n4. ADMIN ROUTES (đã đăng nhập là admin)\n";
@@ -234,6 +235,10 @@ if ($adminOk) {
     ], $adminCookie);
     assert_http("POST /admin/categories/store tên 1 ký tự → 200 (hiện lỗi)", $shortResult['code'], [200]);
     assert_contains("Thông báo lỗi khi tên quá ngắn", $shortResult['body'], '2 ký tự');
+
+    // Dọn dẹp danh mục test tự động để không làm bẩn CSDL
+    $cleanDb = Database::getConnection();
+    $cleanDb->exec("DELETE FROM categories WHERE name LIKE 'Test Cat %' OR name = 'X'");
 }
 
 echo "\n6. KIỂM TRA 403 CHO THÀNH VIÊN THƯỜNG\n";
@@ -243,11 +248,11 @@ $memberCookie = tempnam(sys_get_temp_dir(), 'member_session_');
 $loginPage2 = httpGet(BASE . '/login', true, $memberCookie);
 $csrf4 = getCsrfToken($loginPage2['body']);
 $memberLogin = httpPost(BASE . '/login', [
-    'email' => 'member@forum.local',
-    'password' => 'member123',
+    'email' => 'minh@forum.local',
+    'password' => '123456',
     '_csrf' => $csrf4,
 ], $memberCookie);
-assert_http("POST /login member@forum.local/member123", $memberLogin['code'], [303]);
+assert_http("POST /login minh@forum.local/123456", $memberLogin['code'], [303]);
 
 if ($memberLogin['code'] === 303) {
     $r = httpGet(BASE . '/admin', false, $memberCookie);

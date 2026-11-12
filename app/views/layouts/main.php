@@ -75,6 +75,30 @@ HTML;
     
     <script>
         window.BASE_URL = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
+        <?php
+        $detectedLanIp = '';
+        $hostName = @gethostname();
+        if (is_string($hostName) && $hostName !== '') {
+            $ipList = @gethostbynamel($hostName);
+            if (is_array($ipList)) {
+                foreach ($ipList as $ip) {
+                    if (is_string($ip) && str_starts_with($ip, '192.168.')) {
+                        $detectedLanIp = $ip;
+                        break;
+                    }
+                }
+                if ($detectedLanIp === '') {
+                    foreach ($ipList as $ip) {
+                        if (is_string($ip) && (str_starts_with($ip, '10.') || preg_match('/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $ip))) {
+                            $detectedLanIp = $ip;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        ?>
+        window.LAN_IP = <?= json_encode($detectedLanIp) ?>;
     </script>
 </head>
 <body>

@@ -4,6 +4,8 @@ require_once __DIR__ . '/../models/Checklist.php';
 require_once __DIR__ . '/../models/Trip.php';
 require_once __DIR__ . '/../models/PlaceReview.php';
 require_once __DIR__ . '/../models/Post.php';
+require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../models/Notification.php';
 
 class OutdoorController extends Controller
 {
@@ -27,18 +29,13 @@ class OutdoorController extends Controller
         $tripType = trim((string) ($_GET['type'] ?? ''));
 
         $allChecklists = $this->checklists->getVisibleForUser($userId, $tripType ?: null);
-
-        // Phân trang 2 checklist / trang theo yêu cầu
-        $currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-        if ($currentPage < 1) {
-            $currentPage = 1;
-        }
         $perPage = 2;
         $totalChecklists = count($allChecklists);
         $totalPages = (int) ceil($totalChecklists / $perPage);
         if ($totalPages < 1) {
             $totalPages = 1;
         }
+        $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         if ($currentPage > $totalPages && $totalChecklists > 0) {
             $currentPage = $totalPages;
         }
@@ -47,16 +44,17 @@ class OutdoorController extends Controller
         $paginatedChecklists = array_slice($allChecklists, $offset, $perPage);
 
         $this->render('outdoor/checklists', [
-            'title' => 'Checklist dã ngoại — Danh sách trang bị',
-            'checklists' => $paginatedChecklists,
-            'tripTypes' => $this->checklists->getTripTypes(),
-            'currentType' => $tripType,
-            'currentPage' => $currentPage,
-            'totalPages' => $totalPages,
+            'title'           => 'Checklist dã ngoại — Danh sách trang bị',
+            'checklists'      => $paginatedChecklists,
+            'tripTypes'       => $this->checklists->getTripTypes(),
+            'currentType'     => $tripType,
+            'currentPage'     => $currentPage,
+            'totalPages'      => $totalPages,
             'totalChecklists' => $totalChecklists,
-            'perPage' => $perPage,
-            'errors' => [],
-            'old' => [],
+            'perPage'         => $perPage,
+            'limit'           => $perPage,
+            'errors'          => [],
+            'old'             => [],
         ]);
     }
 
@@ -93,17 +91,22 @@ class OutdoorController extends Controller
 
         if ($errors !== []) {
             $allChecklists = $this->checklists->getVisibleForUser((int) $user['id']);
+            $totalChecklists = count($allChecklists);
+            $perPage = 2;
+            $totalPages = max(1, (int) ceil($totalChecklists / $perPage));
+
             $this->render('outdoor/checklists', [
-                'title' => 'Checklist dã ngoại — Danh sách trang bị',
-                'checklists' => array_slice($allChecklists, 0, 2),
-                'tripTypes' => $this->checklists->getTripTypes(),
-                'currentType' => '',
-                'currentPage' => 1,
-                'totalPages' => max(1, (int) ceil(count($allChecklists) / 2)),
-                'totalChecklists' => count($allChecklists),
-                'perPage' => 2,
-                'errors' => $errors,
-                'old' => $_POST,
+                'title'           => 'Checklist dã ngoại — Danh sách trang bị',
+                'checklists'      => array_slice($allChecklists, 0, $perPage),
+                'tripTypes'       => $this->checklists->getTripTypes(),
+                'currentType'     => '',
+                'currentPage'     => 1,
+                'totalPages'      => $totalPages,
+                'totalChecklists' => $totalChecklists,
+                'perPage'         => $perPage,
+                'limit'           => $perPage,
+                'errors'          => $errors,
+                'old'             => $_POST,
             ]);
             return;
         }
@@ -159,12 +162,25 @@ class OutdoorController extends Controller
         $userId = is_array($user) ? (int) $user['id'] : null;
         $filter = trim((string) ($_GET['filter'] ?? 'upcoming'));
 
+        $allTrips = $this->trips->getAll($filter, $userId);
+        $totalTrips = count($allTrips);
+        $limit = 4;
+        $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $totalPages = $totalTrips > 0 ? (int)ceil($totalTrips / $limit) : 1;
+        $currentPage = min($currentPage, $totalPages);
+        $offset = ($currentPage - 1) * $limit;
+        $pagedTrips = array_slice($allTrips, $offset, $limit);
+
         $this->render('outdoor/trips', [
-            'title' => 'Nhóm đi chung — Rủ bạn đồng hành dã ngoại',
-            'trips' => $this->trips->getAll($filter, $userId),
+            'title'         => 'Nhóm đi chung — Rủ bạn đồng hành dã ngoại',
+            'trips'         => $pagedTrips,
             'currentFilter' => $filter,
-            'errors' => [],
-            'old' => [],
+            'currentPage'   => $currentPage,
+            'totalPages'    => $totalPages,
+            'totalTrips'    => $totalTrips,
+            'limit'         => $limit,
+            'errors'        => [],
+            'old'           => [],
         ]);
     }
 
@@ -193,12 +209,15 @@ class OutdoorController extends Controller
         $lng = $lngInput === '' ? null : filter_var($lngInput, FILTER_VALIDATE_FLOAT);
         $errors = [];
 
-        // Parse datetime linh hoạt hỗ trợ cả Y-m-d\TH:i và Y-m-d\TH:i:s
-        $startsAt = DateTime::createFromFormat('Y-m-d\TH:i', $dateInput)
-            ?: DateTime::createFromFormat('Y-m-d\TH:i:s', $dateInput);
-        if (!$startsAt) {
+        // Parse datetime linh hoạt đồng bộ múi giờ Asia/Ho_Chi_Minh
+        $tz = new DateTimeZone('Asia/Ho_Chi_Minh');
+        $startsAt = DateTime::createFromFormat('Y-m-d\TH:i', $dateInput, $tz)
+            ?: DateTime::createFromFormat('Y-m-d\TH:i:s', $dateInput, $tz)
+            ?: DateTime::createFromFormat('Y-m-d H:i:s', $dateInput, $tz)
+            ?: DateTime::createFromFormat('Y-m-d H:i', $dateInput, $tz);
+        if (!$startsAt && $dateInput !== '') {
             try {
-                $startsAt = new DateTime($dateInput);
+                $startsAt = new DateTime($dateInput, $tz);
             } catch (Throwable $e) {
                 $startsAt = null;
             }
@@ -213,8 +232,9 @@ class OutdoorController extends Controller
         if ($location === '' || mb_strlen($location) > 150) {
             $errors['location'] = 'Vui lòng nhập địa điểm (tối đa 150 ký tự).';
         }
-        if (!$startsAt || $startsAt <= new DateTime()) {
-            $errors['starts_at'] = 'Thời gian khởi hành phải ở trong tương lai.';
+        $now = new DateTime('now', $tz);
+        if (!$startsAt || $startsAt <= $now) {
+            $errors['starts_at'] = 'Thời gian khởi hành phải ở trong tương lai (sau ' . $now->format('H:i d/m/Y') . ').';
         }
         if ($maxParticipants === false || $maxParticipants < 2 || $maxParticipants > 100) {
             $errors['max_participants'] = 'Số người tối đa từ 2 đến 100 (đã tính người tổ chức).';
@@ -227,12 +247,23 @@ class OutdoorController extends Controller
         }
 
         if ($errors !== []) {
+            $allTrips = $this->trips->getAll('upcoming', (int) $user['id']);
+            $totalTrips = count($allTrips);
+            $limit = 4;
+            $currentPage = 1;
+            $totalPages = $totalTrips > 0 ? (int)ceil($totalTrips / $limit) : 1;
+            $pagedTrips = array_slice($allTrips, 0, $limit);
+
             $this->render('outdoor/trips', [
-                'title' => 'Nhóm đi chung — Rủ bạn đồng hành dã ngoại',
-                'trips' => $this->trips->getAll('upcoming'),
+                'title'         => 'Nhóm đi chung — Rủ bạn đồng hành dã ngoại',
+                'trips'         => $pagedTrips,
                 'currentFilter' => 'upcoming',
-                'errors' => $errors,
-                'old' => $_POST,
+                'currentPage'   => $currentPage,
+                'totalPages'    => $totalPages,
+                'totalTrips'    => $totalTrips,
+                'limit'         => $limit,
+                'errors'        => $errors,
+                'old'           => $_POST,
             ]);
             return;
         }
@@ -398,11 +429,117 @@ class OutdoorController extends Controller
         }
     }
 
+    public function contactOrganizer(int $id): void
+    {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
+
+        if (!$this->verifyCsrfToken()) {
+            if ($isAjax) {
+                Response::json(false, null, 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang.', 419);
+                return;
+            }
+            Session::flash('error', 'Phiên làm việc đã hết hạn. Vui lòng thử lại.');
+            $this->redirect('/trips/' . $id);
+            return;
+        }
+
+        $trip = $this->trips->getById($id);
+        if (!$trip) {
+            if ($isAjax) {
+                Response::json(false, null, 'Không tìm thấy chuyến đi yêu cầu.', 404);
+                return;
+            }
+            Session::flash('error', 'Không tìm thấy chuyến đi yêu cầu.');
+            $this->redirect('/trips');
+            return;
+        }
+
+        $user = Auth::user();
+        $senderName = trim((string)($_POST['sender_name'] ?? ($user['username'] ?? '')));
+        $senderContact = trim((string)($_POST['sender_contact'] ?? ($user['email'] ?? '')));
+        $message = trim((string)($_POST['message'] ?? ''));
+
+        if ($senderName === '') {
+            $senderName = is_array($user) && !empty($user['username']) ? $user['username'] : 'Thành viên diễn đàn';
+        }
+
+        if (mb_strlen($message) < 5) {
+            $err = 'Nội dung thư/tin nhắn cần tối thiểu 5 ký tự.';
+            if ($isAjax) {
+                Response::json(false, null, $err, 422);
+                return;
+            }
+            Session::flash('error', $err);
+            $this->redirect('/trips/' . $id);
+            return;
+        }
+
+        $organizerId = (int)($trip['user_id'] ?? 0);
+        $senderId = is_array($user) && !empty($user['id']) ? (int)$user['id'] : 0;
+        $tripTitle = mb_substr((string)($trip['title'] ?? 'chuyến đi'), 0, 40);
+
+        // Tạo thông báo gửi đến Trưởng đoàn
+        if ($organizerId > 0 && class_exists('Notification')) {
+            $shortMsg = mb_substr($message, 0, 120);
+            $contactInfo = $senderContact !== '' ? " (Liên hệ: {$senderContact})" : '';
+            $notifContent = "📩 {$senderName} đã gửi thư trao đổi về chuyến '{$tripTitle}': \"{$shortMsg}\"{$contactInfo}";
+
+            Notification::send(
+                $organizerId,
+                $senderId > 0 ? $senderId : $organizerId,
+                'trip_contact',
+                $id,
+                $notifContent
+            );
+
+            // Ghi nhận xác nhận cho người gửi nếu đã đăng nhập
+            if ($senderId > 0 && $senderId !== $organizerId) {
+                Notification::send(
+                    $senderId,
+                    $senderId,
+                    'trip_contact_sent',
+                    $id,
+                    "Bạn đã gửi thư liên hệ tới trưởng đoàn {$trip['username']} về chuyến đi '{$tripTitle}'."
+                );
+            }
+        }
+
+        $successMsg = 'Đã gửi thư và thông báo thành công đến trưởng đoàn ' . ($trip['username'] ?? '') . '!';
+        if ($isAjax) {
+            Response::json(true, [
+                'trip_id' => $id,
+                'organizer' => $trip['username'] ?? '',
+                'sent_at' => date('H:i d/m/Y')
+            ], $successMsg, 200);
+            return;
+        }
+
+        Session::flash('success', $successMsg);
+        $this->redirect('/trips/' . $id);
+    }
+
     public function map(): void
     {
+        $allPlaces = $this->reviews->getPopularPlaces();
+        $totalPlaces = count($allPlaces);
+        $limit = 4;
+        $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $totalPages = $totalPlaces > 0 ? (int)ceil($totalPlaces / $limit) : 1;
+        if ($currentPage > $totalPages) {
+            $currentPage = $totalPages;
+        }
+        $offset = ($currentPage - 1) * $limit;
+        $pagedPlaces = array_slice($allPlaces, $offset, $limit);
+
         $this->render('outdoor/map', [
-            'title' => 'Bản đồ địa điểm dã ngoại & Khám phá cung đường',
-            'places' => $this->reviews->getPopularPlaces(),
+            'title'       => 'Bản đồ địa điểm dã ngoại & Khám phá cung đường',
+            'places'      => $pagedPlaces,
+            'allPlaces'   => $allPlaces,
+            'totalPlaces' => $totalPlaces,
+            'currentPage' => $currentPage,
+            'totalPages'  => $totalPages,
+            'limit'       => $limit,
         ]);
     }
 

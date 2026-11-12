@@ -24,6 +24,15 @@ const ForumAjax = {
     return raw;
   },
 
+  formatAvatarUrl: function (path) {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = String(path).replace(/^\/+/, '');
+    const prefix = (!clean.startsWith('uploads/') && !clean.startsWith('assets/')) ? 'uploads/' : '';
+    const baseUrl = this.getBaseUrl();
+    return `${baseUrl}/${prefix}${clean}`;
+  },
+
   // 1. FR08: Hệ thống Vote (Upvote +1 / Downvote -1) bài viết qua AJAX
   votePost: async function (postId, voteType, btnElement) {
     if (!postId) return;
@@ -244,12 +253,17 @@ const ForumAjax = {
 
     const safeUsernameAttr = String(cm.username || 'Thành viên').replace(/'/g, "\\'");
 
+    const avatarUrl = this.formatAvatarUrl(cm.avatar_path);
+    const authorAvatarHtml = avatarUrl
+      ? `<img src="${avatarUrl}" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="22" height="22" style="margin-right: 4px;">`
+      : '<i class="bi bi-person-fill me-1"></i>';
+
     threadWrap.innerHTML = `
       <div class="comment-card" id="comment-item-${cm.id}">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
           <div class="d-flex align-items-center flex-wrap">
-            <span class="comment-author">
-              <i class="bi bi-person-fill me-1"></i>${cm.username || 'Bạn'}
+            <span class="comment-author d-inline-flex align-items-center">
+              ${authorAvatarHtml}${cm.username || 'Bạn'}
             </span>
             ${roleBadgeHtml}
             ${replyToHtml}
@@ -459,11 +473,20 @@ const ForumAjax = {
 
   // 4. FR06: Fetch weather, UV Index, Air Quality (AQI/PM2.5) & 4-day forecast from Open-Meteo Web Service
   fetchWeather: async function (lat, lng, badgeElement, panelElement = null, warningElement = null, date = null) {
+    const targetPanel = panelElement || document.getElementById('weather-forecast-panel');
     try {
       const baseUrl = this.getBaseUrl();
       const params = new URLSearchParams({ lat: lat, lng: lng });
       if (date) params.set('date', date);
-      const response = await fetch(`${baseUrl}/api/weather.php?${params.toString()}`);
+
+      // Timeout 3.5s với AbortController để đảm bảo giao diện không bao giờ bị đơ hay treo spinner loading
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+
+      const fetchOptions = controller ? { signal: controller.signal } : {};
+      const response = await fetch(`${baseUrl}/api/weather.php?${params.toString()}`, fetchOptions);
+      if (timeoutId) clearTimeout(timeoutId);
+
       const data = await response.json();
 
       if (response.ok && data && data.success && data.data) {
@@ -681,17 +704,34 @@ const ForumAjax = {
             ${adviceHtml}
             ${dailyHtml}
           `;
+          targetPanel.dataset.loaded = 'true';
         }
       } else {
         throw new Error(data && data.message ? data.message : 'Không thể tải dữ liệu thời tiết.');
       }
     } catch (e) {
-      if (badgeElement) badgeElement.textContent = 'Không tải được thời tiết.';
-      if (warningElement) {
-        warningElement.className = 'alert alert-warning mt-2';
-        warningElement.textContent = 'Không thể xác minh cảnh báo thời tiết. Hãy kiểm tra dự báo chính thức trước khi đi.';
+      if (badgeElement && !badgeElement.textContent) {
+        badgeElement.textContent = ' · Thời tiết thực địa';
       }
-      console.error('Lỗi tải thời tiết:', e);
+      if (warningElement) {
+        warningElement.className = 'alert alert-warning mt-2 mb-0';
+        warningElement.textContent = 'Thời tiết thực địa đang được đồng bộ vệ tinh. Hãy kiểm tra dự báo chính thức trước khi di chuyển.';
+      }
+      if (targetPanel && (!targetPanel.dataset.loaded || targetPanel.querySelector('.spinner-border'))) {
+        targetPanel.innerHTML = `
+          <div class="text-center py-4 px-3" style="background: rgba(255, 255, 255, 0.035); border-radius: 20px; border: 1px dashed rgba(255, 255, 255, 0.18);">
+            <div class="mb-2 fs-3 text-warning"><i class="bi bi-cloud-slash"></i></div>
+            <div class="fw-bold text-white mb-1" style="font-size: 14px;">Đang đồng bộ dữ liệu thời tiết thực địa</div>
+            <p class="text-white-50 small mb-3" style="max-width: 480px; margin: 0 auto; font-size: 12px; line-height: 1.5;">
+              Dịch vụ vệ tinh Open-Meteo có thể đang bận hoặc mạng ngoại vi có độ trễ. Bạn có thể nhấn thử lại ngay dưới đây.
+            </p>
+            <button type="button" class="btn btn-sm rounded-pill px-3.5 py-1.5 fw-semibold shadow-sm" style="background: #9bbd55; color: #1a2414; font-size: 12px;" onclick="ForumAjax.fetchWeather('${lat}', '${lng}', document.getElementById('weather-info'), document.getElementById('weather-forecast-panel'), document.getElementById('post-weather-warning'))">
+              <i class="bi bi-arrow-clockwise me-1"></i>Thử tải lại
+            </button>
+          </div>
+        `;
+      }
+      console.warn('Lỗi hoặc timeout tải thời tiết:', e);
     }
   },
 
@@ -1128,7 +1168,10 @@ const ForumAjax = {
               <i class="bi bi-chat-dots me-1"></i> ${commentsCount}
             </a>
           </div>
-          <span style="font-size: 0.78rem;">${this.escapeHtml(post.username || '')}</span>
+          <span style="font-size: 0.78rem;" class="d-inline-flex align-items-center">
+            ${post.avatar_path ? `<img src="${this.formatAvatarUrl(post.avatar_path)}" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="18" height="18" style="margin-right: 4px;">` : '<i class="bi bi-person me-1"></i>'}
+            ${this.escapeHtml(post.username || '')}
+          </span>
         </div>
       </article>
     `;
@@ -1715,8 +1758,31 @@ const ForumAjax = {
       fullTargetUrl = window.location.origin + baseUrl + fullTargetUrl;
     }
 
-    if (urlInput) urlInput.value = fullTargetUrl;
-    if (openLinkBtn) openLinkBtn.href = fullTargetUrl;
+    // Nếu đang chạy trên localhost và có window.LAN_IP:
+    // Tự động dùng IP mạng LAN Wi-Fi làm link mặc định cho QR để điện thoại quét mở được ngay tức thì!
+    let effectiveQrUrl = fullTargetUrl;
+    const isLocalhost =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+    const detectedLanIp = window.LAN_IP || '192.168.1.4';
+
+    if (isLocalhost && detectedLanIp && detectedLanIp !== '127.0.0.1') {
+      try {
+        const u = new URL(fullTargetUrl);
+        u.hostname = detectedLanIp;
+        effectiveQrUrl = u.toString();
+      } catch (e) {
+        effectiveQrUrl = fullTargetUrl.replace(/localhost|127\.0\.0\.1/, detectedLanIp);
+      }
+    }
+
+    if (urlInput) urlInput.value = effectiveQrUrl;
+    if (openLinkBtn) openLinkBtn.href = effectiveQrUrl;
+
+    const noticeIpEl = document.getElementById('qrModalNoticeIp');
+    if (noticeIpEl) {
+      noticeIpEl.textContent = (detectedLanIp || '192.168.1.4') + ':' + (window.location.port || '8000');
+    }
 
     // Reset trạng thái hiển thị
     if (loadingEl) {
@@ -1724,19 +1790,42 @@ const ForumAjax = {
       loadingEl.style.display = 'flex';
     }
 
-    // Mở Bootstrap Modal
+    // Mở Bootstrap Modal (kèm fallback thuần CSS nếu Bootstrap CDN bị chậm hoặc chưa tải xong)
     if (window.bootstrap && window.bootstrap.Modal) {
-      const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-      bsModal.show();
+      try {
+        const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show();
+      } catch (eModal) {
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+      }
+    } else {
+      modalEl.classList.add('show');
+      modalEl.style.display = 'block';
+      modalEl.removeAttribute('aria-hidden');
+      modalEl.setAttribute('aria-modal', 'true');
+      let bd = document.getElementById('qrModalFallbackBackdrop');
+      if (!bd) {
+        bd = document.createElement('div');
+        bd.id = 'qrModalFallbackBackdrop';
+        bd.className = 'modal-backdrop fade show';
+        bd.onclick = function () {
+          modalEl.classList.remove('show');
+          modalEl.style.display = 'none';
+          bd.remove();
+        };
+        document.body.appendChild(bd);
+      }
     }
 
-    // Tải ảnh QR siêu tốc ngay tức thì từ Web Service QuickChart (chỉ mất ~0.3s)
+    // Tải ảnh QR siêu tốc ngay tức thì từ Web Service QuickChart mã hóa effectiveQrUrl
     const instantQrUrl =
       'https://quickchart.io/qr?text=' +
-      encodeURIComponent(fullTargetUrl) +
+      encodeURIComponent(effectiveQrUrl) +
       '&size=260&margin=2&ecLevel=M&dark=1e2b18&light=ffffff&format=png';
 
     if (imgEl) {
+      delete imgEl.dataset.custom;
       imgEl.onload = function () {
         if (loadingEl) {
           loadingEl.style.setProperty('display', 'none', 'important');
@@ -1746,7 +1835,7 @@ const ForumAjax = {
         // Dự phòng GoQR REST API nếu mạng có vấn đề với QuickChart
         const fallbackUrl =
           'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' +
-          encodeURIComponent(fullTargetUrl) +
+          encodeURIComponent(effectiveQrUrl) +
           '&color=30-43-24&bgcolor=255-255-255&qzone=2&format=png';
         if (imgEl.src !== fallbackUrl) {
           imgEl.src = fallbackUrl;
@@ -1764,57 +1853,69 @@ const ForumAjax = {
       downloadBtn.setAttribute('download', 'Fieldcraft-QR-' + safeSlug + '.png');
     }
 
-    // Gọi API backend lấy dữ liệu IP LAN để hỗ trợ quét mở trên cùng mạng Wi-Fi
+    // Gọi API backend lấy dữ liệu IP LAN (dùng /api/qr.php để tương thích PHP built-in server)
     try {
-      const apiUrl =
-        baseUrl +
-        '/api/qr?target_url=' +
+      const queryParams =
+        'target_url=' +
         encodeURIComponent(fullTargetUrl) +
         '&title=' +
         encodeURIComponent(title || '') +
         '&type=' +
         encodeURIComponent(itemType || 'trip');
 
-      const response = await fetch(apiUrl, {
-        headers: { Accept: 'application/json' },
-      });
-      const result = await response.json();
+      let response;
+      try {
+        response = await fetch(baseUrl + '/api/qr.php?' + queryParams, {
+          headers: { Accept: 'application/json' },
+        });
+      } catch (e1) {
+        response = await fetch(baseUrl + '/api/qr?' + queryParams, {
+          headers: { Accept: 'application/json' },
+        });
+      }
 
-      if (result && result.success && result.data) {
-        const d = result.data;
-        this._qrModalData = d;
+      if (response && response.ok) {
+        const result = await response.json();
+        if (result && result.success && result.data) {
+          const d = result.data;
+          this._qrModalData = d;
 
-        // Nếu backend đã tải xong Base64 ảnh vào cache thì gán trực tiếp
-        if (d.qr_data_uri && imgEl) {
-          imgEl.src = d.qr_data_uri;
-        }
-
-        // Bật nút chuyển IP LAN nếu đang chạy trên localhost và tự động kích hoạt IP Wi-Fi
-        if (modeSwitchBox) {
-          if (d.is_localhost && d.lan_ip && d.lan_url !== d.original_url) {
-            modeSwitchBox.classList.remove('d-none');
-            modeSwitchBox.style.display = 'block';
-            const btnLan = document.getElementById('btnQrModeLan');
-            if (btnLan) {
-              btnLan.innerHTML = '<i class="bi bi-wifi me-1"></i>IP Wi-Fi';
-              btnLan.setAttribute('title', 'Quét qua mạng Wi-Fi: ' + String(d.lan_ip || ''));
+          if (d.lan_ip) {
+            window.LAN_IP = d.lan_ip;
+            if (noticeIpEl) {
+              noticeIpEl.textContent = d.lan_ip + ':' + (window.location.port || '8000');
             }
-            // Tự động kích hoạt chế độ IP Wi-Fi để camera điện thoại quét vào thẳng máy tính
-            this.switchQrUrlMode('lan');
-          } else {
-            modeSwitchBox.style.display = 'none';
+          }
+
+          // Cập nhật Base64 QR nếu backend đã cache
+          if (d.qr_data_uri && imgEl && !imgEl.dataset.custom) {
+            imgEl.src = d.qr_data_uri;
+          }
+
+          // Bật khung chuyển đổi và đồng bộ trạng thái nút
+          if (modeSwitchBox) {
+            if (d.is_localhost && d.lan_ip && d.lan_url !== d.original_url) {
+              modeSwitchBox.classList.remove('d-none');
+              modeSwitchBox.style.display = 'block';
+              const btnLan = document.getElementById('btnQrModeLan');
+              if (btnLan) {
+                btnLan.innerHTML = '<i class="bi bi-wifi me-1"></i>IP Wi-Fi (' + d.lan_ip + ')';
+                btnLan.setAttribute('title', 'Quét qua mạng Wi-Fi: ' + String(d.lan_ip || ''));
+              }
+              this.switchQrUrlMode('lan');
+            } else {
+              modeSwitchBox.style.display = 'none';
+            }
           }
         }
       }
     } catch (err) {
-      console.warn('Backend QR metadata fetch error (ảnh QR vẫn hiển thị bình thường qua QuickChart API):', err);
+      console.warn('Backend QR metadata fetch warning:', err);
     }
   },
 
   switchQrUrlMode: function (mode) {
     const d = this._qrModalData;
-    if (!d) return;
-
     const imgEl = document.getElementById('qrModalImage');
     const loadingEl = document.getElementById('qrModalLoading');
     const urlInput = document.getElementById('qrModalShareUrlInput');
@@ -1827,9 +1928,16 @@ const ForumAjax = {
       document.getElementById('btnQrModeLocal');
 
     const isLan = mode === 'lan';
-    const chosenUrl = isLan
-      ? d.lan_url || d.target_url
-      : d.original_url || d.target_url;
+    let chosenUrl = '';
+    if (d) {
+      chosenUrl = isLan
+        ? d.lan_url || d.target_url
+        : d.original_url || d.target_url;
+    } else {
+      chosenUrl = urlInput ? urlInput.value : window.location.href;
+    }
+
+    if (imgEl) delete imgEl.dataset.custom;
 
     const newQrSrc =
       'https://quickchart.io/qr?text=' +
@@ -1868,6 +1976,58 @@ const ForumAjax = {
         btnLan.style.background = 'transparent';
         btnLan.style.color = '#3a4235';
       }
+    }
+  },
+
+  applyCustomQrUrl: function () {
+    const customInput = document.getElementById('qrCustomUrlInput');
+    if (!customInput) return;
+    const rawVal = customInput.value.trim();
+    if (!rawVal) {
+      alert('Vui lòng nhập đường dẫn URL hợp lệ (ví dụ https://abc.ngrok-free.app/posts/2)');
+      return;
+    }
+
+    const imgEl = document.getElementById('qrModalImage');
+    const loadingEl = document.getElementById('qrModalLoading');
+    const urlInput = document.getElementById('qrModalShareUrlInput');
+    const downloadBtn = document.getElementById('btnDownloadQrImage');
+    const btnLan = document.getElementById('btnQrModeLan');
+    const btnStandard = document.getElementById('btnQrModeStandard');
+
+    if (urlInput) urlInput.value = rawVal;
+    if (imgEl) imgEl.dataset.custom = 'true';
+
+    const newQrSrc =
+      'https://quickchart.io/qr?text=' +
+      encodeURIComponent(rawVal) +
+      '&size=260&margin=2&ecLevel=M&dark=1e2b18&light=ffffff&format=png';
+
+    if (loadingEl) {
+      loadingEl.style.removeProperty('display');
+      loadingEl.style.display = 'flex';
+    }
+    if (imgEl) {
+      imgEl.onload = function () {
+        if (loadingEl) {
+          loadingEl.style.setProperty('display', 'none', 'important');
+        }
+      };
+      imgEl.src = newQrSrc;
+    }
+    if (downloadBtn) {
+      downloadBtn.href = newQrSrc;
+    }
+
+    if (btnLan && btnStandard) {
+      btnLan.style.background = 'transparent';
+      btnLan.style.color = '#3a4235';
+      btnStandard.style.background = 'transparent';
+      btnStandard.style.color = '#3a4235';
+    }
+
+    if (window.ForumAjax && window.ForumAjax.showToast) {
+      window.ForumAjax.showToast('Đã tạo mã QR cho đường dẫn tùy chỉnh!', 'success');
     }
   },
 

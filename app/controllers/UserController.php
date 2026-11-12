@@ -34,17 +34,28 @@ class UserController extends Controller
         }
 
         $avatarPath = $user->getAvatarPath();
-        $avatarUpload = $_FILES['avatar'] ?? null;
-        if ($avatarUpload !== null && !is_array($avatarUpload)) {
-            $this->renderProfile($user, ['avatar' => 'File ảnh tải lên không hợp lệ.'], $_POST);
-            return;
-        }
-        if (is_array($avatarUpload) && ($avatarUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        $avatarCropped = trim(is_string($_POST['avatar_cropped'] ?? null) ? $_POST['avatar_cropped'] : '');
+
+        if ($avatarCropped !== '' && str_starts_with($avatarCropped, 'data:image/')) {
             try {
-                $avatarPath = Upload::image($avatarUpload, 'avatars');
+                $avatarPath = Upload::fromBase64($avatarCropped, 'avatars');
             } catch (Exception $exception) {
                 $this->renderProfile($user, ['avatar' => $exception->getMessage()], $_POST);
                 return;
+            }
+        } else {
+            $avatarUpload = $_FILES['avatar'] ?? null;
+            if ($avatarUpload !== null && !is_array($avatarUpload)) {
+                $this->renderProfile($user, ['avatar' => 'File ảnh tải lên không hợp lệ.'], $_POST);
+                return;
+            }
+            if (is_array($avatarUpload) && ($avatarUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                try {
+                    $avatarPath = Upload::image($avatarUpload, 'avatars');
+                } catch (Exception $exception) {
+                    $this->renderProfile($user, ['avatar' => $exception->getMessage()], $_POST);
+                    return;
+                }
             }
         }
 
@@ -125,11 +136,14 @@ class UserController extends Controller
             return null;
         }
 
-        // Đồng bộ role_id và role_name mới nhất từ CSDL vào Session
+        // Đồng bộ thông tin cá nhân, avatar và phân quyền mới nhất từ CSDL vào Session
         if (is_array($sessionUser)) {
             $sessionUser['id'] = $user->getId();
+            $sessionUser['username'] = $user->getUsername();
+            $sessionUser['bio'] = $user->getBio();
             $sessionUser['role_id'] = $user->getRoleId();
             $sessionUser['role_name'] = $user->getRoleName();
+            $sessionUser['avatar_path'] = $user->getAvatarPath();
             Session::set('user', $sessionUser);
         }
 
@@ -217,6 +231,19 @@ class UserController extends Controller
             );
         } catch (Exception $e) {}
 
+        $activities = [];
+        try {
+            $notifModel = new Notification();
+            $activities = $notifModel->getByUserId($userId, 60);
+        } catch (Throwable $notifEx) {
+            error_log('Error loading activities for profile: ' . $notifEx->getMessage());
+        }
+
+        $activeTab = trim((string)($_GET['tab'] ?? 'edit'));
+        if (!in_array($activeTab, ['edit', 'posts', 'bookmarks', 'following', 'activity'], true)) {
+            $activeTab = 'edit';
+        }
+
         $this->render('users/profile', [
             'user' => [
                 'id'          => $user->getId(),
@@ -235,6 +262,8 @@ class UserController extends Controller
             'followingUsers'      => $followingUsers,
             'followingCategories' => $followingCategories,
             'myPosts'             => $myPosts,
+            'activities'          => $activities,
+            'activeTab'           => $activeTab,
             'errors'              => $errors,
             'old'                 => $old,
         ]);

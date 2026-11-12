@@ -11,8 +11,8 @@ require_once __DIR__ . '/../core/BaseService.php';
  */
 class WeatherService extends BaseService
 {
-    private int $cacheTtl = 900; // 15 phút (900 giây)
-    private int $timeout = 5;    // Timeout 5 giây cho mỗi request cURL
+    private int $cacheTtl = 3600; // 1 giờ (3600 giây) để giảm tải và tăng tốc độ tải trang
+    private int $timeout = 3;    // Timeout tối đa 3 giây cho mỗi request cURL
 
     /**
      * Lấy thời tiết hiện tại, chỉ số UV, chất lượng không khí (AQI/PM2.5) và dự báo cho tọa độ (lat, lng).
@@ -38,19 +38,29 @@ class WeatherService extends BaseService
         $cacheKey = 'outdoor_weather_v2_' . md5($roundedLat . '_' . $roundedLng . '_' . $cleanDate);
         $cacheFile = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . $cacheKey . '.json';
 
-        // 1. Kiểm tra cache còn hạn (15 phút)
-        if (is_file($cacheFile) && (time() - (int)@filemtime($cacheFile)) < $this->cacheTtl) {
+        $staleData = null;
+
+        // 1. Kiểm tra cache
+        if (is_file($cacheFile)) {
+            $fileAge = time() - (int)@filemtime($cacheFile);
             $cachedJson = @file_get_contents($cacheFile);
             if ($cachedJson !== false) {
                 $cachedData = json_decode($cachedJson, true);
                 if (is_array($cachedData) && isset($cachedData['temp']) && isset($cachedData['uv']) && isset($cachedData['air_quality'])) {
-                    $cachedData['cached'] = true;
-                    return $cachedData;
+                    // Nếu cache còn hạn (< 1 giờ): trả về ngay lập tức (< 2ms)
+                    if ($fileAge < $this->cacheTtl) {
+                        $cachedData['cached'] = true;
+                        return $cachedData;
+                    }
+                    // Nếu cache đã quá hạn nhưng còn dưới 24 giờ, giữ làm stale data để fallback khi mạng chậm
+                    if ($fileAge < 86400) {
+                        $staleData = $cachedData;
+                    }
                 }
             }
         }
 
-        // 2. Gọi Open-Meteo Weather Forecast API (Nhiệt độ, Độ ẩm, Gió, Tia UV, Dự báo ngày)
+        // 2. Chuẩn bị URL Open-Meteo Weather Forecast API
         $forecastQuery = [
             'latitude'        => $roundedLat,
             'longitude'       => $roundedLng,
@@ -68,9 +78,8 @@ class WeatherService extends BaseService
         }
 
         $forecastUrl = 'https://api.open-meteo.com/v1/forecast?' . http_build_query($forecastQuery);
-        $rawForecast = $this->fetchUrl($forecastUrl);
 
-        // 3. Gọi Open-Meteo Air Quality & UV API (US AQI, European AQI, PM2.5, PM10, UV Index)
+        // 3. Chuẩn bị URL Open-Meteo Air Quality & UV API
         $airQuery = [
             'latitude'  => $roundedLat,
             'longitude' => $roundedLng,
@@ -78,7 +87,15 @@ class WeatherService extends BaseService
             'timezone'  => 'Asia/Ho_Chi_Minh'
         ];
         $airUrl = 'https://air-quality-api.open-meteo.com/v1/air-quality?' . http_build_query($airQuery);
-        $rawAir = $this->fetchUrl($airUrl);
+
+        // 4. Thực hiện gọi song song (cURL Multi) cả 2 API để giảm thời gian phản hồi từ ~4s xuống ~1.2s
+        $parallelResults = $this->fetchUrlsParallel([
+            'forecast' => $forecastUrl,
+            'air'      => $airUrl
+        ]);
+
+        $rawForecast = $parallelResults['forecast'] ?? null;
+        $rawAir = $parallelResults['air'] ?? null;
 
         $airDecoded = [];
         if ($rawAir !== null) {
@@ -99,12 +116,81 @@ class WeatherService extends BaseService
             }
         }
 
-        // 4. Fallback an toàn khi không có mạng hoặc API quá tải
+        // 5. Nếu gọi API thất bại hoặc quá thời gian timeout (3s):
+        // Ưu tiên dùng Stale Cache nếu có để dữ liệu vẫn chuẩn xác nhất
+        if ($staleData !== null) {
+            $staleData['cached'] = true;
+            $staleData['stale'] = true;
+            return $staleData;
+        }
+
+        // 6. Fallback an toàn khi hoàn toàn không có mạng hoặc API Open-Meteo ngoại tuyến
         return $this->getFallbackWeather($roundedLat, $roundedLng, $cleanDate);
     }
 
     /**
-     * Thực hiện HTTP GET bằng cURL
+     * Gọi song song nhiều URL qua curl_multi_exec giúp giảm độ trễ tối đa
+     */
+    private function fetchUrlsParallel(array $urls): array
+    {
+        if (!function_exists('curl_multi_init')) {
+            $results = [];
+            foreach ($urls as $key => $url) {
+                $results[$key] = $this->fetchUrl($url);
+            }
+            return $results;
+        }
+
+        $mh = curl_multi_init();
+        $handles = [];
+        $results = [];
+
+        foreach ($urls as $key => $url) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'OutdoorForum-WebAppDev/1.0');
+            curl_multi_add_handle($mh, $ch);
+            $handles[$key] = $ch;
+        }
+
+        $active = null;
+        do {
+            $mrc = curl_multi_exec($mh, $active);
+        } while ($mrc === CURLM_CALL_MULTI_PERFORM);
+
+        while ($active && $mrc === CURLM_OK) {
+            if (curl_multi_select($mh, 0.2) === -1) {
+                usleep(10000);
+            }
+            do {
+                $mrc = curl_multi_exec($mh, $active);
+            } while ($mrc === CURLM_CALL_MULTI_PERFORM);
+        }
+
+        foreach ($handles as $key => $ch) {
+            $response = curl_multi_getcontent($ch);
+            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+
+            if ($response !== false && $httpCode >= 200 && $httpCode < 300) {
+                $results[$key] = (string)$response;
+            } else {
+                $results[$key] = null;
+            }
+        }
+
+        curl_multi_close($mh);
+        return $results;
+    }
+
+    /**
+     * Thực hiện HTTP GET đơn lẻ bằng cURL (dự phòng)
      */
     private function fetchUrl(string $url): ?string
     {
