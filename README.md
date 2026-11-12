@@ -27,7 +27,7 @@ Website diễn đàn chia sẻ kiến thức và kinh nghiệm dành cho những
 - Tạo checklist đồ dùng theo loại chuyến đi và chia sẻ công khai hoặc giữ riêng tư.
 - Đăng chuyến đi nhóm, giới hạn số người và đăng ký tham gia.
 - Đánh giá địa điểm ngay trên bài viết; bản đồ hiển thị các bài có tọa độ.
-- Cảnh báo mưa, dông và gió dựa trên Open-Meteo. Dự báo chuyến đi chỉ có trong 16 ngày tới; cần kiểm tra cảnh báo lũ và tình trạng đường từ cơ quan địa phương.
+- Thời tiết, chỉ số UV và chất lượng không khí (US AQI/PM2.5) dựa trên Open-Meteo; cảnh báo mưa, dông và gió hỗ trợ lên kế hoạch hoạt động ngoài trời. Dự báo chuyến đi chỉ có trong 16 ngày tới; cần kiểm tra cảnh báo lũ và tình trạng đường từ cơ quan địa phương.
 - Bản đồ dùng Leaflet và OpenStreetMap; cần kết nối Internet để tải bản đồ.
 
 ## Cấu trúc thư mục

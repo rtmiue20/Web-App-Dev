@@ -455,6 +455,39 @@ const ForumAjax = {
         const targetPanel = panelElement || document.getElementById('weather-forecast-panel');
         if (targetPanel) {
           let dailyHtml = '';
+          const air = w.air_quality;
+          const airQualityHtml = air
+            ? `
+              <div class="row row-cols-1 row-cols-md-2 g-2 mt-3">
+                <div class="col">
+                  <div class="h-100 p-3 rounded-3 text-white" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <i class="bi bi-sun-fill text-warning"></i>
+                      <strong>Chỉ số tia cực tím (UV)</strong>
+                    </div>
+                    <div class="fs-5 fw-bold">${air.uv_index ?? 'Chưa có dữ liệu'}${air.uv_index !== null ? ` · ${air.uv_category}` : ''}</div>
+                    <div class="small text-white-50">${air.uv_advice || 'Open-Meteo chưa cung cấp chỉ số UV lúc này.'}</div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="h-100 p-3 rounded-3 text-white" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <i class="bi bi-wind text-info"></i>
+                      <strong>Chất lượng không khí (US AQI)</strong>
+                    </div>
+                    <div class="fs-5 fw-bold">${air.us_aqi ?? 'Chưa có dữ liệu'}${air.us_aqi !== null ? ` · ${air.aqi_category}` : ''}</div>
+                    <div class="small text-white-50">${air.aqi_advice || 'Open-Meteo chưa cung cấp chỉ số AQI lúc này.'}</div>
+                    ${air.pm2_5 !== null ? `<div class="small text-white-50 mt-1">PM2.5: ${air.pm2_5} µg/m³</div>` : ''}
+                  </div>
+                </div>
+              </div>
+            `
+            : `
+              <div class="alert alert-secondary mt-3 mb-0 py-2 small" role="status">
+                Chưa tải được chỉ số UV và chất lượng không khí; dữ liệu thời tiết vẫn được hiển thị.
+              </div>
+            `;
+
           if (Array.isArray(w.daily) && w.daily.length > 0) {
             dailyHtml = `
               <div class="row row-cols-2 row-cols-sm-4 g-2 mt-2 pt-2 border-top border-white border-opacity-10">
@@ -511,6 +544,7 @@ const ForumAjax = {
                    </div>`
                 : ''
             }
+            ${airQualityHtml}
             <div class="small fw-semibold text-white-50 mt-2 mb-1" style="font-size: 11.5px;"><i class="bi bi-calendar3 me-1"></i>Dự báo chi tiết 4 ngày tới:</div>
             ${dailyHtml}
           `;

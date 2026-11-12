@@ -64,6 +64,92 @@ if ($response === false || $httpStatus < 200 || $httpStatus >= 300) {
 }
 
 $data = json_decode($response, true);
+if (!is_array($data)) {
+    http_response_code(502);
+    echo json_encode(['success' => false, 'message' => 'Dữ liệu thời tiết trả về không hợp lệ.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$airQuality = null;
+if ($forecastDate === '') {
+    $airQualityQuery = http_build_query([
+        'latitude' => $lat,
+        'longitude' => $lng,
+        'current' => 'us_aqi,pm2_5,uv_index',
+        'timezone' => 'auto',
+    ]);
+    $airQualityUrl = 'https://air-quality-api.open-meteo.com/v1/air-quality?' . $airQualityQuery;
+    $airQualityHandle = curl_init();
+    curl_setopt($airQualityHandle, CURLOPT_URL, $airQualityUrl);
+    curl_setopt($airQualityHandle, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($airQualityHandle, CURLOPT_TIMEOUT, 3);
+    curl_setopt($airQualityHandle, CURLOPT_SSL_VERIFYPEER, true);
+    $airQualityResponse = curl_exec($airQualityHandle);
+    $airQualityStatus = (int) curl_getinfo($airQualityHandle, CURLINFO_HTTP_CODE);
+    $airQualityError = curl_error($airQualityHandle);
+    curl_close($airQualityHandle);
+
+    if ($airQualityResponse === false || $airQualityStatus < 200 || $airQualityStatus >= 300) {
+        error_log('Open-Meteo air quality request failed: ' . ($airQualityError !== '' ? $airQualityError : 'HTTP ' . $airQualityStatus));
+    } else {
+        $airQualityData = json_decode($airQualityResponse, true);
+        $airCurrent = is_array($airQualityData) ? ($airQualityData['current'] ?? null) : null;
+        if (is_array($airCurrent)) {
+            $uvIndex = isset($airCurrent['uv_index']) && is_numeric($airCurrent['uv_index'])
+                ? (float) $airCurrent['uv_index']
+                : null;
+            $usAqi = isset($airCurrent['us_aqi']) && is_numeric($airCurrent['us_aqi'])
+                ? (int) round((float) $airCurrent['us_aqi'])
+                : null;
+            $pm25 = isset($airCurrent['pm2_5']) && is_numeric($airCurrent['pm2_5'])
+                ? (float) $airCurrent['pm2_5']
+                : null;
+
+            if ($uvIndex !== null || $usAqi !== null || $pm25 !== null) {
+                $airQuality = [
+                    'uv_index' => $uvIndex !== null ? round($uvIndex, 1) : null,
+                    'uv_category' => $uvIndex === null ? null : match (true) {
+                        $uvIndex <= 2 => 'Thấp',
+                        $uvIndex <= 5 => 'Trung bình',
+                        $uvIndex <= 7 => 'Cao',
+                        $uvIndex <= 10 => 'Rất cao',
+                        default => 'Cực cao',
+                    },
+                    'uv_advice' => $uvIndex === null ? null : match (true) {
+                        $uvIndex <= 2 => 'Có thể hoạt động ngoài trời bình thường.',
+                        $uvIndex <= 5 => 'Nên che nắng và dùng kem chống nắng khi ở ngoài lâu.',
+                        $uvIndex <= 7 => 'Cần che chắn, dùng kem chống nắng và hạn chế nắng gắt giữa trưa.',
+                        $uvIndex <= 10 => 'Nguy cơ cao; tránh nắng giữa trưa, mặc áo dài tay và dùng kem chống nắng.',
+                        default => 'Nguy cơ rất cao; hạn chế ra ngoài và che chắn kỹ nếu phải di chuyển.',
+                    },
+                    'us_aqi' => $usAqi,
+                    'aqi_category' => $usAqi === null ? null : match (true) {
+                        $usAqi <= 50 => 'Tốt',
+                        $usAqi <= 100 => 'Trung bình',
+                        $usAqi <= 150 => 'Không tốt cho nhóm nhạy cảm',
+                        $usAqi <= 200 => 'Không tốt',
+                        $usAqi <= 300 => 'Rất không tốt',
+                        default => 'Nguy hại',
+                    },
+                    'aqi_advice' => $usAqi === null ? null : match (true) {
+                        $usAqi <= 50 => 'Không khí tốt cho các hoạt động ngoài trời.',
+                        $usAqi <= 100 => 'Nhóm nhạy cảm nên theo dõi sức khỏe khi hoạt động lâu ngoài trời.',
+                        $usAqi <= 150 => 'Người nhạy cảm nên hạn chế hoạt động gắng sức ngoài trời.',
+                        $usAqi <= 200 => 'Nên giảm hoạt động ngoài trời kéo dài, đặc biệt với người nhạy cảm.',
+                        $usAqi <= 300 => 'Hạn chế hoạt động ngoài trời; nhóm nhạy cảm nên ở trong nhà.',
+                        default => 'Tránh hoạt động ngoài trời và tìm nơi có không khí trong lành.',
+                    },
+                    'pm2_5' => $pm25 !== null ? round($pm25, 1) : null,
+                ];
+            } else {
+                error_log('Open-Meteo air quality response did not contain current UV, AQI, or PM2.5 values.');
+            }
+        } else {
+            error_log('Open-Meteo air quality response did not contain current conditions.');
+        }
+    }
+}
+
 $alerts = [];
 if ($forecastDate !== '') {
     $daily = $data['daily'] ?? null;
@@ -142,6 +228,7 @@ echo json_encode([
         'windspeed' => $windSpeed,
         'condition' => $condition,
         'alerts' => $alerts,
+        'air_quality' => $airQuality,
         'date' => $forecastDate !== '' ? $forecastDate : null,
         'daily' => $dailyForecast,
     ]
