@@ -936,6 +936,17 @@ BEGIN
     LEFT JOIN roles r ON r.id = u.role_id
     WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
       AND p.is_shared = 1
+      AND (
+          r.name IN ('admin', 'moderator')
+          OR p.user_id IS NULL
+          OR EXISTS (
+              SELECT 1
+              FROM post_products pp
+              INNER JOIN posts po ON po.id = pp.post_id
+              WHERE pp.product_id = p.id
+                AND po.status = 'published'
+          )
+      )
     ORDER BY p.id DESC;
 END$$
 

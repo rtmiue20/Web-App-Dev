@@ -628,6 +628,16 @@ class Post extends Model {
                 }
             }
             try {
+                // Tự động dọn dẹp các dụng cụ tự nhập do thành viên tạo nếu không còn bài viết nào sử dụng
+                Database::execute("
+                    DELETE FROM products 
+                    WHERE user_id IS NOT NULL 
+                      AND user_id NOT IN (SELECT u.id FROM users u INNER JOIN roles r ON r.id = u.role_id WHERE r.name IN ('admin', 'moderator'))
+                      AND id NOT IN (SELECT product_id FROM post_products)
+                ");
+            } catch (Throwable $orphanEx) {
+            }
+            try {
                 Database::execute(
                     "DELETE FROM notifications WHERE target_id = :id AND type IN ('create_post', 'admin_pending_post', 'like_post', 'comment_post', 'reply_comment', 'review_place', 'bookmark_post')",
                     ['id' => $id]

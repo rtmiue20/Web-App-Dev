@@ -55,8 +55,15 @@ class DemoSeeder
     private static function ensureColumn(string $table, string $column, string $definitionSql): void
     {
         try {
-            $col = Database::query("SHOW COLUMNS FROM `{$table}` LIKE :col", ['col' => $column]);
-            if (empty($col)) {
+            $cols = Database::query("SHOW COLUMNS FROM `{$table}`");
+            $hasCol = false;
+            foreach ($cols as $c) {
+                if (($c['Field'] ?? '') === $column) {
+                    $hasCol = true;
+                    break;
+                }
+            }
+            if (!$hasCol) {
                 Database::execute("ALTER TABLE `{$table}` ADD COLUMN {$definitionSql}");
             }
         } catch (Throwable $e) {

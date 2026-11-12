@@ -820,6 +820,9 @@ class PostController extends Controller {
 
             $current = $this->products->findById($pId);
             $catId = $current['category_id'] ?? null;
+            if ($imgUrl === '' && !empty($current['image_url'])) {
+                $imgUrl = $current['image_url'];
+            }
 
             $this->products->update(
                 $pId,

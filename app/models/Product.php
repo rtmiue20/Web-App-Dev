@@ -57,6 +57,11 @@ class Product extends Model
         return $this->repository->findByCategory($categoryId);
     }
 
+    public function getAllForAdmin(?int $categoryId = null): array
+    {
+        return $this->repository->findAllForAdmin($categoryId);
+    }
+
     public function findById(int $id): ?array
     {
         return $this->repository->findById($id);

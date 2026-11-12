@@ -375,13 +375,37 @@ if (empty($editImages) && !empty($post['image_url'])) {
                                                 <input type="url" name="existing_tool_link[]" value="<?= htmlspecialchars($t['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link shop">
                                             </div>
                                         </div>
-                                        <div class="col-12 col-md-6">
-                                            <label class="form-label small fw-semibold text-dark mb-1">Đổi ảnh mới (từ máy)</label>
-                                            <input type="file" name="existing_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">
-                                        </div>
-                                        <div class="col-12 col-md-6">
-                                            <label class="form-label small fw-semibold text-dark mb-1">Hoặc giữ URL ảnh</label>
-                                            <input type="url" name="existing_tool_image_url[]" value="<?= htmlspecialchars($t['image_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm rounded-3">
+                                        <div class="col-12">
+                                            <label class="form-label small fw-semibold text-dark mb-1">
+                                                <i class="bi bi-image text-success me-1"></i>Hình ảnh dụng cụ
+                                            </label>
+                                            <div class="d-flex align-items-center gap-3 p-2 rounded-3 border bg-white" style="border-color: rgba(0,0,0,0.08) !important;">
+                                                <?php 
+                                                    $rawImg = (string)($t['image_url'] ?? '');
+                                                    if ($rawImg === '') {
+                                                        $rawImg = 'assets/img/tent-forest.png';
+                                                    }
+                                                    $previewSrc = (strpos($rawImg, 'http') === 0 || strpos($rawImg, '/') === 0) ? $rawImg : '/' . ltrim($rawImg, '/');
+                                                ?>
+                                                <div class="position-relative flex-shrink-0">
+                                                    <img src="<?= htmlspecialchars($previewSrc, ENT_QUOTES, 'UTF-8') ?>" 
+                                                         alt="Ảnh dụng cụ" 
+                                                         class="tool-preview-thumb rounded-3 border shadow-sm" 
+                                                         style="width: 52px; height: 52px; object-fit: cover; background: #f0f4ec;">
+                                                    <span class="badge bg-secondary position-absolute bottom-0 start-50 translate-middle-x status-badge" style="font-size: 9px; padding: 1px 4px; opacity: 0.9;">Hiện tại</span>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                                        <span class="text-muted" style="font-size: 11.5px;">Chọn ảnh từ máy nếu muốn thay đổi <span class="fw-normal">(để trống sẽ tự động giữ nguyên ảnh hiện tại)</span></span>
+                                                    </div>
+                                                    <input type="file" 
+                                                           name="existing_tool_file[]" 
+                                                           class="form-control form-control-sm rounded-3" 
+                                                           accept="image/*"
+                                                           onchange="handleToolImageChange(this)">
+                                                    <input type="hidden" name="existing_tool_image_url[]" value="<?= htmlspecialchars($t['image_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label small fw-semibold text-dark mb-1">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>
@@ -1027,13 +1051,21 @@ function addCustomToolRow(initialData) {
                     '<input type="url" name="custom_tool_link[]" value="' + linkVal + '" class="form-control form-control-sm border-start-0 rounded-end-3" placeholder="https://shopee.vn/... hoặc https://lazada.vn/... hoặc link web shop">' +
                 '</div>' +
             '</div>' +
-            '<div class="col-12 col-md-6">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Tải ảnh lên (từ máy)</label>' +
-                '<input type="file" name="custom_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*">' +
-            '</div>' +
-            '<div class="col-12 col-md-6">' +
-                '<label class="form-label small fw-semibold text-dark mb-1">Hoặc dán URL ảnh</label>' +
-                '<input type="url" name="custom_tool_image_url[]" value="' + imgVal + '" class="form-control form-control-sm rounded-3" placeholder="https://domain.com/anh-dung-cu.jpg">' +
+            '<div class="col-12">' +
+                '<label class="form-label small fw-semibold text-dark mb-1">' +
+                    '<i class="bi bi-image text-success me-1"></i>Hình ảnh dụng cụ <span class="text-muted fw-normal">(tải từ máy hoặc để trống dùng ảnh mặc định)</span>' +
+                '</label>' +
+                '<div class="d-flex align-items-center gap-3 p-2 rounded-3 border bg-white" style="border-color: rgba(0,0,0,0.08) !important;">' +
+                    '<div class="position-relative flex-shrink-0">' +
+                        '<img src="' + (imgVal ? (imgVal.indexOf('http') === 0 || imgVal.indexOf('/') === 0 ? imgVal : '/' + imgVal) : '/assets/img/tent-forest.png') + '" ' +
+                             'alt="Xem trước" class="tool-preview-thumb rounded-3 border shadow-sm" style="width: 52px; height: 52px; object-fit: cover; background: #f0f4ec;">' +
+                        '<span class="badge bg-secondary position-absolute bottom-0 start-50 translate-middle-x status-badge" style="font-size: 9px; padding: 1px 4px; opacity: 0.9;">' + (imgVal ? 'Đã có ảnh' : 'Mặc định') + '</span>' +
+                    '</div>' +
+                    '<div class="flex-grow-1">' +
+                        '<input type="file" name="custom_tool_file[]" class="form-control form-control-sm rounded-3" accept="image/*" onchange="handleToolImageChange(this)">' +
+                        '<input type="hidden" name="custom_tool_image_url[]" value="' + imgVal + '">' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
             '<div class="col-12">' +
                 '<label class="form-label small fw-semibold text-dark mb-1">Kinh nghiệm / Đánh giá ngắn khi sử dụng</label>' +
@@ -1054,6 +1086,25 @@ function addCustomToolRow(initialData) {
     card.innerHTML = html;
     container.appendChild(card);
     updateSelectedToolsCounter();
+}
+
+function handleToolImageChange(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        var card = input.closest('.custom-tool-card') || input.parentElement;
+        var thumb = card ? card.querySelector('.tool-preview-thumb') : null;
+        var badge = card ? card.querySelector('.status-badge') : null;
+        reader.onload = function(e) {
+            if (thumb) {
+                thumb.src = e.target.result;
+            }
+            if (badge) {
+                badge.className = 'badge bg-success position-absolute bottom-0 start-50 translate-middle-x status-badge';
+                badge.textContent = 'Ảnh mới';
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 
 function removeCustomToolRow(btn) {

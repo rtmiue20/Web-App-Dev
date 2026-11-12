@@ -94,4 +94,51 @@ echo "10. Xóa dụng cụ thử nghiệm: " . ($deleteSuccess ? "Thành công" 
 assert($deleteSuccess === true, "Xóa dụng cụ thất bại!");
 assert($productModel->findById($newToolId) === null, "Dụng cụ vẫn còn trong CSDL sau khi xóa!");
 
+// 11. Kiểm tra logic phê duyệt: Dụng cụ từ bài viết pending KHÔNG được hiển thị, khi duyệt thì mới hiển thị
+$memberUserId = 2; // minh (member)
+$pendingToolId = $productModel->create(
+    1,
+    'Lều cắm trại test duyệt tự động',
+    500000,
+    'assets/img/tent-forest.png',
+    'Mô tả test',
+    'https://shopee.vn',
+    1,
+    $memberUserId
+);
+// Gán dụng cụ vào bài viết 2 (đang pending)
+$productModel->syncPostProducts(2, [$pendingToolId]);
+Database::execute("UPDATE posts SET status = 'pending' WHERE id = 2");
+
+$visibleListPending = $productModel->getAll();
+$isFoundInPending = false;
+foreach ($visibleListPending as $vp) {
+    if ((int)$vp['id'] === $pendingToolId) {
+        $isFoundInPending = true;
+        break;
+    }
+}
+assert($isFoundInPending === false, "LỖI: Dụng cụ từ bài viết pending lại xuất hiện ở kho cộng đồng!");
+echo "11.1 Dụng cụ từ bài viết pending được ẩn khỏi kho cộng đồng chính xác." . PHP_EOL;
+
+// Admin duyệt bài viết 2 sang published
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 2");
+$visibleListPublished = $productModel->getAll();
+$isFoundInPublished = false;
+foreach ($visibleListPublished as $vp) {
+    if ((int)$vp['id'] === $pendingToolId) {
+        $isFoundInPublished = true;
+        break;
+    }
+}
+assert($isFoundInPublished === true, "LỖI: Dụng cụ từ bài viết published không xuất hiện sau khi duyệt!");
+echo "11.2 Khi bài viết được Admin duyệt, dụng cụ tự động xuất hiện ở kho cộng đồng chính xác." . PHP_EOL;
+
+// Dọn dẹp test
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 2");
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 1");
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 3");
+$productModel->syncPostProducts(2, []);
+$productModel->delete($pendingToolId);
+
 echo "=== TẤT CẢ CÁC BƯỚC KIỂM THỬ ĐÃ THÀNH CÔNG VÀ CHÍNH XÁC! ===" . PHP_EOL;
