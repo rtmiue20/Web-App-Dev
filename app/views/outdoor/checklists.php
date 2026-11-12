@@ -5,7 +5,9 @@ $userId = is_array($user) ? (int) $user['id'] : null;
 $isAdmin = class_exists('Auth') ? Auth::isModerator($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
 $isMember = class_exists('Auth') ? Auth::isMember($user) : is_array($user);
 $isGuestAccount = is_array($user) && !$isMember;
-$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$escape = function ($value): string {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <main class="app-container" style="max-width: 1100px;">
     <!-- Page Header -->

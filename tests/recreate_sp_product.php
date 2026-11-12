@@ -1,5 +1,5 @@
 <?php
-require_once 'c:/Users/PC/Documents/Web-App-Dev/app/core/Database.php';
+require_once __DIR__ . '/../app/bootstrap.php';
 
 $pdo = Database::getConnection();
 

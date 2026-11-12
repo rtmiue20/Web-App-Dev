@@ -481,7 +481,9 @@ const ForumAjax = {
 
       // Timeout 3.5s với AbortController để đảm bảo giao diện không bao giờ bị đơ hay treo spinner loading
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+      const timeoutId = controller ? setTimeout(function () {
+        controller.abort();
+      }, 3500) : null;
 
       const fetchOptions = controller ? { signal: controller.signal } : {};
       const response = await fetch(`${baseUrl}/api/weather.php?${params.toString()}`, fetchOptions);
@@ -1552,7 +1554,7 @@ const ForumAjax = {
       if (!json || !json.success || !json.data) return;
 
       const unreadCount = Number(json.data.unread_count || 0);
-      [document.getElementById('navUnreadBadge'), document.getElementById('mobileNavUnreadBadge')].forEach(b => {
+      [document.getElementById('navUnreadBadge'), document.getElementById('mobileNavUnreadBadge')].forEach(function (b) {
         if (!b) return;
         if (unreadCount > 0) {
           b.textContent = unreadCount > 99 ? '99+' : unreadCount;
