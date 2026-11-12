@@ -8,7 +8,7 @@
 class ChatbotService
 {
     private string $apiKey;
-    private string $apiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    private string $apiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
 
     public function __construct()
     {
@@ -124,7 +124,7 @@ class ChatbotService
                     'success' => true,
                     'reply' => $replyText,
                     'source' => 'gemini_ai',
-                    'model' => 'Gemini 1.5 Flash'
+                    'model' => 'Gemini 3.5 Flash'
                 ];
             }
         }

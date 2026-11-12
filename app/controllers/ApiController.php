@@ -5,6 +5,7 @@ require_once __DIR__ . '/../models/Post.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../services/WeatherService.php';
 require_once __DIR__ . '/../services/VietnamAddressService.php';
+require_once __DIR__ . '/../services/QrCodeService.php';
 require_once __DIR__ . '/../helpers/Session.php';
 require_once __DIR__ . '/../helpers/Auth.php';
 require_once __DIR__ . '/../helpers/Csrf.php';
@@ -24,6 +25,7 @@ class ApiController extends Controller
 {
     private WeatherService $weatherService;
     private VietnamAddressService $addressService;
+    private QrCodeService $qrCodeService;
     private Comment $comments;
     private Post $posts;
     private User $users;
@@ -32,21 +34,36 @@ class ApiController extends Controller
     {
         $this->weatherService = new WeatherService();
         $this->addressService = new VietnamAddressService();
+        $this->qrCodeService = new QrCodeService();
         $this->comments = new Comment();
         $this->posts = new Post();
         $this->users = new User();
     }
 
     /**
-     * GET /api/weather?lat=...&lng=...
-     * Gọi Web Service Open-Meteo lấy thời tiết hiện tại và dự báo 4 ngày
+     * GET /api/weather?lat=...&lng=...&date=...
+     * Gọi Web Service Open-Meteo lấy thời tiết hiện tại, chỉ số UV, chất lượng không khí (AQI/PM2.5) và dự báo 4 ngày
      */
     public function weather(): void
     {
         $lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float)$_GET['lat'] : 21.2833;
         $lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float)$_GET['lng'] : 104.3167;
+        $forecastDate = isset($_GET['date']) ? trim((string)$_GET['date']) : '';
 
-        $forecast = $this->weatherService->getForecast($lat, $lng);
+        if ($forecastDate !== '') {
+            $dateObj = DateTimeImmutable::createFromFormat('!Y-m-d', $forecastDate);
+            $today = new DateTimeImmutable('today');
+            if (!$dateObj || $dateObj->format('Y-m-d') !== $forecastDate) {
+                Response::json(['success' => false, 'message' => 'Ngày dự báo không hợp lệ.'], 400);
+                return;
+            }
+            if ($dateObj < $today || $dateObj > $today->modify('+15 days')) {
+                // Nếu ngày chuyến đi nằm ngoài khoảng 16 ngày tới, vẫn trả về thời tiết hiện tại của tọa độ kèm ghi chú
+                $forecastDate = '';
+            }
+        }
+
+        $forecast = $this->weatherService->getForecast($lat, $lng, $forecastDate);
         Response::json([
             'success' => true,
             'data'    => $forecast
@@ -1040,5 +1057,27 @@ class ApiController extends Controller
                 'new_comments' => array_sum(array_column($rows, 'new_comments')),
             ],
         ], 'Tải thống kê hoạt động theo ngày thành công.');
+    }
+
+    /**
+     * GET /api/qr?url=...&title=...&type=trip|post|checklist&size=260
+     * Gọi Web Service QuickChart / GoQR API sinh mã QR chia sẻ chuyến đi và bài viết qua điện thoại
+     */
+    public function qrCode(): void
+    {
+        $targetUrl = isset($_GET['target_url']) ? trim((string)$_GET['target_url']) : (isset($_GET['url']) ? trim((string)$_GET['url']) : '');
+        $title = isset($_GET['title']) ? trim((string)$_GET['title']) : 'Chia sẻ chuyến dã ngoại';
+        $type = isset($_GET['type']) ? trim((string)$_GET['type']) : 'trip';
+        $size = isset($_GET['size']) && is_numeric($_GET['size']) ? (int)$_GET['size'] : 260;
+
+        if ($targetUrl === '') {
+            $targetUrl = '/';
+        }
+
+        $qrData = $this->qrCodeService->generateQrData($targetUrl, $title, $type, $size);
+        Response::json([
+            'success' => true,
+            'data'    => $qrData
+        ]);
     }
 }

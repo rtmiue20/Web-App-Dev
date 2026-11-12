@@ -220,13 +220,20 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                         </div>
                     </div>
 
-                    <!-- View Details Button -->
-                    <div class="pt-2 border-top d-flex justify-content-between align-items-center">
-                        <?php if ($trip['lat'] && $trip['lng']): ?>
-                            <span class="text-muted small"><i class="bi bi-cloud-sun text-info me-1"></i>Có dự báo thời tiết</span>
-                        <?php else: ?>
-                            <span></span>
-                        <?php endif; ?>
+                    <!-- View Details & QR Share Buttons -->
+                    <div class="pt-2 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button"
+                                    class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1 px-2.5 py-1 fw-semibold"
+                                    onclick="ForumAjax.openQrShareModal('/trips/<?= (int) $trip['id'] ?>', '<?= $escape(addslashes($trip['title'])) ?>', 'trip')"
+                                    style="background: rgba(35, 61, 44, 0.09); color: #233d2c; border: 1px solid rgba(35, 61, 44, 0.24); font-size: 12px; height: 32px;"
+                                    title="Mã QR chia sẻ nhanh chuyến đi bằng điện thoại">
+                                <i class="bi bi-qr-code-scan text-success"></i> Mã QR chia sẻ
+                            </button>
+                            <?php if ($trip['lat'] && $trip['lng']): ?>
+                                <span class="text-muted small d-none d-sm-inline"><i class="bi bi-cloud-sun text-info me-1"></i>Có thời tiết</span>
+                            <?php endif; ?>
+                        </div>
                         <a class="nature-btn-secondary py-1 px-3 d-inline-flex align-items-center gap-1"
                            href="<?= $escape($baseUrl) ?>/trips/<?= (int) $trip['id'] ?>" style="font-size: 13px; height: 36px;">
                             Xem chi tiết & Đăng ký <i class="bi bi-arrow-right"></i>

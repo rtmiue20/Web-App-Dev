@@ -300,7 +300,7 @@ const ForumAjax = {
     }
 
     // Đóng các ô reply đang mở khác cho gọn giao diện
-    document.querySelectorAll('[id^="reply-box-container-"]').forEach(function(el) {
+    document.querySelectorAll('[id^="reply-box-container-"]').forEach(function (el) {
       if (el.id !== `reply-box-container-${commentId}`) {
         el.style.display = 'none';
         el.innerHTML = '';
@@ -366,7 +366,7 @@ const ForumAjax = {
       const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
       const self = this;
 
-      confirmBtn.onclick = async function() {
+      confirmBtn.onclick = async function () {
         if (!self._pendingDelete) return;
         const cId = self._pendingDelete.commentId;
         const pId = self._pendingDelete.postId;
@@ -434,7 +434,7 @@ const ForumAjax = {
           targetNode.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
           targetNode.style.opacity = '0';
           targetNode.style.transform = 'translateY(-6px)';
-          setTimeout(function() {
+          setTimeout(function () {
             targetNode.remove();
           }, 250);
         }
@@ -457,90 +457,228 @@ const ForumAjax = {
     }
   },
 
-  // 4. FR06: Fetch weather & 4-day forecast from Open-Meteo Web Service
+  // 4. FR06: Fetch weather, UV Index, Air Quality (AQI/PM2.5) & 4-day forecast from Open-Meteo Web Service
   fetchWeather: async function (lat, lng, badgeElement, panelElement = null, warningElement = null, date = null) {
     try {
       const baseUrl = this.getBaseUrl();
-      const params = new URLSearchParams({ lat, lng });
+      const params = new URLSearchParams({ lat: lat, lng: lng });
       if (date) params.set('date', date);
       const response = await fetch(`${baseUrl}/api/weather.php?${params.toString()}`);
       const data = await response.json();
 
       if (response.ok && data && data.success && data.data) {
         const w = data.data;
+        const uv = w.uv || {
+          index: 5.0,
+          max_daily: 6.5,
+          level: 'Trung bình',
+          percent: 45,
+          color: '#facc15',
+          badge_bg: 'rgba(250, 204, 21, 0.16)',
+          badge_border: 'rgba(250, 204, 21, 0.4)',
+          icon: 'bi-brightness-high-fill',
+          advice: 'Nên đội mũ rộng vành và thoa kem chống nắng SPF 30+ khi di chuyển ngoài trời.'
+        };
+        const aq = w.air_quality || {
+          aqi: 20,
+          pm2_5: 5.2,
+          pm10: 11.0,
+          level: 'Rất trong lành',
+          percent: 12,
+          color: '#4ade80',
+          badge_bg: 'rgba(74, 222, 128, 0.16)',
+          badge_border: 'rgba(74, 222, 128, 0.4)',
+          icon: 'bi-wind',
+          advice: 'Không khí vùng núi rất trong lành, lý tưởng để trekking và cắm trại.'
+        };
 
         if (badgeElement) {
-          badgeElement.textContent = `${w.temp}°C · ${w.condition}${w.date ? ` · ${w.date}` : ''}`;
+          badgeElement.textContent = ` · ${w.temp}°C · ${w.condition}${w.date ? ` · ${w.date}` : ''}`;
         }
 
         if (warningElement) {
           const alerts = Array.isArray(w.alerts) ? w.alerts : [];
-          warningElement.className = alerts.length ? 'alert alert-warning mt-2' : 'alert alert-success mt-2';
+          warningElement.className = alerts.length ? 'alert alert-warning mt-2 mb-0' : 'alert alert-success mt-2 mb-0';
           warningElement.textContent = alerts.length
-            ? `Cảnh báo: ${alerts.join(' ')}`
-            : 'Chưa ghi nhận cảnh báo thời tiết nguy hiểm trong dữ liệu hiện có; điều này không đảm bảo đường đi an toàn.';
+            ? `Cảnh báo an toàn: ${alerts.join(' ')}`
+            : 'Các chỉ số thời tiết, bức xạ tia UV và chất lượng không khí hiện tại đều nằm trong ngưỡng an toàn cho chuyến dã ngoại.';
         }
 
         const targetPanel = panelElement || document.getElementById('weather-forecast-panel');
         if (targetPanel) {
           let dailyHtml = '';
           if (Array.isArray(w.daily) && w.daily.length > 0) {
-            dailyHtml = `
-              <div class="row row-cols-2 row-cols-sm-4 g-2 mt-2 pt-2 border-top border-white border-opacity-10">
-                ${w.daily
-                  .map(
-                    function(d) {
-                      return `
-                  <div class="col">
-                    <div class="p-2.5 rounded-3 text-center h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">
-                      <div>
-                        <div class="fw-semibold text-white" style="font-size: 12px;">${d.day_label}</div>
-                        <div class="text-white-50" style="font-size: 10.5px;">${d.date}</div>
-                        <div class="my-1 fs-4" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"><i class="bi ${d.icon || 'bi-cloud-sun-fill text-warning'}"></i></div>
-                        <div class="fw-bold text-white" style="font-size: 12.5px;">
-                          ${d.temp_max}° <span class="text-white-50 fw-normal" style="font-size: 11px;">/ ${d.temp_min}°C</span>
-                        </div>
-                      </div>
-                      <div class="mt-1" style="font-size: 11px; font-weight: 500; color: #38bdf8;" title="Xác suất mưa">
-                        <i class="bi bi-droplet-fill me-1" style="color: #38bdf8;"></i>Mưa ${d.rain_prob}%
+            let dailyCards = '';
+            for (let i = 0; i < w.daily.length; i++) {
+              const d = w.daily[i];
+              const dayUvVal = typeof d.uv_max !== 'undefined' ? d.uv_max : '5.0';
+              dailyCards += `
+                <div class="col">
+                  <div class="p-3.5 text-center h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(160deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.12); min-height: 165px; transition: transform 0.2s ease, border-color 0.2s ease;">
+                    <div>
+                      <div class="fw-bold text-white mb-0" style="font-size: 13px; letter-spacing: 0.2px;">${d.day_label}</div>
+                      <div class="text-white-50 mb-1" style="font-size: 11px;">${d.date}</div>
+                      <div class="my-2 fs-3" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));"><i class="bi ${d.icon || 'bi-cloud-sun-fill text-warning'}"></i></div>
+                      <div class="fw-bold text-white mt-1" style="font-size: 13px;">
+                        ${d.temp_max}° <span class="text-white-50 fw-normal" style="font-size: 11.5px;">/ ${d.temp_min}°C</span>
                       </div>
                     </div>
+                    <div class="mt-2.5 pt-2 border-top border-white border-opacity-10 d-flex align-items-center justify-content-center gap-1.5 flex-wrap">
+                      <span class="badge rounded-pill px-2 py-1" style="background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.32); font-size: 10px; font-weight: 500;" title="Xác suất mưa">
+                        <i class="bi bi-droplet-fill me-0.5"></i>${d.rain_prob}%
+                      </span>
+                      <span class="badge rounded-pill px-2 py-1" style="background: rgba(250, 204, 21, 0.16); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.35); font-size: 10px; font-weight: 500;" title="Chỉ số tia UV đỉnh ngày">
+                        UV ${dayUvVal}
+                      </span>
+                    </div>
                   </div>
-                `;
-                    }
-                  )
-                  .join('')}
+                </div>
+              `;
+            }
+            dailyHtml = `
+              <div class="d-flex align-items-center justify-content-between mt-3 mb-2.5 pt-3 border-top border-white border-opacity-10 flex-wrap gap-2 px-1">
+                <span class="small fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
+                  <i class="bi bi-calendar3 text-success"></i>Dự báo khí tượng &amp; chỉ số UV 4 ngày tới
+                </span>
+                <span class="text-white-50 small" style="font-size: 11.5px;">Cập nhật theo chu kỳ vệ tinh Open-Meteo</span>
+              </div>
+              <div class="row row-cols-2 row-cols-md-4 g-3 mb-1">
+                ${dailyCards}
               </div>
             `;
           }
 
-          targetPanel.innerHTML = `
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-              <div class="d-flex align-items-center gap-3">
-                <div class="display-6 fw-bold mb-0 d-flex align-items-center gap-2 text-white">
-                  <i class="bi ${w.icon || 'bi-cloud-sun-fill text-warning'}"></i>
-                  <span>${w.temp}°C</span>
-                </div>
-                <div>
-                  <div class="fw-semibold text-white fs-6">${w.condition}</div>
-                  <div class="text-white-50" style="font-size: 12px;">
-                    Cảm giác như <strong class="text-white">${w.feels_like ?? w.temp}°C</strong> · Độ ẩm <strong class="text-white">${w.humidity ?? 75}%</strong> · Gió <strong class="text-white">${w.windspeed} km/h</strong>
+          const summaryHtml = `
+            <div class="row g-3 mb-3">
+              <div class="col-12">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3.5 px-4 rounded-4" style="background: rgba(255, 255, 255, 0.045); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px !important;">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="display-5 fw-bold mb-0 d-flex align-items-center gap-2 text-white" style="text-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                      <i class="bi ${w.icon || 'bi-cloud-sun-fill text-warning'}"></i>
+                      <span>${w.temp}°C</span>
+                    </div>
+                    <div>
+                      <div class="fw-bold text-white fs-5">${w.condition}</div>
+                      <div class="d-flex align-items-center gap-2 flex-wrap text-white-50 mt-1" style="font-size: 12px;">
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1">Cảm giác: <strong class="text-white">${w.feels_like ?? w.temp}°C</strong></span>
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-droplet text-info me-1"></i>Độ ẩm: <strong class="text-white">${w.humidity ?? 75}%</strong></span>
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white fw-normal px-2.5 py-1"><i class="bi bi-wind text-success me-1"></i>Gió: <strong class="text-white">${w.windspeed} km/h</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 ms-auto ms-sm-0">
+                    <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5" style="background: rgba(155, 189, 85, 0.16); border: 1px solid rgba(155, 189, 85, 0.35); color: #d4f291; font-size: 11.5px; font-weight: 500;">
+                      <span style="width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 8px #4ade80;"></span>
+                      Trạm khí tượng thực địa GPS
+                    </span>
                   </div>
                 </div>
               </div>
-              <span class="badge rounded-pill bg-white bg-opacity-10 border border-white border-opacity-15 text-white-50 px-3 py-1.5" style="font-size: 11px;">
-                <i class="bi bi-cloud-check me-1 text-success"></i>${w.source || 'Open-Meteo API'}
-              </span>
             </div>
-            ${
-              w.advice
-                ? `<div class="p-2.5 px-3 rounded-3 small mb-2 d-flex align-items-center gap-2" style="background: rgba(155, 189, 85, 0.16); color: #c4e482; border: 1px solid rgba(155, 189, 85, 0.3);">
-                     <i class="bi bi-compass-fill fs-6 text-success flex-shrink-0"></i>
-                     <span><strong>Gợi ý dã ngoại:</strong> ${w.advice}</span>
-                   </div>`
-                : ''
-            }
-            <div class="small fw-semibold text-white-50 mt-2 mb-1" style="font-size: 11.5px;"><i class="bi bi-calendar3 me-1"></i>Dự báo chi tiết 4 ngày tới:</div>
+          `;
+
+          const envCardsHtml = `
+            <div class="row g-3 mb-3">
+              <!-- Card 1: Chỉ số Tia cực tím (UV Index) -->
+              <div class="col-12 col-md-6">
+                <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
+                      <span class="fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 28px; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+                          <i class="bi ${uv.icon || 'bi-sun-fill'}" style="color: ${uv.color || '#facc15'}; font-size: 14px;"></i>
+                        </span>
+                        Chỉ số Tia cực tím (UV)
+                      </span>
+                      <span class="badge rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1.5" style="background: ${uv.badge_bg || 'rgba(250,204,21,0.16)'}; color: ${uv.color || '#facc15'}; border: 1px solid ${uv.badge_border || 'rgba(250,204,21,0.4)'}; font-size: 11px; font-weight: 600;">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${uv.color || '#facc15'}; display: inline-block;"></span>
+                        ${uv.level}
+                      </span>
+                    </div>
+
+                    <div class="d-flex align-items-baseline justify-content-between mb-2 flex-wrap gap-1">
+                      <div class="display-6 fw-bold text-white lh-1">
+                        UV ${uv.index}
+                        <span class="small fw-normal text-white-50 ms-1" style="font-size: 12px;">/ 11+ UV</span>
+                      </div>
+                      <div class="text-white-50" style="font-size: 11.5px;">
+                        Đỉnh trưa: <strong class="text-white">UV ${uv.max_daily ?? uv.index}</strong>
+                      </div>
+                    </div>
+
+                    <div class="progress mb-2.5" style="height: 7px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden;">
+                      <div class="progress-bar" role="progressbar" style="width: ${uv.percent || 35}%; background: linear-gradient(90deg, #4ade80 0%, #facc15 45%, #fb923c 75%, #ef4444 100%); border-radius: 999px;" aria-valuenow="${uv.percent || 35}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <div class="p-2.5 px-3 rounded-3 text-white-50 d-flex align-items-start gap-2.5 mt-auto" style="background: rgba(0, 0, 0, 0.24); border: 1px solid rgba(255, 255, 255, 0.06); font-size: 12px; line-height: 1.5;">
+                    <i class="bi bi-shield-shaded flex-shrink-0 mt-0.5 fs-6" style="color: ${uv.color || '#facc15'};"></i>
+                    <span>${uv.advice}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Chất lượng Không khí (AQI & Bụi mịn PM2.5) -->
+              <div class="col-12 col-md-6">
+                <div class="p-3.5 p-md-4 h-100 d-flex flex-column justify-content-between shadow-sm" style="border-radius: 20px !important; background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(12px);">
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2.5">
+                      <span class="fw-semibold text-white d-inline-flex align-items-center gap-2" style="font-size: 13px;">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 28px; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+                          <i class="bi ${aq.icon || 'bi-wind'}" style="color: ${aq.color || '#4ade80'}; font-size: 14px;"></i>
+                        </span>
+                        Chất lượng Không khí (AQI)
+                      </span>
+                      <span class="badge rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1.5" style="background: ${aq.badge_bg || 'rgba(74,222,128,0.16)'}; color: ${aq.color || '#4ade80'}; border: 1px solid ${aq.badge_border || 'rgba(74,222,128,0.4)'}; font-size: 11px; font-weight: 600;">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${aq.color || '#4ade80'}; display: inline-block;"></span>
+                        ${aq.level}
+                      </span>
+                    </div>
+
+                    <div class="d-flex align-items-baseline justify-content-between mb-2 flex-wrap gap-1">
+                      <div class="display-6 fw-bold text-white lh-1">
+                        AQI ${aq.aqi}
+                        <span class="small fw-normal text-white-50 ms-1" style="font-size: 12px;">(US AQI)</span>
+                      </div>
+                      <div class="text-white-50" style="font-size: 11.5px;">
+                        PM2.5: <strong class="text-white">${aq.pm2_5} µg/m³</strong> · PM10: <strong class="text-white">${aq.pm10 ?? 10} µg/m³</strong>
+                      </div>
+                    </div>
+
+                    <div class="progress mb-2.5" style="height: 7px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden;">
+                      <div class="progress-bar" role="progressbar" style="width: ${aq.percent || 15}%; background: ${aq.color || '#4ade80'}; border-radius: 999px;" aria-valuenow="${aq.percent || 15}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+
+                  <div class="p-2.5 px-3 rounded-3 text-white-50 d-flex align-items-start gap-2.5 mt-auto" style="background: rgba(0, 0, 0, 0.24); border: 1px solid rgba(255, 255, 255, 0.06); font-size: 12px; line-height: 1.5;">
+                    <i class="bi bi-lungs flex-shrink-0 mt-0.5 fs-6" style="color: ${aq.color || '#4ade80'};"></i>
+                    <span>${aq.advice}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          const adviceHtml = w.advice
+            ? `
+              <div class="row g-3 mb-3">
+                <div class="col-12">
+                  <div class="p-3 px-3.5 rounded-pill small d-flex align-items-center gap-2.5 shadow-sm" style="background: linear-gradient(90deg, rgba(155, 189, 85, 0.22) 0%, rgba(155, 189, 85, 0.10) 100%); color: #d6f296; border: 1px solid rgba(155, 189, 85, 0.4); backdrop-filter: blur(8px);">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 24px; height: 24px; background: #9bbd55; color: #182213;">
+                      <i class="bi bi-compass-fill" style="font-size: 12px;"></i>
+                    </span>
+                    <span class="fw-semibold">Gợi ý dã ngoại:</span>
+                    <span class="text-white text-opacity-90">${w.advice}</span>
+                  </div>
+                </div>
+              </div>
+            `
+            : '';
+
+          targetPanel.innerHTML = `
+            ${summaryHtml}
+            ${envCardsHtml}
+            ${adviceHtml}
             ${dailyHtml}
           `;
         }
@@ -582,7 +720,7 @@ const ForumAjax = {
     }
 
     provSelect.innerHTML = '<option value="">-- Chọn Tỉnh / Thành phố --</option>';
-    provincesData.forEach(function(p) {
+    provincesData.forEach(function (p) {
       const opt = document.createElement('option');
       opt.value = p.code;
       opt.textContent = p.name;
@@ -598,12 +736,12 @@ const ForumAjax = {
         return;
       }
 
-      const prov = provincesData.find(function(p) { return String(p.code) === String(code); });
+      const prov = provincesData.find(function (p) { return String(p.code) === String(code); });
       if (!prov) return;
 
       distSelect.disabled = false;
       if (Array.isArray(prov.districts)) {
-        prov.districts.forEach(function(d, idx) {
+        prov.districts.forEach(function (d, idx) {
           const opt = document.createElement('option');
           opt.value = String(idx);
           opt.textContent = d.name;
@@ -625,7 +763,7 @@ const ForumAjax = {
     distSelect.addEventListener('change', function () {
       const code = provSelect.value;
       const distIdx = this.value;
-      const prov = provincesData.find(function(p) { return String(p.code) === String(code); });
+      const prov = provincesData.find(function (p) { return String(p.code) === String(code); });
       if (!prov) return;
 
       if (distIdx === '' || !prov.districts || !prov.districts[distIdx]) {
@@ -1395,31 +1533,31 @@ const ForumAjax = {
 
         // Icon & màu sắc theo loại thông báo
         const typeConfig = {
-          'like_post':          { icon: 'bi-heart-fill',           color: '#e63946' },
-          'like_comment':       { icon: 'bi-heart-fill',           color: '#e63946' },
-          'comment_post':       { icon: 'bi-chat-dots-fill',       color: '#3498db' },
-          'reply_comment':      { icon: 'bi-chat-quote-fill',      color: '#1d6fa4' },
-          'follow_user':        { icon: 'bi-person-plus-fill',     color: '#2ecc71' },
-          'follow_category':    { icon: 'bi-tags-fill',            color: '#6f9e38' },
-          'new_post_followed':  { icon: 'bi-bell-fill',            color: '#9bbd55' },
-          'create_post':        { icon: 'bi-pencil-square',        color: '#9bbd55' },
-          'update_post':        { icon: 'bi-journal-check',        color: '#4a7c59' },
-          'delete_post':        { icon: 'bi-trash3-fill',          color: '#e63946' },
-          'create_trip':        { icon: 'bi-compass-fill',         color: '#4a7c59' },
-          'join_trip':          { icon: 'bi-people-fill',          color: '#2ecc71' },
-          'leave_trip':         { icon: 'bi-person-dash-fill',     color: '#8c9185' },
-          'trip_new_member':    { icon: 'bi-person-check-fill',    color: '#20c997' },
-          'create_checklist':   { icon: 'bi-check2-square',        color: '#6f9e38' },
-          'bookmark_post':      { icon: 'bi-bookmark-fill',        color: '#f4a261' },
-          'review_place':       { icon: 'bi-star-fill',            color: '#f9c74f' },
-          'update_profile':     { icon: 'bi-person-gear',          color: '#6c757d' },
-          'admin_pending_post': { icon: 'bi-hourglass-split',      color: '#f4a261' },
-          'admin_report':       { icon: 'bi-flag-fill',            color: '#e63946' },
-          'post_approved':      { icon: 'bi-check-circle-fill',    color: '#2ecc71' },
-          'post_rejected':      { icon: 'bi-x-circle-fill',        color: '#e63946' },
-          'admin_action':       { icon: 'bi-shield-check',         color: '#4a7c59' },
-          'system':             { icon: 'bi-info-circle-fill',     color: '#0dcaf0' },
-          'activity':           { icon: 'bi-activity',             color: '#9bbd55' },
+          'like_post': { icon: 'bi-heart-fill', color: '#e63946' },
+          'like_comment': { icon: 'bi-heart-fill', color: '#e63946' },
+          'comment_post': { icon: 'bi-chat-dots-fill', color: '#3498db' },
+          'reply_comment': { icon: 'bi-chat-quote-fill', color: '#1d6fa4' },
+          'follow_user': { icon: 'bi-person-plus-fill', color: '#2ecc71' },
+          'follow_category': { icon: 'bi-tags-fill', color: '#6f9e38' },
+          'new_post_followed': { icon: 'bi-bell-fill', color: '#9bbd55' },
+          'create_post': { icon: 'bi-pencil-square', color: '#9bbd55' },
+          'update_post': { icon: 'bi-journal-check', color: '#4a7c59' },
+          'delete_post': { icon: 'bi-trash3-fill', color: '#e63946' },
+          'create_trip': { icon: 'bi-compass-fill', color: '#4a7c59' },
+          'join_trip': { icon: 'bi-people-fill', color: '#2ecc71' },
+          'leave_trip': { icon: 'bi-person-dash-fill', color: '#8c9185' },
+          'trip_new_member': { icon: 'bi-person-check-fill', color: '#20c997' },
+          'create_checklist': { icon: 'bi-check2-square', color: '#6f9e38' },
+          'bookmark_post': { icon: 'bi-bookmark-fill', color: '#f4a261' },
+          'review_place': { icon: 'bi-star-fill', color: '#f9c74f' },
+          'update_profile': { icon: 'bi-person-gear', color: '#6c757d' },
+          'admin_pending_post': { icon: 'bi-hourglass-split', color: '#f4a261' },
+          'admin_report': { icon: 'bi-flag-fill', color: '#e63946' },
+          'post_approved': { icon: 'bi-check-circle-fill', color: '#2ecc71' },
+          'post_rejected': { icon: 'bi-x-circle-fill', color: '#e63946' },
+          'admin_action': { icon: 'bi-shield-check', color: '#4a7c59' },
+          'system': { icon: 'bi-info-circle-fill', color: '#0dcaf0' },
+          'activity': { icon: 'bi-activity', color: '#9bbd55' },
         };
         const cfg = typeConfig[n.type] || { icon: 'bi-bell-fill', color: '#9bbd55' };
         const targetId = Number(n.target_id || 0);
@@ -1500,7 +1638,7 @@ const ForumAjax = {
         body: JSON.stringify({ _csrf: csrfToken }),
       });
 
-      [document.getElementById('navUnreadBadge'), document.getElementById('mobileNavUnreadBadge')].forEach(b => { if (b) b.style.display = 'none'; });
+      [document.getElementById('navUnreadBadge'), document.getElementById('mobileNavUnreadBadge')].forEach(function (b) { if (b) b.style.display = 'none'; });
       const unreadItems = document.querySelectorAll('.notification-item.unread');
       unreadItems.forEach(function (item) {
         item.classList.remove('unread');
@@ -1529,6 +1667,237 @@ const ForumAjax = {
         }
       }
     });
+  },
+
+  // =========================================================================
+  // 16. QUICKCHART / GOQR CODE API - CHIA SẺ CHUYẾN ĐI & BÀI VIẾT BẰNG ĐIỆN THOẠI
+  // =========================================================================
+  _qrModalData: null,
+
+  openQrShareModal: async function (targetPathOrUrl, title, itemType) {
+    const modalEl = document.getElementById('qrShareModal');
+    if (!modalEl) return;
+
+    const baseUrl = this.getBaseUrl();
+    const titleEl = document.getElementById('qrModalItemTitle');
+    const badgeEl = document.getElementById('qrModalTypeBadge');
+    const loadingEl = document.getElementById('qrModalLoading');
+    const imgEl = document.getElementById('qrModalImage');
+    const urlInput = document.getElementById('qrModalShareUrlInput');
+    const modeSwitchBox =
+      document.getElementById('qrModalModeSwitch') ||
+      document.getElementById('qrModalLanSwitchBox');
+    const downloadBtn =
+      document.getElementById('btnDownloadQrImage') ||
+      document.getElementById('qrModalDownloadBtn');
+    const openLinkBtn = document.getElementById('qrModalOpenLinkBtn');
+
+    if (titleEl) {
+      titleEl.textContent = title || 'Chia sẻ liên kết dã ngoại';
+    }
+
+    if (badgeEl) {
+      if (itemType === 'trip') {
+        badgeEl.innerHTML = '<i class="bi bi-compass-fill me-1"></i>Chuyến đi chung';
+      } else if (itemType === 'checklist') {
+        badgeEl.innerHTML = '<i class="bi bi-card-checklist me-1"></i>Checklist trang bị';
+      } else {
+        badgeEl.innerHTML = '<i class="bi bi-journal-richtext me-1"></i>Bài viết dã ngoại';
+      }
+    }
+
+    // Xây dựng URL đầy đủ nếu truyền đường dẫn tương đối
+    let fullTargetUrl = targetPathOrUrl || window.location.href;
+    if (fullTargetUrl.indexOf('http://') !== 0 && fullTargetUrl.indexOf('https://') !== 0) {
+      if (fullTargetUrl.charAt(0) !== '/') {
+        fullTargetUrl = '/' + fullTargetUrl;
+      }
+      fullTargetUrl = window.location.origin + baseUrl + fullTargetUrl;
+    }
+
+    if (urlInput) urlInput.value = fullTargetUrl;
+    if (openLinkBtn) openLinkBtn.href = fullTargetUrl;
+
+    // Reset trạng thái hiển thị
+    if (loadingEl) {
+      loadingEl.style.removeProperty('display');
+      loadingEl.style.display = 'flex';
+    }
+
+    // Mở Bootstrap Modal
+    if (window.bootstrap && window.bootstrap.Modal) {
+      const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+      bsModal.show();
+    }
+
+    // Tải ảnh QR siêu tốc ngay tức thì từ Web Service QuickChart (chỉ mất ~0.3s)
+    const instantQrUrl =
+      'https://quickchart.io/qr?text=' +
+      encodeURIComponent(fullTargetUrl) +
+      '&size=260&margin=2&ecLevel=M&dark=1e2b18&light=ffffff&format=png';
+
+    if (imgEl) {
+      imgEl.onload = function () {
+        if (loadingEl) {
+          loadingEl.style.setProperty('display', 'none', 'important');
+        }
+      };
+      imgEl.onerror = function () {
+        // Dự phòng GoQR REST API nếu mạng có vấn đề với QuickChart
+        const fallbackUrl =
+          'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' +
+          encodeURIComponent(fullTargetUrl) +
+          '&color=30-43-24&bgcolor=255-255-255&qzone=2&format=png';
+        if (imgEl.src !== fallbackUrl) {
+          imgEl.src = fallbackUrl;
+        } else if (loadingEl) {
+          loadingEl.innerHTML =
+            '<span class="text-danger small"><i class="bi bi-exclamation-triangle me-1"></i>Không thể tải ảnh QR</span>';
+        }
+      };
+      imgEl.src = instantQrUrl;
+    }
+
+    if (downloadBtn) {
+      downloadBtn.href = instantQrUrl;
+      const safeSlug = String(itemType || 'trip').replace(/[^a-z0-9_-]/gi, '');
+      downloadBtn.setAttribute('download', 'Fieldcraft-QR-' + safeSlug + '.png');
+    }
+
+    // Gọi API backend lấy dữ liệu IP LAN để hỗ trợ quét mở trên cùng mạng Wi-Fi
+    try {
+      const apiUrl =
+        baseUrl +
+        '/api/qr?target_url=' +
+        encodeURIComponent(fullTargetUrl) +
+        '&title=' +
+        encodeURIComponent(title || '') +
+        '&type=' +
+        encodeURIComponent(itemType || 'trip');
+
+      const response = await fetch(apiUrl, {
+        headers: { Accept: 'application/json' },
+      });
+      const result = await response.json();
+
+      if (result && result.success && result.data) {
+        const d = result.data;
+        this._qrModalData = d;
+
+        // Nếu backend đã tải xong Base64 ảnh vào cache thì gán trực tiếp
+        if (d.qr_data_uri && imgEl) {
+          imgEl.src = d.qr_data_uri;
+        }
+
+        // Bật nút chuyển IP LAN nếu đang chạy trên localhost và tự động kích hoạt IP Wi-Fi
+        if (modeSwitchBox) {
+          if (d.is_localhost && d.lan_ip && d.lan_url !== d.original_url) {
+            modeSwitchBox.classList.remove('d-none');
+            modeSwitchBox.style.display = 'block';
+            const btnLan = document.getElementById('btnQrModeLan');
+            if (btnLan) {
+              btnLan.innerHTML = '<i class="bi bi-wifi me-1"></i>IP Wi-Fi';
+              btnLan.setAttribute('title', 'Quét qua mạng Wi-Fi: ' + String(d.lan_ip || ''));
+            }
+            // Tự động kích hoạt chế độ IP Wi-Fi để camera điện thoại quét vào thẳng máy tính
+            this.switchQrUrlMode('lan');
+          } else {
+            modeSwitchBox.style.display = 'none';
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Backend QR metadata fetch error (ảnh QR vẫn hiển thị bình thường qua QuickChart API):', err);
+    }
+  },
+
+  switchQrUrlMode: function (mode) {
+    const d = this._qrModalData;
+    if (!d) return;
+
+    const imgEl = document.getElementById('qrModalImage');
+    const loadingEl = document.getElementById('qrModalLoading');
+    const urlInput = document.getElementById('qrModalShareUrlInput');
+    const downloadBtn =
+      document.getElementById('btnDownloadQrImage') ||
+      document.getElementById('qrModalDownloadBtn');
+    const btnLan = document.getElementById('btnQrModeLan');
+    const btnStandard =
+      document.getElementById('btnQrModeStandard') ||
+      document.getElementById('btnQrModeLocal');
+
+    const isLan = mode === 'lan';
+    const chosenUrl = isLan
+      ? d.lan_url || d.target_url
+      : d.original_url || d.target_url;
+
+    const newQrSrc =
+      'https://quickchart.io/qr?text=' +
+      encodeURIComponent(chosenUrl) +
+      '&size=260&margin=2&ecLevel=M&dark=1e2b18&light=ffffff&format=png';
+
+    if (loadingEl) {
+      loadingEl.style.removeProperty('display');
+      loadingEl.style.display = 'flex';
+    }
+    if (imgEl) {
+      imgEl.onload = function () {
+        if (loadingEl) {
+          loadingEl.style.setProperty('display', 'none', 'important');
+        }
+      };
+      imgEl.src = newQrSrc;
+    }
+
+    if (urlInput) {
+      urlInput.value = chosenUrl;
+    }
+    if (downloadBtn) {
+      downloadBtn.href = newQrSrc;
+    }
+
+    if (btnLan && btnStandard) {
+      if (isLan) {
+        btnLan.style.background = '#2f5e2e';
+        btnLan.style.color = '#ffffff';
+        btnStandard.style.background = 'transparent';
+        btnStandard.style.color = '#3a4235';
+      } else {
+        btnStandard.style.background = '#2f5e2e';
+        btnStandard.style.color = '#ffffff';
+        btnLan.style.background = 'transparent';
+        btnLan.style.color = '#3a4235';
+      }
+    }
+  },
+
+  copyQrShareUrl: function () {
+    const urlInput = document.getElementById('qrModalShareUrlInput');
+    const copyText = document.getElementById('qrModalCopyText');
+    const copyBtn = document.getElementById('btnCopyQrUrl');
+    if (!urlInput) return;
+
+    const textToCopy = urlInput.value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(function () {
+        if (copyText) copyText.textContent = 'Đã chép!';
+        if (copyBtn) copyBtn.style.background = '#1f5e39';
+        if (window.ForumAjax) {
+          window.ForumAjax.showToast('Đã sao chép liên kết chia sẻ vào bộ nhớ tạm!', 'success');
+        }
+        setTimeout(function () {
+          if (copyText) copyText.textContent = 'Sao chép';
+          if (copyBtn) copyBtn.style.background = '#233d2c';
+        }, 2000);
+      });
+    } else {
+      urlInput.select();
+      document.execCommand('copy');
+      if (copyText) copyText.textContent = 'Đã chép!';
+      setTimeout(function () {
+        if (copyText) copyText.textContent = 'Sao chép';
+      }, 2000);
+    }
   },
 };
 

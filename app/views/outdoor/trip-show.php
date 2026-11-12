@@ -1,6 +1,6 @@
 <?php
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$escape = 'e';
 $hasCoordinates = !empty($trip['lat']) && !empty($trip['lng']);
 $isLoggedIn = Auth::check();
 $isMember = Auth::isMember();
@@ -27,7 +27,15 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
                 </span>
                 <h1 class="h2 fw-bold mt-2 mb-1" style="color: var(--color-ink);"><?= $escape($trip['title']) ?></h1>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <button type="button"
+                        class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1.5 px-3 py-2 fw-semibold shadow-sm"
+                        onclick="ForumAjax.openQrShareModal('/trips/<?= (int) $trip['id'] ?>', '<?= $escape(addslashes($trip['title'])) ?>', 'trip')"
+                        style="background: linear-gradient(135deg, #233d2c 0%, #192b1f 100%); color: #b7e4c7; border: 1px solid rgba(132, 204, 22, 0.4); font-size: 13.5px; transition: all 0.2s ease;"
+                        title="Mở mã QR chia sẻ chuyến đi bằng điện thoại">
+                    <i class="bi bi-qr-code-scan" style="color: #a3e635;"></i>
+                    <span>Mã QR chia sẻ</span>
+                </button>
                 <?php if ($hasStarted): ?>
                     <span class="badge text-bg-secondary px-3 py-2 fs-6">Đã khởi hành</span>
                 <?php elseif ($spotsLeft === 0): ?>
@@ -175,21 +183,28 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
 
     <!-- Weather Safety Section -->
     <section class="nature-card p-4 p-md-5" style="border-radius: 32px;">
-        <div class="d-flex align-items-center gap-2 mb-3">
-            <span class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: rgba(155, 189, 85, 0.2); color: var(--color-moss);">
-                <i class="bi bi-cloud-sun-fill fs-5"></i>
-            </span>
-            <div>
-                <h2 class="h5 fw-semibold mb-0" style="color: var(--color-ink);">Dự báo khí tượng & Khuyến nghị an toàn</h2>
-                <span class="text-muted small">Cập nhật tự động từ dịch vụ Open-Meteo theo tọa độ chuyến đi</span>
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2.5 pb-2.5 border-bottom">
+            <div class="d-flex align-items-center gap-2.5">
+                <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background: rgba(155, 189, 85, 0.2); color: var(--color-moss);">
+                    <i class="bi bi-cloud-sun-fill fs-5"></i>
+                </span>
+                <div>
+                    <h2 class="h5 fw-bold mb-0" style="color: var(--color-ink); font-size: 17px;">Thời tiết &amp; Môi trường dã ngoại</h2>
+                    <span class="text-muted small" style="font-size: 12.5px;">Theo dõi điều kiện tự nhiên theo thời gian thực để chuẩn bị chuyến đi an toàn</span>
+                </div>
             </div>
+            <?php if (!empty($trip['location'])): ?>
+                <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1.5 shadow-sm" style="background: rgba(35, 38, 31, 0.08); color: var(--color-ink); border: 1px solid rgba(35, 38, 31, 0.16); font-size: 12px;">
+                    <i class="bi bi-geo-alt-fill text-danger"></i><?= $escape($trip['location']) ?>
+                </span>
+            <?php endif; ?>
         </div>
 
         <?php if ($hasCoordinates): ?>
-            <div id="trip-weather-panel" class="p-3.5 rounded-4 mb-3" style="background: rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.08);">
-                <div class="d-flex align-items-center gap-2">
+            <div id="trip-weather-panel" class="p-4 p-md-5 rounded-4 mb-3" style="background: rgba(20, 28, 17, 0.88); border: 1px solid rgba(155, 189, 85, 0.3); border-radius: 28px !important;">
+                <div class="d-flex align-items-center gap-2 text-white">
                     <span class="spinner-border spinner-border-sm text-success" role="status"></span>
-                    <span id="trip-weather-info" style="color: var(--color-ink); font-size: 14.5px;">Đang tải dự báo thời tiết tại <?= $escape($trip['location']) ?>...</span>
+                    <span style="font-size: 14px;">Đang tải dữ liệu thời tiết thực địa tại <?= $escape($trip['location']) ?>...</span>
                 </div>
             </div>
             <div id="trip-weather-warning" class="d-none" role="status"></div>
@@ -202,8 +217,8 @@ $hasStarted = strtotime($trip['starts_at']) <= time();
                         ForumAjax.fetchWeather(
                             <?= json_encode((string) $trip['lat']) ?>,
                             <?= json_encode((string) $trip['lng']) ?>,
-                            document.getElementById('trip-weather-info'),
                             null,
+                            document.getElementById('trip-weather-panel'),
                             document.getElementById('trip-weather-warning'),
                             <?= json_encode(date('Y-m-d', strtotime($trip['starts_at']))) ?>
                         );
