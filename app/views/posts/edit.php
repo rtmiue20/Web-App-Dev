@@ -595,15 +595,6 @@ function handleEditDrop(e) {
                 <i class="bi bi-search me-1"></i> Tìm
             </button>
         </div>
-        <!-- Quick suggestions -->
-        <div style="padding:0 1.25rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px;">
-            <span class="text-white-50 small"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gợi ý:</span>
-            <button type="button" onclick="MapPicker.quickSearch('Đồi Đa Phú')" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill py-0.5 px-2.5 text-white-50" style="font-size:11.5px;">Đồi Đa Phú</button>
-            <button type="button" onclick="MapPicker.quickSearch('Tà Xùa')" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill py-0.5 px-2.5 text-white-50" style="font-size:11.5px;">Tà Xùa</button>
-            <button type="button" onclick="MapPicker.quickSearch('Núi Bà Đen')" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill py-0.5 px-2.5 text-white-50" style="font-size:11.5px;">Núi Bà Đen</button>
-            <button type="button" onclick="MapPicker.quickSearch('Fansipan')" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill py-0.5 px-2.5 text-white-50" style="font-size:11.5px;">Fansipan</button>
-            <button type="button" onclick="MapPicker.quickSearch('Hồ Tuyền Lâm')" class="btn btn-sm btn-dark border border-secondary border-opacity-50 rounded-pill py-0.5 px-2.5 text-white-50" style="font-size:11.5px;">Hồ Tuyền Lâm</button>
-        </div>
         <div id="mapSearchResults" style="max-height:220px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.07);"></div>
         <div id="mapSelectedInfo" style="padding:0.65rem 1.25rem; background:rgba(122,171,58,0.08); display:none; align-items:center; gap:8px;">
             <i class="bi bi-geo-alt-fill" style="color:var(--color-moss,#7aab3a);"></i>

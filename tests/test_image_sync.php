@@ -52,3 +52,4 @@ if ($allPassed) {
     echo "❌ CÓ HÌNH ẢNH CHƯA ĐỒNG BỘ HOẶC BỊ LỖI!\n";
     exit(1);
 }
+

@@ -755,16 +755,6 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                         </button>
                     </div>
 
-                    <!-- Quick suggestions -->
-                    <div style="padding:0 1.25rem 0.75rem; background:#ffffff; border-bottom:1px solid #edf0e8; display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12px;">
-                        <span class="text-muted small"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Gợi ý:</span>
-                        <button type="button" onclick="MapPicker.quickSearch('Đồi Đa Phú')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Đồi Đa Phú</button>
-                        <button type="button" onclick="MapPicker.quickSearch('Tà Xùa')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Tà Xùa</button>
-                        <button type="button" onclick="MapPicker.quickSearch('Núi Bà Đen')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Núi Bà Đen</button>
-                        <button type="button" onclick="MapPicker.quickSearch('Fansipan')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Fansipan</button>
-                        <button type="button" onclick="MapPicker.quickSearch('Hồ Tuyền Lâm')" class="btn btn-sm btn-light border rounded-pill py-0.5 px-2.5" style="font-size:11.5px;">Hồ Tuyền Lâm</button>
-                    </div>
-
                     <!-- Search results -->
                     <div id="mapSearchResults" style="max-height:240px; overflow-y:auto; border-bottom:1px solid #edf0e8; background:#ffffff;"></div>
 
