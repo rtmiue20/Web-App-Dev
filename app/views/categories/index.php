@@ -2,11 +2,16 @@
 $title = 'Chuyên mục dã ngoại';
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
 ?>
-<div class="app-container">
-    <div class="d-flex flex-wrap justify-content-between align-items-center page-header gap-3">
+<div class="app-container" style="max-width: 1100px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 page-header">
         <div>
-            <h1 class="page-title">Chuyên mục</h1>
-            <p class="page-subtitle">Khám phá các bài viết và kinh nghiệm theo từng chủ đề dã ngoại.</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge" style="background: rgba(155, 189, 85, 0.18); color: var(--color-moss); border: 1px solid rgba(155, 189, 85, 0.35);">
+                    <i class="bi bi-grid-fill me-1"></i>Chủ đề dã ngoại
+                </span>
+            </div>
+            <h1 class="page-title mb-1">Chuyên mục</h1>
+            <p class="page-subtitle mb-0">Khám phá các bài viết và kinh nghiệm theo từng chủ đề dã ngoại.</p>
         </div>
         <?php if (Session::has('user') && (((Session::get('user')['role_name'] ?? '') === 'admin') || (int)(Session::get('user')['role_id'] ?? 0) === 2)): ?>
             <div class="d-flex gap-2">
@@ -63,5 +68,46 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : '';
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- Thanh phân trang Chuyên mục (Đồng bộ chuẩn Nature Glass giống Dụng cụ) -->
+        <?php if (($totalCategories ?? 0) > 0): ?>
+            <nav aria-label="Điều hướng phân trang chuyên mục" class="mt-5 mb-4">
+                <ul class="pagination forum-pagination justify-content-center flex-wrap">
+                    <!-- Nút trang trước -->
+                    <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories?page=<?= max(1, $currentPage - 1) ?>" 
+                           tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
+                           aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
+                            <i class="bi bi-chevron-left me-1"></i> Trước
+                        </a>
+                    </li>
+
+                    <!-- Danh sách số trang -->
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
+                            <a class="page-link rounded-pill" 
+                               href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories?page=<?= $i ?>">
+                                <?= $i ?>
+                            </a>
+                        </li>
+                    <?php endfor; ?>
+
+                    <!-- Nút trang sau -->
+                    <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/categories?page=<?= min($totalPages, $currentPage + 1) ?>" 
+                           tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
+                           aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
+                            Sau <i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="text-center text-white-50 small mt-2">
+                    Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($categories) ?> chuyên mục / trang • Tổng số <?= $totalCategories ?> chuyên mục)
+                </div>
+            </nav>
+        <?php endif; ?>
     <?php endif; ?>
 </div>

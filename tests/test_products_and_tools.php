@@ -49,7 +49,8 @@ assert(count($emptyTools) === 0, "Không xóa hết dụng cụ cũ!");
 $productModel->syncPostProducts($testPostId, $sampleProductIds);
 echo "6. Khôi phục lại dụng cụ bài viết 1 thành công." . PHP_EOL;
 
-// 7. Kiểm tra thêm dụng cụ mới với người chia sẻ (user_id = 7)
+// 7. Kiểm tra thêm dụng cụ mới với người chia sẻ (user_id = 1 - admin)
+$testUserId = 1;
 $newToolId = $productModel->create(
     1,
     'Dao đi rừng sinh tồn đa năng Morakniv',
@@ -58,7 +59,7 @@ $newToolId = $productModel->create(
     'Thép carbon sắc bén, cán nhựa chống trượt an toàn',
     'https://shopee.vn/search?keyword=dao%20morakniv',
     1,
-    7
+    $testUserId
 );
 echo "7. Thêm dụng cụ mới thành công, ID: {$newToolId}" . PHP_EOL;
 assert($newToolId > 0, "Không tạo được dụng cụ mới!");
@@ -67,7 +68,7 @@ assert($newToolId > 0, "Không tạo được dụng cụ mới!");
 $newTool = $productModel->findById($newToolId);
 echo "8. Người chia sẻ dụng cụ: " . ($newTool['author_username'] ?? 'Không rõ') . PHP_EOL;
 assert(!empty($newTool['author_username']), "Không lấy được tên người chia sẻ!");
-assert((int)$newTool['user_id'] === 7, "User ID người chia sẻ không đúng!");
+assert((int)$newTool['user_id'] === $testUserId, "User ID người chia sẻ không đúng!");
 
 // 9. Kiểm tra cập nhật dụng cụ
 $updateSuccess = $productModel->update(
@@ -92,5 +93,52 @@ $deleteSuccess = $productModel->delete($newToolId);
 echo "10. Xóa dụng cụ thử nghiệm: " . ($deleteSuccess ? "Thành công" : "Thất bại") . PHP_EOL;
 assert($deleteSuccess === true, "Xóa dụng cụ thất bại!");
 assert($productModel->findById($newToolId) === null, "Dụng cụ vẫn còn trong CSDL sau khi xóa!");
+
+// 11. Kiểm tra logic phê duyệt: Dụng cụ từ bài viết pending KHÔNG được hiển thị, khi duyệt thì mới hiển thị
+$memberUserId = 2; // minh (member)
+$pendingToolId = $productModel->create(
+    1,
+    'Lều cắm trại test duyệt tự động',
+    500000,
+    'assets/img/tent-forest.png',
+    'Mô tả test',
+    'https://shopee.vn',
+    1,
+    $memberUserId
+);
+// Gán dụng cụ vào bài viết 2 (đang pending)
+$productModel->syncPostProducts(2, [$pendingToolId]);
+Database::execute("UPDATE posts SET status = 'pending' WHERE id = 2");
+
+$visibleListPending = $productModel->getAll();
+$isFoundInPending = false;
+foreach ($visibleListPending as $vp) {
+    if ((int)$vp['id'] === $pendingToolId) {
+        $isFoundInPending = true;
+        break;
+    }
+}
+assert($isFoundInPending === false, "LỖI: Dụng cụ từ bài viết pending lại xuất hiện ở kho cộng đồng!");
+echo "11.1 Dụng cụ từ bài viết pending được ẩn khỏi kho cộng đồng chính xác." . PHP_EOL;
+
+// Admin duyệt bài viết 2 sang published
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 2");
+$visibleListPublished = $productModel->getAll();
+$isFoundInPublished = false;
+foreach ($visibleListPublished as $vp) {
+    if ((int)$vp['id'] === $pendingToolId) {
+        $isFoundInPublished = true;
+        break;
+    }
+}
+assert($isFoundInPublished === true, "LỖI: Dụng cụ từ bài viết published không xuất hiện sau khi duyệt!");
+echo "11.2 Khi bài viết được Admin duyệt, dụng cụ tự động xuất hiện ở kho cộng đồng chính xác." . PHP_EOL;
+
+// Dọn dẹp test
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 2");
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 1");
+Database::execute("UPDATE posts SET status = 'published' WHERE id = 3");
+$productModel->syncPostProducts(2, []);
+$productModel->delete($pendingToolId);
 
 echo "=== TẤT CẢ CÁC BƯỚC KIỂM THỬ ĐÃ THÀNH CÔNG VÀ CHÍNH XÁC! ===" . PHP_EOL;

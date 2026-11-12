@@ -8,7 +8,13 @@
 class ChatbotService
 {
     private string $apiKey;
-    private string $apiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+    private array $candidateModels = [
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-1.5-flash',
+        'gemini-flash-latest',
+        'gemini-flash-lite-latest',
+    ];
 
     public function __construct()
     {
@@ -27,6 +33,18 @@ class ChatbotService
                 $this->apiKey = trim((string)API_KEY);
             } elseif (defined('GEMINI_API_KEY') && GEMINI_API_KEY !== '' && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
                 $this->apiKey = trim((string)GEMINI_API_KEY);
+            }
+        }
+
+        if ($this->apiKey === '') {
+            $envKey = getenv('GEMINI_API_KEY')
+                ?: getenv('API_KEY')
+                ?: ($_ENV['GEMINI_API_KEY'] ?? '')
+                ?: ($_ENV['API_KEY'] ?? '')
+                ?: ($_SERVER['GEMINI_API_KEY'] ?? '')
+                ?: ($_SERVER['API_KEY'] ?? '');
+            if ($envKey !== '') {
+                $this->apiKey = trim((string)$envKey);
             }
         }
     }
@@ -58,12 +76,10 @@ class ChatbotService
     }
 
     /**
-     * Gọi Google Gemini API REST endpoint
+     * Gọi Google Gemini API REST endpoint với cơ chế fallback model tự động
      */
     private function callGeminiApi(string $message, array $history = []): array
     {
-        $url = $this->apiEndpoint . '?key=' . urlencode($this->apiKey);
-
         $systemInstruction = $this->buildSystemInstruction();
 
         $contents = [];
@@ -100,32 +116,38 @@ class ChatbotService
             ]
         ];
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json; charset=utf-8'
-        ]);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $encodedPayload = json_encode($payload);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
+        foreach ($this->candidateModels as $modelName) {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . urlencode($this->apiKey);
 
-        if ($curlError === '' && $httpCode === 200 && $response) {
-            $json = json_decode($response, true);
-            if (!empty($json['candidates'][0]['content']['parts'][0]['text'])) {
-                $replyText = trim($json['candidates'][0]['content']['parts'][0]['text']);
-                return [
-                    'success' => true,
-                    'reply' => $replyText,
-                    'source' => 'gemini_ai',
-                    'model' => 'Gemini 3.5 Flash'
-                ];
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $encodedPayload);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json; charset=utf-8'
+            ]);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError === '' && $httpCode === 200 && $response) {
+                $json = json_decode($response, true);
+                if (!empty($json['candidates'][0]['content']['parts'][0]['text'])) {
+                    $replyText = trim($json['candidates'][0]['content']['parts'][0]['text']);
+                    return [
+                        'success' => true,
+                        'reply' => $replyText,
+                        'source' => 'gemini_ai',
+                        'model' => 'Google Gemini AI (' . $modelName . ')'
+                    ];
+                }
             }
         }
 

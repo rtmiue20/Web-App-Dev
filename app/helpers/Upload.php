@@ -112,6 +112,65 @@ class Upload
     }
 
     /**
+     * Lưu ảnh từ chuỗi Base64 Data URI (phục vụ chức năng cắt/căn chỉnh ảnh đại diện)
+     */
+    public static function fromBase64(string $dataUrl, string $subDir = 'avatars'): string
+    {
+        if (!preg_match('/\A[a-z0-9_-]+\z/i', $subDir)) {
+            throw new InvalidArgumentException('Thư mục tải ảnh không hợp lệ.');
+        }
+
+        if (!preg_match('#\Adata:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=\r\n]+)\z#i', $dataUrl, $matches)) {
+            throw new Exception('Dữ liệu ảnh đại diện không hợp lệ.');
+        }
+
+        $binary = base64_decode($matches[2], true);
+        if ($binary === false || strlen($binary) === 0) {
+            throw new Exception('Không thể giải mã dữ liệu ảnh.');
+        }
+
+        if (strlen($binary) > self::MAX_SIZE) {
+            throw new Exception('Ảnh vượt quá dung lượng 2MB.');
+        }
+
+        // Quét nội dung chặn Polyglot code độc hại
+        if (preg_match('/<\?php|<\?=|<script\b/i', substr($binary, 0, 65536))) {
+            throw new Exception('Phát hiện nội dung mã độc hại bên trong file ảnh.');
+        }
+
+        $imageInfo = @getimagesizefromstring($binary);
+        if ($imageInfo === false || !isset(self::ALLOWED[$imageInfo['mime'] ?? ''])) {
+            throw new Exception('Chỉ chấp nhận định dạng JPG, PNG, WEBP.');
+        }
+
+        $width = (int)($imageInfo[0] ?? 0);
+        $height = (int)($imageInfo[1] ?? 0);
+        if ($width <= 0 || $height <= 0 || $width > self::MAX_DIMENSION || $height > self::MAX_DIMENSION) {
+            throw new Exception('Kích thước ảnh không hợp lệ.');
+        }
+
+        $ext = self::ALLOWED[$imageInfo['mime']];
+        $dir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR
+            . 'uploads' . DIRECTORY_SEPARATOR . $subDir;
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0755, true) && !is_dir($dir)) {
+                throw new RuntimeException('Không thể tạo thư mục lưu ảnh.');
+            }
+        }
+
+        $name = bin2hex(random_bytes(16)) . '.' . $ext;
+        $destination = $dir . DIRECTORY_SEPARATOR . $name;
+
+        if (file_put_contents($destination, $binary) === false) {
+            throw new RuntimeException('Không thể lưu file ảnh vào máy chủ.');
+        }
+
+        @chmod($destination, 0644);
+
+        return 'uploads/' . $subDir . '/' . $name;
+    }
+
+    /**
      * Upload nhiều ảnh cùng lúc, trả về mảng các đường dẫn ảnh thành công
      */
     public static function multipleImages(array $files, string $subDir = 'posts'): array

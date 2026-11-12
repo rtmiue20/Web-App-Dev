@@ -16,13 +16,26 @@ class CategoryController extends Controller
     }
 
     /**
-     * Trang xem danh sách chuyên mục công khai cho khách và thành viên.
+     * Trang xem danh sách chuyên mục công khai cho khách và thành viên (có phân trang đồng bộ).
      */
     public function index(): void
     {
+        $allCategories = $this->categoryService->getAllCategories();
+        $totalCategories = count($allCategories);
+        $limit = 6;
+        $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $totalPages = $totalCategories > 0 ? (int)ceil($totalCategories / $limit) : 1;
+        $currentPage = min($currentPage, $totalPages);
+        $offset = ($currentPage - 1) * $limit;
+        $pagedCategories = array_slice($allCategories, $offset, $limit);
+
         $this->render('categories/index', [
-            'title'      => 'Chuyên mục dã ngoại',
-            'categories' => $this->categoryService->getAllCategories(),
+            'title'           => 'Chuyên mục dã ngoại',
+            'categories'      => $pagedCategories,
+            'currentPage'     => $currentPage,
+            'totalPages'      => $totalPages,
+            'totalCategories' => $totalCategories,
+            'limit'           => $limit,
         ]);
     }
 

@@ -14,7 +14,7 @@ BEGIN
         (SELECT COUNT(*) FROM posts WHERE status = 'pending') AS pending_posts,
         (SELECT COUNT(*) FROM categories) AS total_categories,
         (SELECT COUNT(*) FROM comments) AS total_comments,
-        (SELECT COUNT(*) FROM products WHERE is_shared = 1) AS total_products;
+        (SELECT COUNT(*) FROM products) AS total_products;
 END$$
 
 DELIMITER ;

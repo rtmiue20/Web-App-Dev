@@ -216,7 +216,9 @@ $chartPdo->exec("
     CREATE TABLE comments (id INTEGER PRIMARY KEY, post_id INTEGER, user_id INTEGER, created_at TEXT);
 ");
 
-$dayAgo = static fn(int $n, string $time = '10:30:00'): string => date('Y-m-d', strtotime("-{$n} days")) . ' ' . $time;
+$dayAgo = function (int $n, string $time = '10:30:00'): string {
+    return date('Y-m-d', strtotime("-{$n} days")) . ' ' . $time;
+};
 $insUser    = $chartPdo->prepare('INSERT INTO users (username, created_at) VALUES (?, ?)');
 $insPost    = $chartPdo->prepare('INSERT INTO posts (user_id, title, created_at) VALUES (1, ?, ?)');
 $insComment = $chartPdo->prepare('INSERT INTO comments (post_id, user_id, created_at) VALUES (1, 1, ?)');

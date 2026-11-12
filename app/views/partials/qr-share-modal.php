@@ -33,19 +33,28 @@
                 <!-- Chuyển đổi chế độ URL khi chạy localhost (Localhost <-> LAN Wi-Fi IP) -->
                 <div id="qrModalModeSwitch" class="d-none mb-3">
                     <div class="d-inline-flex p-1 rounded-pill border" style="background: #eef0ea; border-color: rgba(35, 38, 31, 0.12) !important;">
-                        <button type="button" id="btnQrModeStandard"
-                                class="btn btn-sm rounded-pill px-3 py-1 fw-semibold"
-                                style="font-size: 11.5px; background: #2f5e2e; color: #ffffff;"
-                                onclick="ForumAjax.switchQrUrlMode('standard')">
-                            <i class="bi bi-laptop me-1"></i>Link gốc
-                        </button>
                         <button type="button" id="btnQrModeLan"
                                 class="btn btn-sm rounded-pill px-3 py-1 fw-semibold"
-                                style="font-size: 11.5px; background: transparent; color: #3a4235;"
+                                style="font-size: 11.5px; background: #2f5e2e; color: #ffffff;"
                                 onclick="ForumAjax.switchQrUrlMode('lan')"
                                 title="Dùng IP mạng Wi-Fi nội bộ để điện thoại cùng Wi-Fi quét mở trực tiếp">
-                            <i class="bi bi-wifi me-1"></i>IP Wi-Fi
+                            <i class="bi bi-wifi me-1"></i>IP Wi-Fi (Điện thoại)
                         </button>
+                        <button type="button" id="btnQrModeStandard"
+                                class="btn btn-sm rounded-pill px-3 py-1 fw-semibold"
+                                style="font-size: 11.5px; background: transparent; color: #3a4235;"
+                                onclick="ForumAjax.switchQrUrlMode('standard')">
+                            <i class="bi bi-laptop me-1"></i>Localhost
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Thông báo hướng dẫn kết nối cùng mạng Wi-Fi -->
+                <div id="qrModalWifiNotice" class="alert py-2 px-3 mb-3 text-start d-flex align-items-center gap-2 border shadow-none"
+                     style="font-size: 11.5px; border-radius: 14px; background: rgba(47, 94, 46, 0.08); border-color: rgba(47, 94, 46, 0.22) !important; color: #1e3a1d;">
+                    <i class="bi bi-router text-success fs-6 flex-shrink-0"></i>
+                    <div>
+                        <strong>Yêu cầu Wi-Fi:</strong> Điện thoại cần kết nối <strong>cùng mạng Wi-Fi</strong> với máy tính để quét mở link IP <code id="qrModalNoticeIp" class="px-1 py-0.5 rounded bg-white text-dark fw-bold">192.168.1.4:8000</code>.
                     </div>
                 </div>
 
@@ -69,12 +78,12 @@
                          style="width: 212px; height: 212px; object-fit: contain; display: block; position: relative; z-index: 1;">
                 </div>
 
-                <p class="small text-muted mb-3 px-2" style="font-size: 12.5px; line-height: 1.45;">
-                    <i class="bi bi-phone me-1 text-success"></i>Mở <strong>Camera điện thoại</strong> hoặc <strong>Zalo</strong> quét mã để mở ngay trên di động và tham gia cùng nhóm.
+                <p class="small text-muted mb-2.5 px-2" style="font-size: 12.5px; line-height: 1.45;">
+                    <i class="bi bi-phone me-1 text-success"></i>Mở <strong>Camera điện thoại</strong> hoặc <strong>Zalo</strong> quét mã để mở ngay trên di động.
                 </p>
 
                 <!-- Ô liên kết & Nút Sao chép nhanh -->
-                <div class="input-group input-group-sm rounded-pill overflow-hidden border shadow-sm" style="background: #ffffff; border-color: rgba(35, 38, 31, 0.16) !important;">
+                <div class="input-group input-group-sm rounded-pill overflow-hidden border shadow-sm mb-2" style="background: #ffffff; border-color: rgba(35, 38, 31, 0.16) !important;">
                     <span class="input-group-text bg-white border-0 ps-3 text-muted">
                         <i class="bi bi-link-45deg fs-6"></i>
                     </span>
@@ -85,6 +94,24 @@
                             onclick="ForumAjax.copyQrShareUrl()">
                         <i class="bi bi-clipboard-check me-1"></i>Sao chép
                     </button>
+                </div>
+
+                <!-- Tùy chỉnh URL nếu dùng mạng 4G/LTE ngoài Wi-Fi hoặc qua Tunnel (Ngrok, Cloudflare) -->
+                <div class="text-start mt-2">
+                    <a class="small text-decoration-none d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" href="#qrCustomUrlCollapse" role="button" aria-expanded="false" style="font-size: 11.5px; color: #4b663b;">
+                        <i class="bi bi-globe2"></i>Tùy chỉnh URL nếu quét bằng 4G / Tunnel ngoài Wi-Fi <i class="bi bi-chevron-down" style="font-size: 9px;"></i>
+                    </a>
+                    <div class="collapse mt-2" id="qrCustomUrlCollapse">
+                        <div class="input-group input-group-sm rounded-pill overflow-hidden border shadow-none" style="background: #ffffff; border-color: rgba(35, 38, 31, 0.18) !important;">
+                            <input type="text" id="qrCustomUrlInput" class="form-control border-0 px-3 small" placeholder="https://abc.ngrok-free.app/posts/2" style="font-size: 11.5px;">
+                            <button type="button" class="btn btn-dark px-3 fw-semibold" style="font-size: 11.5px;" onclick="ForumAjax.applyCustomQrUrl()">
+                                Sinh lại QR
+                            </button>
+                        </div>
+                        <div class="text-muted small mt-1 px-1" style="font-size: 11px;">
+                            Dán đường link public (ví dụ qua ngrok hoặc Cloudflare Tunnel) để bất kỳ ai dù ở bất kỳ mạng nào cũng có thể quét mở ngay.
+                        </div>
+                    </div>
                 </div>
             </div>
 
