@@ -1,5 +1,5 @@
 <?php
-chdir('C:/Users/MinhTrieu/UEH/WebDev/Project');
+chdir(dirname(__DIR__));
 require_once 'app/bootstrap.php';
 require_once 'app/controllers/OutdoorController.php';
 
@@ -90,7 +90,7 @@ assert(strlen($out) > 0, "Không render được view map");
 assert(str_contains($out, 'Bản đồ địa điểm dã ngoại'), "Thiếu tiêu đề Bản đồ");
 assert(str_contains($out, 'places-map'), "Thiếu container bản đồ places-map");
 assert(str_contains($out, 'leaflet.js'), "Thiếu thư viện Leaflet");
-assert(str_contains($out, 'Núi Bà Đen') || str_contains($out, 'Đèo Hải Vân') || str_contains($out, 'Vũng Tàu'), "Thiếu địa điểm có tọa độ");
+assert(str_contains($out, 'Đà Lạt') || str_contains($out, 'Tà Năng') || str_contains($out, 'Tà Xùa') || str_contains($out, 'Núi Chứa Chan') || str_contains($out, 'Núi Bà Đen'), "Thiếu địa điểm có tọa độ");
 echo "-> OK! Render " . strlen($out) . " bytes\n";
 
 // Test 8: Place Reviews

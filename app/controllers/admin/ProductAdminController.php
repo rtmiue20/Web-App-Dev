@@ -29,7 +29,7 @@ class ProductAdminController extends Controller
             $categoryId = null;
         }
 
-        $productsList = $this->products->getAll($categoryId);
+        $productsList = $this->products->getAllForAdmin($categoryId);
         $categoriesList = $this->categories->getAll();
 
         $this->render('admin/products/index', [

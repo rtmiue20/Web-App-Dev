@@ -55,8 +55,15 @@ class DemoSeeder
     private static function ensureColumn(string $table, string $column, string $definitionSql): void
     {
         try {
-            $col = Database::query("SHOW COLUMNS FROM `{$table}` LIKE :col", ['col' => $column]);
-            if (empty($col)) {
+            $cols = Database::query("SHOW COLUMNS FROM `{$table}`");
+            $hasCol = false;
+            foreach ($cols as $c) {
+                if (($c['Field'] ?? '') === $column) {
+                    $hasCol = true;
+                    break;
+                }
+            }
+            if (!$hasCol) {
                 Database::execute("ALTER TABLE `{$table}` ADD COLUMN {$definitionSql}");
             }
         } catch (Throwable $e) {
@@ -315,9 +322,12 @@ class DemoSeeder
             if (empty($catRows) && !self::isSeeded('categories_seeded')) {
                 Database::execute(
                     "INSERT IGNORE INTO categories (id, name, description) VALUES
-                     (1, 'Cắm trại', 'Kinh nghiệm cắm trại, hạ trại qua đêm và chọn bãi cắm đẹp'),
-                     (2, 'Trekking', 'Lịch trình leo núi, đi rừng, săn mây và kỹ năng sinh tồn'),
-                     (3, 'Dụng cụ', 'Đánh giá & tư vấn lều trại, balo, bếp dã ngoại, trang bị')"
+                     (1, 'Cắm trại & Glamping', 'Kinh nghiệm hạ trại, chọn bãi cắm ven hồ, cắm trại rừng thông & dã ngoại gia đình.'),
+                     (2, 'Trekking & Leo núi', 'Chinh phục đỉnh cao, săn mây, băng rừng và khám phá những cung đường mạo hiểm.'),
+                     (3, 'Dụng cụ & Đồ phượt', 'Đánh giá và chia sẻ kinh nghiệm chọn lều, túi ngủ, bếp ga, balo, dao sinh tồn.'),
+                     (4, 'Kỹ năng sinh tồn', 'Kỹ năng nhóm lửa, lọc nước, sơ cứu ngoài trời, định vị bản đồ GPS và ứng phó thời tiết.'),
+                     (5, 'Kinh nghiệm chuyến đi', 'Cẩm nang lịch trình thực tế, review bãi cắm, chi phí, tọa độ đẹp và kinh nghiệm di chuyển.'),
+                     (6, 'Bạn đồng hành & Ghép xe', 'Rủ rê đồng đội, kết nối phượt thủ, ghép xe máy & ô tô cho các chuyến dã ngoại cuối tuần.')"
                 );
                 $cat1 = 1;
                 $cat2 = 2;
@@ -353,6 +363,13 @@ class DemoSeeder
                             'cnt3' => "Khi đi cắm trại vùng núi cao như Tà Xùa (Sơn La) hay Sa Pa, độ ẩm ban đêm và sương mù rất dày.\n\nTiêu chí chọn lều:\n1. Chọn lều 2 lớp có chỉ số chống nước từ PU3000mm trở lên.\n2. Khung nhôm hợp kim nhẹ và chịu gió tốt trên sống lưng khủng long.\n3. Đi kèm tấm lót đáy (footprint) để cách ẩm từ mặt đất."
                         ]
                     );
+
+                    Database::execute("
+                        INSERT IGNORE INTO post_images (post_id, image_url) VALUES
+                        (1, 'uploads/posts/post_da_lat_san_may.jpg'),
+                        (2, 'uploads/posts/post_ta_nang_phan_dung.jpg'),
+                        (3, 'uploads/posts/post_leu_chong_mua_ta_xua.png')
+                    ");
                 }
                 self::markSeeded('posts_seeded');
             }

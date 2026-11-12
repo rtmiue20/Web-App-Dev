@@ -5,7 +5,9 @@ $userId = is_array($user) ? (int) $user['id'] : null;
 $isAdmin = class_exists('Auth') ? Auth::isModerator($user) : (is_array($user) && (((int) ($user['role_id'] ?? 0) === 2) || (($user['role_name'] ?? '') === 'admin')));
 $isMember = class_exists('Auth') ? Auth::isMember($user) : is_array($user);
 $isGuestAccount = is_array($user) && !$isMember;
-$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$escape = function ($value): string {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <main class="app-container" style="max-width: 1100px;">
     <!-- Page Header -->
@@ -94,20 +96,20 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </form>
         </section>
     <?php elseif ($isGuestAccount): ?>
-        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.14); border: 1px solid rgba(155, 189, 85, 0.32);">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-eye-fill text-success fs-5"></i>
+                <i class="bi bi-eye-fill fs-5" style="color: var(--color-moss);"></i>
                 <span class="text-white">Tài khoản của bạn đang ở vai trò <strong>Khách (Chỉ xem)</strong>. Bạn có thể xem và đánh dấu thử các mẫu checklist công khai, nhưng không thể tạo checklist mới.</span>
             </div>
         </div>
     <?php else: ?>
-        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.25);">
+        <div class="p-3 mb-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background: rgba(155, 189, 85, 0.14); border: 1px solid rgba(155, 189, 85, 0.32);">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-info-circle-fill text-success fs-5"></i>
+                <i class="bi bi-info-circle-fill fs-5" style="color: var(--color-moss);"></i>
                 <span class="text-white">Bạn đang xem danh sách dã ngoại công khai.</span>
             </div>
-            <a href="<?= $escape($baseUrl) ?>/login" class="nature-btn-primary py-1 px-3" style="width: auto; height: 36px; font-size: 13px;">
-                Đăng nhập để tạo checklist riêng
+            <a href="<?= $escape($baseUrl) ?>/login" class="nature-btn-primary py-1 px-3.5 d-inline-flex align-items-center gap-1" style="width: auto; height: 38px; font-size: 13.5px;">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập để tạo checklist riêng
             </a>
         </div>
     <?php endif; ?>
@@ -162,7 +164,14 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
 
                     <!-- Author Info & Progress -->
                     <div class="d-flex align-items-center justify-content-between text-muted small mb-3 pb-2 border-bottom">
-                        <span><i class="bi bi-person me-1"></i><?= $escape($checklist['username']) ?> · <?= date('d/m/Y', strtotime($checklist['created_at'])) ?></span>
+                        <span class="d-inline-flex align-items-center gap-1.5">
+                            <?php if (!empty($checklist['avatar_path'])): ?>
+                                <img src="<?= $escape(upload_url($checklist['avatar_path'])) ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="20" height="20">
+                            <?php else: ?>
+                                <i class="bi bi-person me-1"></i>
+                            <?php endif; ?>
+                            <span><?= $escape($checklist['username']) ?> · <?= date('d/m/Y', strtotime($checklist['created_at'])) ?></span>
+                        </span>
                         <span class="fw-semibold text-success progress-text-<?= (int)$checklist['id'] ?>" style="font-size: 11.5px;">
                             0/<?= $totalItems ?> món
                         </span>
@@ -192,7 +201,9 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                             </button>
                             <button type="button" class="btn btn-sm rounded-pill py-1 px-2.5 fw-semibold"
                                     style="font-size: 11.5px; background: rgba(35, 61, 44, 0.08); color: #233d2c; border: 1px solid rgba(35, 61, 44, 0.22);"
-                                    onclick="ForumAjax.openQrShareModal('/checklists#checklist-card-<?= (int)$checklist['id'] ?>', '<?= $escape(addslashes($checklist['title'])) ?>', 'checklist')"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#qrShareModal"
+                                    onclick="if(window.ForumAjax) ForumAjax.openQrShareModal('/checklists#checklist-card-<?= (int)$checklist['id'] ?>', <?= htmlspecialchars(json_encode((string)($checklist['title'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, 'checklist')"
                                     title="Mã QR chia sẻ checklist qua điện thoại">
                                 <i class="bi bi-qr-code-scan text-success me-1"></i>Mã QR chia sẻ
                             </button>
@@ -206,18 +217,19 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         <?php endforeach; ?>
     </div>
 
-    <!-- Phân trang Checklist (2 ô / trang) -->
-    <?php if (isset($totalPages) && $totalPages > 1): ?>
+    <!-- Thanh phân trang checklist (Đồng bộ chuẩn Nature Glass) -->
+    <?php if (($totalChecklists ?? 0) > 0 && ($totalPages ?? 1) > 1): ?>
         <?php
-        $typeParam = (!empty($currentType) && $currentType !== 'all') ? 'type=' . urlencode($currentType) . '&' : '';
+        $typeQuery = (!empty($currentType) && $currentType !== 'all') ? 'type=' . urlencode($currentType) . '&' : '';
         $currentPage = isset($currentPage) ? (int)$currentPage : 1;
+        $totalPages = isset($totalPages) ? (int)$totalPages : 1;
         ?>
         <nav aria-label="Điều hướng phân trang checklist" class="mt-5 mb-4">
             <ul class="pagination forum-pagination justify-content-center flex-wrap">
                 <!-- Nút trang trước -->
                 <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
                     <a class="page-link rounded-pill" 
-                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists?<?= $typeParam ?>page=<?= max(1, $currentPage - 1) ?>" 
+                       href="<?= $escape($baseUrl) ?>/checklists?<?= $typeQuery ?>page=<?= max(1, $currentPage - 1) ?>" 
                        tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
                        aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
                         <i class="bi bi-chevron-left me-1"></i> Trước
@@ -228,7 +240,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
                         <a class="page-link rounded-pill" 
-                           href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists?<?= $typeParam ?>page=<?= $i ?>">
+                           href="<?= $escape($baseUrl) ?>/checklists?<?= $typeQuery ?>page=<?= $i ?>">
                             <?= $i ?>
                         </a>
                     </li>
@@ -237,7 +249,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                 <!-- Nút trang sau -->
                 <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
                     <a class="page-link rounded-pill" 
-                       href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/checklists?<?= $typeParam ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
+                       href="<?= $escape($baseUrl) ?>/checklists?<?= $typeQuery ?>page=<?= min($totalPages, $currentPage + 1) ?>" 
                        tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
                        aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
                         Sau <i class="bi bi-chevron-right ms-1"></i>
@@ -246,7 +258,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </ul>
 
             <div class="text-center text-white-50 small mt-2">
-                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị 2 checklist / trang • Tổng số <?= $totalChecklists ?? count($checklists) ?> checklist)
+                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($checklists) ?> checklist / trang • Tổng số <?= $totalChecklists ?? count($checklists) ?> checklist)
             </div>
         </nav>
     <?php endif; ?>

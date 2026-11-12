@@ -15,16 +15,13 @@ $currentUserId = Auth::id();
 $isAdmin = Auth::isAdmin();
 $csrfToken = Csrf::token();
 ?>
-<div class="app-container">
+<div class="app-container" style="max-width: 1100px;">
     <!-- Header trang Dụng cụ -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center page-header gap-3 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 page-header">
         <div>
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="nature-badge" style="background: rgba(155, 189, 85, 0.15); color: #fff; border-color: rgba(155, 189, 85, 0.4);">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge" style="background: rgba(155, 189, 85, 0.18); color: var(--color-moss); border: 1px solid rgba(155, 189, 85, 0.35);">
                     <i class="bi bi-tools me-1"></i>Dụng cụ &amp; Thiết bị
-                </span>
-                <span class="badge rounded-pill text-bg-dark border border-secondary border-opacity-25 px-3 py-1 text-white-50">
-                    <i class="bi bi-box-seam me-1"></i><?= $totalItems ?> sản phẩm
                 </span>
             </div>
             <h1 class="page-title mb-1">Dụng cụ &amp; Thiết bị dã ngoại</h1>
@@ -102,9 +99,10 @@ $csrfToken = Csrf::token();
                 $canManage = $isMember && ($isAdmin || $isOwner);
 
                 // Thông tin người chia sẻ
+                $isBqt = empty($prod['author_username']) || (!empty($prod['author_role']) && $prod['author_role'] === 'admin') || (!empty($prod['author_username']) && $prod['author_username'] === 'admin');
                 $sharerName = !empty($prod['author_username']) ? $prod['author_username'] : 'Ban quản trị';
                 $sharerAvatar = !empty($prod['author_avatar']) ? ($baseUrl . '/' . ltrim($prod['author_avatar'], '/')) : ($baseUrl . '/assets/img/celtic-logo.png');
-                $sharerIsAdmin = (!empty($prod['author_role']) && $prod['author_role'] === 'admin');
+                $sharerIsAdmin = $isBqt;
             ?>
                 <div class="col">
                     <div class="nature-card h-100 d-flex flex-column overflow-hidden p-0 position-relative" style="border-radius: 28px; transition: transform 0.25s ease, box-shadow 0.25s ease;">
@@ -154,15 +152,25 @@ $csrfToken = Csrf::token();
 
                             <!-- Người chia sẻ -->
                             <div class="d-flex align-items-center gap-2 mb-3 text-muted" style="font-size: 12.5px;">
-                                <img src="<?= htmlspecialchars($sharerAvatar, ENT_QUOTES, 'UTF-8') ?>" 
-                                     alt="<?= htmlspecialchars($sharerName, ENT_QUOTES, 'UTF-8') ?>" 
-                                     class="rounded-circle border" 
-                                     style="width: 22px; height: 22px; object-fit: cover;">
+                                <?php if ($isBqt || str_contains($sharerAvatar, 'celtic-logo.png')): ?>
+                                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                          style="width: 24px; height: 24px; background: #182313; border: 1.5px solid rgba(155, 189, 85, 0.45); overflow: hidden; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.12);"
+                                          title="Ban quản trị Outdoor Forum">
+                                        <img src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/img/celtic-logo.png" 
+                                             alt="Ban quản trị" 
+                                             style="width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 50%;">
+                                    </span>
+                                <?php else: ?>
+                                    <img src="<?= htmlspecialchars($sharerAvatar, ENT_QUOTES, 'UTF-8') ?>" 
+                                         alt="<?= htmlspecialchars($sharerName, ENT_QUOTES, 'UTF-8') ?>" 
+                                         class="rounded-circle border" 
+                                         style="width: 24px; height: 24px; object-fit: cover;">
+                                <?php endif; ?>
                                 <span class="text-truncate">
                                     Chia sẻ bởi <strong class="text-dark"><?= htmlspecialchars($sharerName, ENT_QUOTES, 'UTF-8') ?></strong>
                                 </span>
                                 <?php if ($sharerIsAdmin): ?>
-                                    <span class="badge text-bg-success rounded-pill px-2 py-0" style="font-size: 10px;">BQT</span>
+                                    <span class="badge text-bg-success rounded-pill px-2 py-0.5" style="font-size: 10px; font-weight: 600;">BQT</span>
                                 <?php endif; ?>
                             </div>
 
@@ -227,7 +235,7 @@ $csrfToken = Csrf::token();
         </div>
 
         <!-- Thanh phân trang dụng cụ (Hiển thị 6 dụng cụ / trang) -->
-        <?php if ($totalPages > 1): ?>
+        <?php if (($totalProducts ?? 0) > 0): ?>
             <nav aria-label="Điều hướng phân trang dụng cụ" class="mt-5 mb-4">
                 <ul class="pagination forum-pagination justify-content-center flex-wrap">
                     <!-- Nút trang trước -->
@@ -262,7 +270,7 @@ $csrfToken = Csrf::token();
                 </ul>
 
                 <div class="text-center text-white-50 small mt-2">
-                    Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị 6 dụng cụ / trang • Tổng số <?= $totalProducts ?> dụng cụ)
+                    Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($paginatedProducts ?? $products) ?> dụng cụ / trang • Tổng số <?= $totalProducts ?> dụng cụ)
                 </div>
             </nav>
         <?php endif; ?>

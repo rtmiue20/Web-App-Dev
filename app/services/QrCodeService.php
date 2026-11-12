@@ -56,10 +56,17 @@ class QrCodeService extends BaseService
         $cleanSize = max(150, min(500, $size));
         $normalizedUrl = $this->normalizeShareUrl($targetUrl);
         $lanUrl = $this->buildLanUrl($normalizedUrl);
+        $lanIp = $this->detectLocalLanIp();
+        $isLocalhost = $this->isLocalhostUrl($normalizedUrl) && ($lanUrl !== $normalizedUrl);
 
-        // 1. Xây dựng URL gọi REST API QuickChart QR (kèm API Key)
+        // Khi chạy trên localhost / máy tính phát triển:
+        // ĐIỆN THOẠI KHÔNG THỂ TRUY CẬP LOCALHOST (sẽ trỏ ngược vào 127.0.0.1 của điện thoại).
+        // Do đó, URL chính mặc định để mã hóa QR phải là $lanUrl (IP Wi-Fi nội bộ) để điện thoại quét mở được ngay!
+        $primaryTargetUrl = $isLocalhost ? $lanUrl : $normalizedUrl;
+
+        // 1. Xây dựng URL gọi REST API QuickChart QR (kèm API Key) mã hóa $primaryTargetUrl
         $quickChartParams = [
-            'text'    => $normalizedUrl,
+            'text'    => $primaryTargetUrl,
             'size'    => $cleanSize,
             'dark'    => '1e2b18',
             'light'   => 'ffffff',
@@ -75,7 +82,7 @@ class QrCodeService extends BaseService
         // 2. Xây dựng URL dự phòng từ GoQR / QRServer REST API
         $goQrParams = [
             'size'    => $cleanSize . 'x' . $cleanSize,
-            'data'    => $normalizedUrl,
+            'data'    => $primaryTargetUrl,
             'color'   => '30-43-24',
             'bgcolor' => '255-255-255',
             'qzone'   => 2,
@@ -83,7 +90,16 @@ class QrCodeService extends BaseService
         ];
         $goQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?' . http_build_query($goQrParams);
 
-        // 3. Xây dựng URL QR cho mạng LAN (nếu đang chạy trên localhost)
+        // 3. Xây dựng URL QR cho localhost (phục vụ nút chuyển đổi "Link gốc")
+        $localQuickChartParams = $quickChartParams;
+        $localQuickChartParams['text'] = $normalizedUrl;
+        $localQrUrl = 'https://quickchart.io/qr?' . http_build_query($localQuickChartParams);
+
+        $localGoQrParams = $goQrParams;
+        $localGoQrParams['data'] = $normalizedUrl;
+        $localFallbackQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?' . http_build_query($localGoQrParams);
+
+        // 4. URL QR cho mạng LAN
         $lanQuickChartParams = $quickChartParams;
         $lanQuickChartParams['text'] = $lanUrl;
         $lanQrUrl = 'https://quickchart.io/qr?' . http_build_query($lanQuickChartParams);
@@ -92,22 +108,24 @@ class QrCodeService extends BaseService
         $lanGoQrParams['data'] = $lanUrl;
         $lanFallbackQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?' . http_build_query($lanGoQrParams);
 
-        // 4. Tải ảnh QR qua cURL (có cache) để trả về Base64 Data URI ngay trong JSON response
-        $dataUri = $this->fetchQrDataUri($quickChartUrl, $goQrUrl, $normalizedUrl, $cleanSize);
+        // 5. Tải ảnh QR qua cURL (có cache) để trả về Base64 Data URI ngay trong JSON response
+        $dataUri = $this->fetchQrDataUri($quickChartUrl, $goQrUrl, $primaryTargetUrl, $cleanSize);
 
         return [
             'title'              => $title !== '' ? $title : 'Chia sẻ chuyến dã ngoại',
             'type'               => $type,
             'type_label'         => $this->mapTypeLabel($type),
-            'target_url'         => $normalizedUrl,
+            'target_url'         => $primaryTargetUrl,
             'original_url'       => $normalizedUrl,
-            'share_url'          => $normalizedUrl,
+            'share_url'          => $primaryTargetUrl,
             'lan_url'            => $lanUrl,
-            'lan_ip'             => $this->detectLocalLanIp(),
-            'is_localhost'       => $this->isLocalhostUrl($normalizedUrl) && ($lanUrl !== $normalizedUrl),
+            'lan_ip'             => $lanIp,
+            'is_localhost'       => $isLocalhost,
             'size'               => $cleanSize,
             'qr_image_url'       => $quickChartUrl,
             'fallback_qr_url'    => $goQrUrl,
+            'local_qr_url'       => $localQrUrl,
+            'local_fallback_url' => $localFallbackQrUrl,
             'lan_qr_url'         => $lanQrUrl,
             'lan_fallback_url'   => $lanFallbackQrUrl,
             'qr_data_uri'        => $dataUri,

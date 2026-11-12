@@ -25,19 +25,28 @@ $defaultImages = [
     <div class="row g-4" id="post-cards-row">
         <?php foreach ($posts as $idx => $post): 
             $postId = (int)$post['id'];
+            $isPending = (($post['status'] ?? 'published') === 'pending');
             $img = !empty($post['image_url']) 
                 ? (str_starts_with($post['image_url'], 'http') ? $post['image_url'] : $baseUrl . '/' . ltrim($post['image_url'], '/'))
                 : $defaultImages[$idx % count($defaultImages)];
             $voteScore = (int)($post['vote_score'] ?? $post['likes'] ?? 0);
             $commentsCount = (int)($post['comments_count'] ?? 0);
+            $viewsCount = (int)($post['views_count'] ?? 0);
         ?>
             <div class="col-12 col-md-6 col-lg-4">
-                <article class="paper-card h-100 d-flex flex-column">
+                <article class="paper-card h-100 d-flex flex-column" <?= $isPending ? 'style="border: 2px solid rgba(245, 158, 11, 0.6) !important; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);"' : '' ?>>
                     <div class="card-header-meta">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="card-meta-tag">
-                                <?= htmlspecialchars($post['category_name'] ?? 'Dã ngoại', ENT_QUOTES, 'UTF-8') ?>
-                            </span>
+                        <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                <span class="card-meta-tag">
+                                    <?= htmlspecialchars($post['category_name'] ?? 'Dã ngoại', ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <?php if ($isPending): ?>
+                                    <span class="badge text-bg-warning text-dark px-2 py-1" style="font-size: 11px; font-weight: 700;">
+                                        <i class="bi bi-hourglass-split me-1"></i>Chờ duyệt
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                             <?php if (!empty($post['location'])): ?>
                                 <span class="badge text-bg-light border small text-muted text-truncate" style="max-width: 170px;">
                                     <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($post['location'], ENT_QUOTES, 'UTF-8') ?>
@@ -52,7 +61,12 @@ $defaultImages = [
                         </h2>
                     </div>
 
-                    <div class="card-image-box">
+                    <div class="card-image-box position-relative">
+                        <?php if (($post['images_count'] ?? 0) > 1): ?>
+                            <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill px-2 py-1 text-white shadow-sm" style="font-size: 11px; z-index: 2; backdrop-filter: blur(4px);" title="Bài viết có <?= (int)$post['images_count'] ?> ảnh">
+                                <i class="bi bi-collection-fill me-1"></i><?= (int)$post['images_count'] ?>
+                            </span>
+                        <?php endif; ?>
                         <img src="<?= htmlspecialchars($img, ENT_QUOTES, 'UTF-8') ?>" 
                              alt="<?= htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8') ?>"
                              loading="lazy">
@@ -100,14 +114,25 @@ $defaultImages = [
                                title="Số bình luận">
                                 <i class="bi bi-chat-dots me-1"></i><?= $commentsCount ?>
                             </a>
+
+                            <span class="text-muted d-inline-flex align-items-center px-2 py-1 rounded-pill"
+                                  style="background: rgba(34, 40, 31, 0.05); font-size: 0.8rem;"
+                                  title="Số lượt xem bài viết">
+                                <i class="bi bi-eye me-1"></i><?= number_format($viewsCount) ?>
+                            </span>
                         </div>
 
-                        <div class="d-flex align-items-center gap-2 text-truncate">
-                            <span>
-                                <i class="bi bi-person me-1"></i><?= htmlspecialchars($post['username'] ?? 'Thành viên', ENT_QUOTES, 'UTF-8') ?>
+                        <div class="d-flex align-items-center gap-1.5 text-truncate">
+                            <?php if (!empty($post['avatar_path'])): ?>
+                                <img src="<?= htmlspecialchars(upload_url($post['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="18" height="18">
+                            <?php else: ?>
+                                <i class="bi bi-person me-1"></i>
+                            <?php endif; ?>
+                            <span class="text-truncate">
+                                <?= htmlspecialchars($post['username'] ?? 'Thành viên', ENT_QUOTES, 'UTF-8') ?>
                             </span>
                             <span>·</span>
-                            <span>
+                            <span class="text-nowrap">
                                 <?= !empty($post['created_at']) ? date('d/m/Y', strtotime($post['created_at'])) : '' ?>
                             </span>
                         </div>

@@ -2,8 +2,8 @@
 /**
  * Test FR14: Quản lý thành viên & Cấp lại mật khẩu (UserAdminController)
  */
-define('PROJECT_ROOT', 'C:/Users/MinhTrieu/UEH/WebDev/Project');
-define('PHP_BIN', 'D:/xampp/php/php.exe');
+define('PROJECT_ROOT', dirname(__DIR__));
+define('PHP_BIN', PHP_BINARY);
 define('HOST', '127.0.0.1');
 define('PORT', '7656');
 define('BASE', 'http://' . HOST . ':' . PORT);
@@ -90,8 +90,8 @@ $memberCookie = tempnam(sys_get_temp_dir(), 'mem_cookie_');
 $loginPage = httpGet(BASE . '/login', true, $memberCookie);
 $csrf = getCsrfToken($loginPage['body']);
 $memberLogin = httpPost(BASE . '/login', [
-    'email' => 'member@forum.local',
-    'password' => 'member123',
+    'email' => 'minh@forum.local',
+    'password' => '123456',
     '_csrf' => $csrf
 ], $memberCookie);
 assert_test("Đăng nhập tài khoản member", $memberLogin['code'] === 303);
@@ -105,7 +105,7 @@ $loginPage2 = httpGet(BASE . '/login', true, $adminCookie);
 $csrf2 = getCsrfToken($loginPage2['body']);
 $adminLogin = httpPost(BASE . '/login', [
     'email' => 'admin@forum.local',
-    'password' => 'admin123',
+    'password' => '123456',
     '_csrf' => $csrf2
 ], $adminCookie);
 assert_test("Đăng nhập tài khoản admin", $adminLogin['code'] === 303);
@@ -113,7 +113,7 @@ assert_test("Đăng nhập tài khoản admin", $adminLogin['code'] === 303);
 $adminUsersPage = httpGet(BASE . '/admin/users', true, $adminCookie);
 assert_test("Admin truy cập /admin/users -> HTTP 200 OK", $adminUsersPage['code'] === 200);
 assert_test("Trang chứa tiêu đề 'Quản lý Thành viên'", str_contains($adminUsersPage['body'], 'Quản lý Thành viên'));
-assert_test("Trang hiển thị thông tin thành viên (member@forum.local)", str_contains($adminUsersPage['body'], 'member@forum.local'));
+assert_test("Trang hiển thị thông tin thành viên (minh@forum.local)", str_contains($adminUsersPage['body'], 'minh@forum.local'));
 assert_test("Trang có nút 'Cấp lại mật khẩu' cho thành viên", str_contains($adminUsersPage['body'], 'btn-reset-password'));
 
 // 4. Admin cấp lại mật khẩu cho thành viên ID = 2 (member)
@@ -130,20 +130,20 @@ $memberCookieNew = tempnam(sys_get_temp_dir(), 'mem_new_');
 $loginPage3 = httpGet(BASE . '/login', true, $memberCookieNew);
 $csrf3 = getCsrfToken($loginPage3['body']);
 $loginWithNewPass = httpPost(BASE . '/login', [
-    'email' => 'member@forum.local',
+    'email' => 'minh@forum.local',
     'password' => $resetPass,
     '_csrf' => $csrf3,
 ], $memberCookieNew);
 assert_test("Thành viên đăng nhập THÀNH CÔNG với mật khẩu mới vừa cấp lại", $loginWithNewPass['code'] === 303);
 
-// 6. Trả lại mật khẩu ban đầu 'member123' để hệ thống ổn định
+// 6. Trả lại mật khẩu ban đầu '123456' để hệ thống ổn định
 $adminUsersPage2 = httpGet(BASE . '/admin/users', true, $adminCookie);
 $csrfAdmin2 = getCsrfToken($adminUsersPage2['body']);
 $restoreReq = httpPost(BASE . '/admin/users/2/reset-password', [
-    'new_password' => 'member123',
+    'new_password' => '123456',
     '_csrf' => $csrfAdmin2,
 ], $adminCookie);
-assert_test("Khôi phục lại mật khẩu mặc định 'member123'", $restoreReq['code'] === 303);
+assert_test("Khôi phục lại mật khẩu mặc định '123456'", $restoreReq['code'] === 303);
 
 // 7. Test kiểm tra thẻ Thành viên trên Dashboard
 $dashPage = httpGet(BASE . '/admin', true, $adminCookie);

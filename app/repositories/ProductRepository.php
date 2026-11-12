@@ -32,7 +32,23 @@ class ProductRepository extends BaseRepository
                     LEFT JOIN categories c ON c.id = p.category_id
                     LEFT JOIN users u ON u.id = p.user_id
                     LEFT JOIN roles r ON r.id = u.role_id
-                    WHERE p.is_shared = 1';
+                    WHERE (
+                        EXISTS (
+                            SELECT 1
+                            FROM post_products pp
+                            INNER JOIN posts po ON po.id = pp.post_id
+                            WHERE pp.product_id = p.id
+                              AND po.status = \'published\'
+                        )
+                        OR (
+                            p.is_shared = 1
+                            AND (
+                                r.name IN (\'admin\', \'moderator\')
+                                OR p.user_id IS NULL
+                                OR NOT EXISTS (SELECT 1 FROM post_products pp2 WHERE pp2.product_id = p.id)
+                            )
+                        )
+                    )';
             $params = [];
 
             if ($categoryId !== null && $categoryId > 0) {
@@ -46,10 +62,27 @@ class ProductRepository extends BaseRepository
             try {
                 $sql2 = 'SELECT p.*, c.name AS category_name
                          FROM products p
-                         LEFT JOIN categories c ON c.id = p.category_id';
+                         LEFT JOIN categories c ON c.id = p.category_id
+                         WHERE (
+                             EXISTS (
+                                 SELECT 1
+                                 FROM post_products pp
+                                 INNER JOIN posts po ON po.id = pp.post_id
+                                 WHERE pp.product_id = p.id
+                                   AND po.status = \'published\'
+                             )
+                             OR (
+                                 p.is_shared = 1
+                                 AND (
+                                     p.user_id IS NULL
+                                     OR p.user_id IN (SELECT u2.id FROM users u2 INNER JOIN roles r2 ON r2.id = u2.role_id WHERE r2.name IN (\'admin\', \'moderator\'))
+                                     OR NOT EXISTS (SELECT 1 FROM post_products pp2 WHERE pp2.product_id = p.id)
+                                 )
+                             )
+                         )';
                 $params2 = [];
                 if ($categoryId !== null && $categoryId > 0) {
-                    $sql2 .= ' WHERE p.category_id = :category_id';
+                    $sql2 .= ' AND p.category_id = :category_id';
                     $params2['category_id'] = $categoryId;
                 }
                 $sql2 .= ' ORDER BY p.id DESC';
@@ -57,6 +90,30 @@ class ProductRepository extends BaseRepository
             } catch (PDOException $ex2) {
                 return [];
             }
+        }
+    }
+
+    /**
+     * Lấy toàn bộ dụng cụ dành cho Quản trị viên (Admin Panel) để quản lý
+     */
+    public function findAllForAdmin(?int $categoryId = null): array
+    {
+        try {
+            $sql = 'SELECT p.*, c.name AS category_name,
+                           u.username AS author_username, u.avatar_path AS author_avatar, r.name AS author_role
+                    FROM products p
+                    LEFT JOIN categories c ON c.id = p.category_id
+                    LEFT JOIN users u ON u.id = p.user_id
+                    LEFT JOIN roles r ON r.id = u.role_id';
+            $params = [];
+            if ($categoryId !== null && $categoryId > 0) {
+                $sql .= ' WHERE p.category_id = :category_id';
+                $params['category_id'] = $categoryId;
+            }
+            $sql .= ' ORDER BY p.id DESC';
+            return $this->query($sql, $params);
+        } catch (PDOException $ex) {
+            return $this->findByCategory($categoryId);
         }
     }
 

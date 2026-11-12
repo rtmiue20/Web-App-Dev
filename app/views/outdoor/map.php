@@ -1,6 +1,8 @@
 <?php
 $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$escape = static function ($value): string {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <!-- Leaflet CSS (jsdelivr CDN ổn định) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" crossorigin="">
@@ -148,15 +150,21 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             <h1 class="page-title mb-1">Bản đồ địa điểm dã ngoại</h1>
             <p class="page-subtitle mb-0">Khám phá các điểm cắm trại, cung đường trekking và tọa độ thiên nhiên được cộng đồng chia sẻ và đánh giá.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <?php if (class_exists('Auth') && Auth::check() && Auth::isGuest()): ?>
+                <span class="badge rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1" style="background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.22); font-size: 13px; font-weight: 500;">
+                    <i class="bi bi-eye me-1"></i> Tài khoản Khách (Chỉ xem)
+                </span>
+            <?php else: ?>
+                <a class="nature-btn-primary px-3 py-2 d-inline-flex align-items-center gap-1" href="<?= $escape($baseUrl) ?>/posts/create" style="width: auto; height: 42px; font-size: 13.5px;">
+                    <i class="bi bi-pin-map-fill"></i> Thêm địa điểm mới
+                </a>
+            <?php endif; ?>
             <a class="nature-btn-secondary px-3 py-2 d-inline-flex align-items-center gap-1" href="<?= $escape($baseUrl) ?>/checklists" style="height: 42px; font-size: 13.5px;">
                 <i class="bi bi-card-checklist"></i> Checklist
             </a>
             <a class="nature-btn-secondary px-3 py-2 d-inline-flex align-items-center gap-1" href="<?= $escape($baseUrl) ?>/trips" style="height: 42px; font-size: 13.5px;">
                 <i class="bi bi-people-fill"></i> Nhóm đi chung
-            </a>
-            <a class="nature-btn-primary px-3 py-2 d-inline-flex align-items-center gap-1" href="<?= $escape($baseUrl) ?>/posts/create" style="width: auto; height: 42px; font-size: 13.5px;">
-                <i class="bi bi-pin-map-fill"></i> Thêm địa điểm mới
             </a>
         </div>
     </div>
@@ -176,30 +184,41 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             <div id="places-map" aria-label="Bản đồ địa điểm dã ngoại tương tác"></div>
         </div>
 
+        <?php
+        $fallbackImages = [
+            $baseUrl . '/assets/img/tent-forest.png',
+            $baseUrl . '/assets/img/ta-xua-trek.png',
+            $baseUrl . '/assets/img/moss-form.png',
+        ];
+
+        // Chuẩn hóa và gán display_image_url cho tất cả địa điểm để hiển thị đồng bộ trên thẻ và ghim bản đồ
+        foreach ($places as $idx => &$pl) {
+            $pl['display_image_url'] = !empty($pl['image_url'])
+                ? upload_url($pl['image_url'])
+                : $fallbackImages[$idx % count($fallbackImages)];
+        }
+        unset($pl);
+        ?>
+
         <!-- Places List Grid -->
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h2 class="h5 fw-semibold mb-0 text-white">
-                <i class="bi bi-pin-map-fill text-danger me-1"></i>Danh sách địa điểm nổi bật (<?= count($places) ?>)
+                <i class="bi bi-pin-map-fill text-danger me-1"></i>Danh sách địa điểm nổi bật (<?= $totalPlaces ?? count($places) ?>)
             </h2>
             <span class="text-white-50 small">Nhấp để xem vị trí trên bản đồ</span>
         </div>
 
         <div class="row g-4">
-            <?php foreach ($places as $place): ?>
+            <?php foreach ($places as $idx => $place): ?>
                 <?php
-                $imgUrl = !empty($place['image_url']) ? upload_url($place['image_url']) : null;
+                $cardFallback = $fallbackImages[$idx % count($fallbackImages)];
+                $imgUrl = !empty($place['display_image_url']) ? $place['display_image_url'] : $cardFallback;
                 $rating = (float) $place['average_rating'];
                 $rCount = (int) $place['review_count'];
                 ?>
                 <div class="col-12 col-md-6 col-lg-6">
                     <article class="nature-card h-100 d-flex flex-column p-0 overflow-hidden" style="border-radius: 28px;" id="place-card-<?= (int)$place['id'] ?>">
-                        <?php if ($imgUrl): ?>
-                            <img src="<?= $escape($imgUrl) ?>" alt="<?= $escape($place['title']) ?>" class="place-card-thumb">
-                        <?php else: ?>
-                            <div class="d-flex align-items-center justify-content-center text-muted" style="height: 140px; background: rgba(0,0,0,0.05); border-radius: 28px 28px 0 0;">
-                                <i class="bi bi-image fs-1 opacity-50"></i>
-                            </div>
-                        <?php endif; ?>
+                        <img src="<?= $escape($imgUrl) ?>" alt="<?= $escape($place['title']) ?>" class="place-card-thumb" loading="lazy" onerror="this.onerror=null;this.src='<?= $escape($cardFallback) ?>';">
 
                         <div class="p-4 d-flex flex-column flex-grow-1">
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
@@ -241,6 +260,47 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             <?php endforeach; ?>
         </div>
 
+        <!-- Thanh phân trang Bản đồ địa điểm (Đồng bộ chuẩn Nature Glass giống Dụng cụ) -->
+        <?php if (($totalPlaces ?? 0) > 0): ?>
+            <nav aria-label="Điều hướng phân trang địa điểm" class="mt-5 mb-4">
+                <ul class="pagination forum-pagination justify-content-center flex-wrap">
+                    <!-- Nút trang trước -->
+                    <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= $escape($baseUrl) ?>/places?page=<?= max(1, $currentPage - 1) ?>" 
+                           tabindex="<?= ($currentPage <= 1) ? '-1' : '0' ?>"
+                           aria-disabled="<?= ($currentPage <= 1) ? 'true' : 'false' ?>">
+                            <i class="bi bi-chevron-left me-1"></i> Trước
+                        </a>
+                    </li>
+
+                    <!-- Danh sách số trang -->
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <li class="page-item <?= ($i === $currentPage) ? 'active' : '' ?>">
+                            <a class="page-link rounded-pill" 
+                               href="<?= $escape($baseUrl) ?>/places?page=<?= $i ?>">
+                                <?= $i ?>
+                            </a>
+                        </li>
+                    <?php endfor; ?>
+
+                    <!-- Nút trang sau -->
+                    <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                        <a class="page-link rounded-pill" 
+                           href="<?= $escape($baseUrl) ?>/places?page=<?= min($totalPages, $currentPage + 1) ?>" 
+                           tabindex="<?= ($currentPage >= $totalPages) ? '-1' : '0' ?>"
+                           aria-disabled="<?= ($currentPage >= $totalPages) ? 'true' : 'false' ?>">
+                            Sau <i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="text-center text-white-50 small mt-2">
+                    Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($places) ?> địa điểm / trang • Tổng số <?= $totalPlaces ?> địa điểm)
+                </div>
+            </nav>
+        <?php endif; ?>
+
         <!-- Leaflet Script (jsdelivr CDN) -->
         <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
@@ -248,7 +308,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             var markersMap  = {};
 
             document.addEventListener('DOMContentLoaded', function () {
-                var placesData = <?= json_encode($places, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+                var placesData = <?= json_encode($allPlaces ?? $places, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
                 var baseUrl    = <?= json_encode($baseUrl, JSON_UNESCAPED_SLASHES) ?>;
 
                 var mapEl = document.getElementById('places-map');
@@ -338,6 +398,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
 
                 /* ── Vẽ Markers và Popups ── */
                 var bounds = [];
+                var defaultFallback = (baseUrl ? baseUrl : '') + '/assets/img/tent-forest.png';
 
                 placesData.forEach(function (place) {
                     var lat = Number(place.lat);
@@ -347,10 +408,13 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
                     var marker = createMossMarker(lat, lng).addTo(mapInstance);
                     markersMap[place.id] = marker;
 
-                    // Popup Content
-                    var imgHtml = place.image_url
-                        ? '<img src="' + baseUrl + '/uploads/' + encodeURIComponent(place.image_url) + '" class="place-popup-thumb" alt="' + encodeURIComponent(place.title) + '" loading="lazy">'
-                        : '<div style="height:85px;background:linear-gradient(135deg,#23301a,#141e10);display:flex;align-items:center;justify-content:center;color:rgba(155,189,85,0.7);font-size:2rem;">🏕️</div>';
+                    // Popup Content - URL chuẩn xác từ display_image_url kèm fallback và onerror an toàn
+                    var popupImgUrl = place.display_image_url
+                        ? place.display_image_url
+                        : (place.image_url ? (place.image_url.startsWith('http') ? place.image_url : (baseUrl ? baseUrl : '') + '/' + place.image_url.replace(/^\/+/, '')) : defaultFallback);
+
+                    var safeTitle = (place.title || '').replace(/"/g, '&quot;');
+                    var imgHtml = '<img src="' + popupImgUrl + '" class="place-popup-thumb" alt="' + safeTitle + '" loading="lazy" onerror="this.onerror=null;this.src=\'' + defaultFallback + '\';">';
 
                     var starsHtml = '';
                     var r = Number(place.average_rating) || 0;
