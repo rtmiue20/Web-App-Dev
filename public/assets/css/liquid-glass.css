@@ -1435,7 +1435,6 @@ input[type="file"].nature-input::file-selector-button:hover {
 }
 
 @keyframes chatbotDotPulse {
-
   0%,
   100% {
     transform: scale(1);
@@ -1730,7 +1729,6 @@ input[type="file"].nature-input::file-selector-button:hover {
 }
 
 @keyframes typingBounce {
-
   0%,
   60%,
   100% {

@@ -702,9 +702,9 @@ $galleryCount = count($galleryImages);
 
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
 
-        <div class="weather-forecast-card mt-4 p-3.5 p-md-4 border shadow-sm" style="background: linear-gradient(160deg, rgba(28, 38, 24, 0.95) 0%, rgba(18, 25, 15, 0.98) 100%); border-color: rgba(155, 189, 85, 0.35) !important; border-radius: 28px !important; backdrop-filter: blur(16px); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35) !important;">
+        <div class="weather-forecast-card mt-4 p-4 p-md-5 border shadow-sm" style="background: linear-gradient(160deg, rgba(28, 38, 24, 0.95) 0%, rgba(18, 25, 15, 0.98) 100%); border-color: rgba(155, 189, 85, 0.35) !important; border-radius: 28px !important; backdrop-filter: blur(16px); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35) !important;">
 
-            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2.5 pb-2.5 border-bottom border-white border-opacity-10">
+            <div class="d-flex align-items-center justify-content-between mb-3.5 flex-wrap gap-2.5 pb-3 border-bottom border-white border-opacity-10">
 
                 <div class="d-flex align-items-center gap-2.5">
 
@@ -738,9 +738,9 @@ $galleryCount = count($galleryImages);
 
             </div>
 
-            <div id="weather-forecast-panel" class="p-3.5" style="background: rgba(12, 17, 10, 0.70); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px !important;">
+            <div id="weather-forecast-panel" class="weather-forecast-content pt-1">
 
-                <div class="text-center py-3 text-white small" style="opacity: 0.85;">
+                <div class="text-center py-4 text-white small" style="opacity: 0.85;">
 
                     <span class="spinner-border spinner-border-sm me-2 text-success" role="status"></span>Đang tải dữ liệu thời tiết thực địa...
 

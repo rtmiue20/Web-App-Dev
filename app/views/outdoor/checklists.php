@@ -206,9 +206,13 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
         <?php endforeach; ?>
     </div>
 
-    <!-- Thanh phân trang checklist (Đồng bộ chuẩn Nature Glass giống Dụng cụ) -->
-    <?php if (($totalChecklists ?? 0) > 0): ?>
-        <?php $typeQuery = !empty($currentType) ? 'type=' . urlencode($currentType) . '&' : ''; ?>
+    <!-- Thanh phân trang checklist (Đồng bộ chuẩn Nature Glass) -->
+    <?php if (($totalChecklists ?? 0) > 0 && ($totalPages ?? 1) > 1): ?>
+        <?php
+        $typeQuery = (!empty($currentType) && $currentType !== 'all') ? 'type=' . urlencode($currentType) . '&' : '';
+        $currentPage = isset($currentPage) ? (int)$currentPage : 1;
+        $totalPages = isset($totalPages) ? (int)$totalPages : 1;
+        ?>
         <nav aria-label="Điều hướng phân trang checklist" class="mt-5 mb-4">
             <ul class="pagination forum-pagination justify-content-center flex-wrap">
                 <!-- Nút trang trước -->
@@ -243,7 +247,7 @@ $escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUO
             </ul>
 
             <div class="text-center text-white-50 small mt-2">
-                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($checklists) ?> checklist / trang • Tổng số <?= $totalChecklists ?> checklist)
+                Trang <?= $currentPage ?> / <?= $totalPages ?> (Hiển thị <?= count($checklists) ?> checklist / trang • Tổng số <?= $totalChecklists ?? count($checklists) ?> checklist)
             </div>
         </nav>
     <?php endif; ?>

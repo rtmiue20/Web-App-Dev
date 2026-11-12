@@ -27,23 +27,30 @@ class OutdoorController extends Controller
         $tripType = trim((string) ($_GET['type'] ?? ''));
 
         $allChecklists = $this->checklists->getVisibleForUser($userId, $tripType ?: null);
+        $perPage = 2;
         $totalChecklists = count($allChecklists);
-        $limit = 4; // 4 checklist / trang (bố cục 2 cột x 2 dòng cân đối và chuyên nghiệp)
+        $totalPages = (int) ceil($totalChecklists / $perPage);
+        if ($totalPages < 1) {
+            $totalPages = 1;
+        }
         $currentPage = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-        $totalPages = $totalChecklists > 0 ? (int)ceil($totalChecklists / $limit) : 1;
-        $currentPage = min($currentPage, $totalPages);
-        $offset = ($currentPage - 1) * $limit;
-        $pagedChecklists = array_slice($allChecklists, $offset, $limit);
+        if ($currentPage > $totalPages && $totalChecklists > 0) {
+            $currentPage = $totalPages;
+        }
+
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedChecklists = array_slice($allChecklists, $offset, $perPage);
 
         $this->render('outdoor/checklists', [
             'title'           => 'Checklist dã ngoại — Danh sách trang bị',
-            'checklists'      => $pagedChecklists,
+            'checklists'      => $paginatedChecklists,
             'tripTypes'       => $this->checklists->getTripTypes(),
             'currentType'     => $tripType,
             'currentPage'     => $currentPage,
             'totalPages'      => $totalPages,
             'totalChecklists' => $totalChecklists,
-            'limit'           => $limit,
+            'perPage'         => $perPage,
+            'limit'           => $perPage,
             'errors'          => [],
             'old'             => [],
         ]);
@@ -83,20 +90,19 @@ class OutdoorController extends Controller
         if ($errors !== []) {
             $allChecklists = $this->checklists->getVisibleForUser((int) $user['id']);
             $totalChecklists = count($allChecklists);
-            $limit = 4;
-            $currentPage = 1;
-            $totalPages = $totalChecklists > 0 ? (int)ceil($totalChecklists / $limit) : 1;
-            $pagedChecklists = array_slice($allChecklists, 0, $limit);
+            $perPage = 2;
+            $totalPages = max(1, (int) ceil($totalChecklists / $perPage));
 
             $this->render('outdoor/checklists', [
                 'title'           => 'Checklist dã ngoại — Danh sách trang bị',
-                'checklists'      => $pagedChecklists,
+                'checklists'      => array_slice($allChecklists, 0, $perPage),
                 'tripTypes'       => $this->checklists->getTripTypes(),
                 'currentType'     => '',
-                'currentPage'     => $currentPage,
+                'currentPage'     => 1,
                 'totalPages'      => $totalPages,
                 'totalChecklists' => $totalChecklists,
-                'limit'           => $limit,
+                'perPage'         => $perPage,
+                'limit'           => $perPage,
                 'errors'          => $errors,
                 'old'             => $_POST,
             ]);
