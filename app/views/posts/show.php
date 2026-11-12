@@ -154,134 +154,70 @@ $galleryCount = count($galleryImages);
 
     <?php if (!empty($galleryImages)): ?>
     <!-- ══════════════════════════════════════════
-         IMAGE CAROUSEL
+         INSTAGRAM-STYLE IMAGE CAROUSEL
     ══════════════════════════════════════════ -->
-    <div class="post-carousel-wrap mb-4" id="postCarousel">
-
-
-
+    <div class="insta-carousel-wrap mb-4" id="postCarousel">
         <!-- Slide viewport -->
-
-        <div class="pc-viewport" id="pcViewport"
-
+        <div class="insta-viewport" id="pcViewport"
              ontouchstart="CarouselLB.touchStart(event)"
-
              ontouchmove="CarouselLB.touchMove(event)"
-
              ontouchend="CarouselLB.touchEnd(event)">
-
-            <?php foreach ($galleryImages as $idx => $imgUrl): ?>
-
-                <div class="pc-slide <?= $idx === 0 ? 'active' : '' ?>" data-index="<?= $idx ?>">
-
-                    <img src="<?= htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8') ?>"
-
-                         alt="Ảnh <?= $idx + 1 ?> / <?= $galleryCount ?>"
-
-                         class="pc-img"
-
-                         onclick="CarouselLB.openLightbox(<?= $idx ?>)"
-
-                         title="Bấm để xem toàn màn hình">
-
-                </div>
-
-            <?php endforeach; ?>
-
+            
+            <div class="insta-track" id="pcTrack">
+                <?php foreach ($galleryImages as $idx => $imgUrl): ?>
+                    <div class="insta-slide" data-index="<?= $idx ?>">
+                        <img src="<?= htmlspecialchars($imgUrl, ENT_QUOTES, 'UTF-8') ?>"
+                             alt="Ảnh <?= $idx + 1 ?> / <?= $galleryCount ?>"
+                             class="insta-img"
+                             onclick="CarouselLB.openLightbox(<?= $idx ?>)"
+                             title="Bấm để xem toàn màn hình">
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
-
-
 
         <?php if ($galleryCount > 1): ?>
-
-        <!-- Prev / Next arrows -->
-
-        <button class="pc-btn pc-btn-prev" onclick="CarouselLB.prev()" aria-label="Ảnh trước">
-
-            <i class="bi bi-chevron-compact-left"></i>
-
-        </button>
-
-        <button class="pc-btn pc-btn-next" onclick="CarouselLB.next()" aria-label="Ảnh sau">
-
-            <i class="bi bi-chevron-compact-right"></i>
-
-        </button>
-
-
-
-        <!-- Counter & play/pause -->
-
-        <div class="pc-footer">
-
-            <span class="pc-counter" id="pcCounter">1 / <?= $galleryCount ?></span>
-
-            <button class="pc-playpause" id="pcPlayPause" onclick="CarouselLB.togglePlay()" title="Tự động / Dừng">
-
-                <i class="bi bi-pause-circle-fill" id="pcPlayIcon"></i>
-
-            </button>
-
+        <!-- Instagram Counter Badge (Top-Right) -->
+        <div class="insta-counter-badge" id="pcCounter">
+            <i class="bi bi-images me-1"></i><span>1/<?= $galleryCount ?></span>
         </div>
 
+        <!-- Instagram Circular Prev / Next Navigation Buttons -->
+        <button type="button" class="insta-nav-btn insta-prev-btn d-none" id="pcPrevBtn" onclick="CarouselLB.prev()" aria-label="Ảnh trước" title="Ảnh trước">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <button type="button" class="insta-nav-btn insta-next-btn" id="pcNextBtn" onclick="CarouselLB.next()" aria-label="Ảnh sau" title="Ảnh sau">
+            <i class="bi bi-chevron-right"></i>
+        </button>
 
-
-        <!-- Dot indicators -->
-
-        <div class="pc-dots" id="pcDots">
-
+        <!-- Instagram Dot Indicators (Bottom-Center) -->
+        <div class="insta-dots-bar" id="pcDots">
             <?php for ($i = 0; $i < $galleryCount; $i++): ?>
-
-                <span class="pc-dot <?= $i === 0 ? 'active' : '' ?>"
-
+                <span class="insta-dot <?= $i === 0 ? 'active' : '' ?>"
                       onclick="CarouselLB.goTo(<?= $i ?>)"
-
-                      aria-label="Ảnh <?= $i + 1 ?>"></span>
-
+                      aria-label="Đến ảnh <?= $i + 1 ?>"></span>
             <?php endfor; ?>
-
         </div>
-
         <?php endif; ?>
-
     </div>
 
-
-
     <!-- ══════════════════════════════════════════
-
          LIGHTBOX MODAL
-
     ══════════════════════════════════════════ -->
-
     <div class="lb-overlay" id="lbOverlay" onclick="CarouselLB.closeLightbox()" style="display:none;">
-
         <div class="lb-box" onclick="event.stopPropagation()">
-
             <button class="lb-close" onclick="CarouselLB.closeLightbox()" aria-label="Đóng">
-
                 <i class="bi bi-x-lg"></i>
-
             </button>
-
             <?php if ($galleryCount > 1): ?>
-
             <button class="lb-nav lb-nav-prev" onclick="CarouselLB.lbPrev()" aria-label="Ảnh trước">
-
-                <i class="bi bi-chevron-compact-left"></i>
-
+                <i class="bi bi-chevron-left"></i>
             </button>
-
             <button class="lb-nav lb-nav-next" onclick="CarouselLB.lbNext()" aria-label="Ảnh sau">
-
-                <i class="bi bi-chevron-compact-right"></i>
-
+                <i class="bi bi-chevron-right"></i>
             </button>
-
             <?php endif; ?>
-
             <img src="" alt="" id="lbImg" class="lb-img">
-
             <div class="lb-caption" id="lbCaption"></div>
         </div>
     </div>
@@ -1763,262 +1699,152 @@ $galleryCount = count($galleryImages);
 
 <style>
 
-/* ── Carousel Wrapper ── */
-
-.post-carousel-wrap {
-
+/* ── Instagram-Style Carousel ── */
+.insta-carousel-wrap {
     position: relative;
-
     width: 100%;
-
-    border-radius: 32px;
-
+    border-radius: 28px;
     overflow: hidden;
-
-    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-
-    background: #0d0d0d;
-
+    background: #0d110d;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     user-select: none;
-
 }
 
-
-
-/* ── Viewport ── */
-
-.pc-viewport {
-
+.insta-viewport {
     position: relative;
-
     width: 100%;
-
-    aspect-ratio: 16/9;
-
+    max-height: 600px;
+    aspect-ratio: 16/10;
     overflow: hidden;
-
     cursor: grab;
-
-}
-
-.pc-viewport:active { cursor: grabbing; }
-
-
-
-/* ── Slides ── */
-
-.pc-slide {
-
-    position: absolute;
-
-    inset: 0;
-
     display: flex;
-
     align-items: center;
-
-    justify-content: center;
-
-    opacity: 0;
-
-    transform: translateX(60px);
-
-    transition: opacity 0.4s ease, transform 0.4s ease;
-
-    pointer-events: none;
-
+    background: #050705;
+}
+.insta-viewport:active {
+    cursor: grabbing;
 }
 
-.pc-slide.active {
-
-    opacity: 1;
-
-    transform: translateX(0);
-
-    pointer-events: auto;
-
-}
-
-.pc-slide.slide-out-left {
-
-    opacity: 0;
-
-    transform: translateX(-60px);
-
-}
-
-.pc-slide.slide-out-right {
-
-    opacity: 0;
-
-    transform: translateX(60px);
-
-}
-
-.pc-img {
-
+.insta-track {
+    display: flex;
     width: 100%;
-
     height: 100%;
-
-    object-fit: contain;
-
-    display: block;
-
-    cursor: zoom-in;
-
+    transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
 }
 
-
-
-/* ── Prev / Next Buttons ── */
-
-.pc-btn {
-
-    position: absolute;
-
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    background: rgba(0,0,0,0.55);
-
-    border: none;
-
-    color: #fff;
-
-    font-size: 1.6rem;
-
-    width: 44px;
-
-    height: 64px;
-
-    border-radius: 12px;
-
-    cursor: pointer;
-
-    z-index: 10;
-
+.insta-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
-    transition: background 0.2s, transform 0.15s;
-
+    position: relative;
+    background: #050705;
 }
 
-.pc-btn:hover { background: rgba(0,0,0,0.8); transform: translateY(-50%) scale(1.08); }
+.insta-img {
+    max-width: 100%;
+    max-height: 600px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+}
 
-.pc-btn-prev { left: 10px; }
-
-.pc-btn-next { right: 10px; }
-
-
-
-/* ── Footer (counter + play/pause) ── */
-
-.pc-footer {
-
+/* Instagram Counter Badge (Top-Right) */
+.insta-counter-badge {
     position: absolute;
-
-    bottom: 48px;
-
+    top: 14px;
     right: 14px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    z-index: 10;
-
-}
-
-.pc-counter {
-
-    background: rgba(0,0,0,0.6);
-
-    color: #fff;
-
-    font-size: 0.78rem;
-
-    padding: 3px 10px;
-
+    background: rgba(18, 22, 16, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
     border-radius: 20px;
-
-    font-variant-numeric: tabular-nums;
-
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    z-index: 15;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
 }
 
-.pc-playpause {
-
-    background: none;
-
-    border: none;
-
-    color: rgba(255,255,255,0.85);
-
-    font-size: 1.25rem;
-
-    cursor: pointer;
-
-    padding: 0;
-
-    line-height: 1;
-
-    transition: color 0.2s, transform 0.15s;
-
-}
-
-.pc-playpause:hover { color: #fff; transform: scale(1.15); }
-
-
-
-/* ── Dot Indicators ── */
-
-.pc-dots {
-
+/* Instagram Circular Navigation Buttons */
+.insta-nav-btn {
     position: absolute;
-
-    bottom: 14px;
-
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    display: flex;
-
-    gap: 6px;
-
-    z-index: 10;
-
-}
-
-.pc-dot {
-
-    width: 8px;
-
-    height: 8px;
-
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-
-    background: rgba(255,255,255,0.4);
-
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #1a1e17;
+    font-size: 1.15rem;
     cursor: pointer;
-
-    transition: background 0.2s, transform 0.2s;
-
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity: 0.92;
+}
+.insta-nav-btn:hover {
+    background: #ffffff;
+    color: #000;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+}
+.insta-prev-btn {
+    left: 14px;
+}
+.insta-next-btn {
+    right: 14px;
+}
+.insta-nav-btn.d-none {
+    display: none !important;
 }
 
-.pc-dot.active {
-
-    background: #fff;
-
-    transform: scale(1.35);
-
+/* Instagram Dots Indicator (Bottom-Center) */
+.insta-dots-bar {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 15;
+}
+.insta-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.insta-dot.active {
+    width: 18px;
+    border-radius: 3px;
+    background: #9bbd55;
+    box-shadow: 0 0 8px rgba(155, 189, 85, 0.8);
 }
 
 
@@ -2266,339 +2092,152 @@ $galleryCount = count($galleryImages);
     if (TOTAL === 0) {
         window.CarouselLB = {
             goTo: function() {}, next: function() {}, prev: function() {},
-            togglePlay: function() {}, openLightbox: function() {}, closeLightbox: function() {},
+            openLightbox: function() {}, closeLightbox: function() {},
             lbNext: function() {}, lbPrev: function() {}, touchStart: function() {},
             touchMove: function() {}, touchEnd: function() {}
         };
         return;
     }
 
-    const AUTO_MS = 1000; // 1 second auto-cycle
-
-
-
-    let current   = 0;
-
-    let playing   = TOTAL > 1;
-
-    let timer     = null;
-
-    let touchX0   = 0;
-
+    let current = 0;
+    let touchX0 = 0;
     let isDragging = false;
 
-
-
-    // ── DOM refs ──────────────────────────────────────────────────
-
-    const slides    = document.querySelectorAll('.pc-slide');
-
-    const dots      = document.querySelectorAll('.pc-dot');
-
+    // DOM references
+    const track     = document.getElementById('pcTrack');
+    const prevBtn   = document.getElementById('pcPrevBtn');
+    const nextBtn   = document.getElementById('pcNextBtn');
+    const dots      = document.querySelectorAll('.insta-dot');
     const counter   = document.getElementById('pcCounter');
-
-    const playIcon  = document.getElementById('pcPlayIcon');
-
     const viewport  = document.getElementById('pcViewport');
-
     const lbOverlay = document.getElementById('lbOverlay');
-
     const lbImg     = document.getElementById('lbImg');
-
     const lbCaption = document.getElementById('lbCaption');
 
+    function updateUiState() {
+        if (track) {
+            track.style.transform = 'translateX(-' + (current * 100) + '%)';
+        }
 
-
-    // ── Core: go to slide index ───────────────────────────────────
-
-    function goToSlide(next, dir) {
-
-        if (TOTAL <= 1) return;
-
-        if (next === current) return;
-
-
-
-        const outClass = dir === 'left' ? 'slide-out-left' : 'slide-out-right';
-
-
-
-        // Animate out current
-
-        slides[current].classList.remove('active');
-
-        slides[current].classList.add(outClass);
-
-        setTimeout(function() {
-
-            if (slides[current]) {
-
-                slides[current].classList.remove(outClass);
-
+        // Instagram button behavior: Hide prev at index 0, hide next at last index
+        if (prevBtn) {
+            if (current <= 0) {
+                prevBtn.classList.add('d-none');
+            } else {
+                prevBtn.classList.remove('d-none');
             }
+        }
+        if (nextBtn) {
+            if (current >= TOTAL - 1) {
+                nextBtn.classList.add('d-none');
+            } else {
+                nextBtn.classList.remove('d-none');
+            }
+        }
 
-        }, 450);
+        // Instagram counter badge: e.g. "1/4"
+        if (counter) {
+            counter.innerHTML = '<i class="bi bi-images me-1"></i><span>' + (current + 1) + '/' + TOTAL + '</span>';
+        }
 
-
-
-        current = (next + TOTAL) % TOTAL;
-
-
-
-        // Animate in next
-
-        slides[current].classList.add('active');
-
-
-
-        // Update dots + counter
-
+        // Instagram dots indicator
         dots.forEach(function(d, i) {
-
             d.classList.toggle('active', i === current);
-
         });
-
-        if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
-
     }
 
-
-
-    // ── Public API (called from onclick) ──────────────────────────
+    // Initialize state
+    updateUiState();
 
     window.CarouselLB = {
-
-
-
-        goTo(idx) {
-
-            const dir = idx > current ? 'left' : 'right';
-
-            goToSlide(idx, dir);
-
+        goTo: function(idx) {
+            if (idx < 0) idx = 0;
+            if (idx >= TOTAL) idx = TOTAL - 1;
+            current = idx;
+            updateUiState();
         },
 
-
-
-        next() {
-
-            goToSlide(current + 1, 'left');
-
-        },
-
-
-
-        prev() {
-
-            goToSlide(current - 1, 'right');
-
-        },
-
-
-
-        togglePlay() {
-
-            playing = !playing;
-
-            if (playIcon) {
-
-                playIcon.className = playing
-
-                    ? 'bi bi-pause-circle-fill'
-
-                    : 'bi bi-play-circle-fill';
-
+        next: function() {
+            if (current < TOTAL - 1) {
+                current++;
+                updateUiState();
             }
-
-            if (playing) startTimer(); else stopTimer();
-
         },
 
+        prev: function() {
+            if (current > 0) {
+                current--;
+                updateUiState();
+            }
+        },
 
-
-        // ── Lightbox ──
-
-        openLightbox(idx) {
-
+        // Lightbox
+        openLightbox: function(idx) {
             if (!lbOverlay || !lbImg) return;
-
             current = (idx + TOTAL) % TOTAL;
-
             lbImg.src = IMAGES[current];
-
             lbImg.alt = 'Ảnh ' + (current + 1) + ' / ' + TOTAL;
-
             if (lbCaption) lbCaption.textContent = TOTAL > 1 ? (current + 1) + ' / ' + TOTAL : '';
-
             lbOverlay.style.display = 'flex';
-
             document.body.style.overflow = 'hidden';
-
-            // Pause auto-play while lightbox is open
-
-            stopTimer();
-
+            updateUiState();
         },
 
-
-
-        closeLightbox() {
-
+        closeLightbox: function() {
             if (!lbOverlay) return;
-
             lbOverlay.style.display = 'none';
-
             document.body.style.overflow = '';
-
-            if (playing) startTimer();
-
         },
 
-
-
-        lbPrev() {
-
+        lbPrev: function() {
             current = (current - 1 + TOTAL) % TOTAL;
-
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
-
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
-
-            // Sync carousel
-
-            dots.forEach(function(d, i) {
-
-                d.classList.toggle('active', i === current);
-
-            });
-
-            if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
-
+            updateUiState();
         },
 
-
-
-        lbNext() {
-
+        lbNext: function() {
             current = (current + 1) % TOTAL;
-
             if (lbImg) { lbImg.src = IMAGES[current]; lbImg.alt = 'Ảnh ' + (current+1) + ' / ' + TOTAL; }
-
             if (lbCaption) lbCaption.textContent = (current + 1) + ' / ' + TOTAL;
-
-            dots.forEach(function(d, i) {
-
-                d.classList.toggle('active', i === current);
-
-            });
-
-            if (counter) counter.textContent = (current + 1) + ' / ' + TOTAL;
-
+            updateUiState();
         },
 
-
-
-        // ── Touch/swipe handlers ──
-
-        touchStart(e) {
-
+        // Touch & Swipe handlers
+        touchStart: function(e) {
+            if (TOTAL <= 1) return;
             touchX0 = e.touches[0].clientX;
-
             isDragging = true;
-
         },
 
-        touchMove(e) {
-
-            if (!isDragging) return;
-
-            e.preventDefault();
-
+        touchMove: function(e) {
+            // Passive touch move
         },
 
-        touchEnd(e) {
-
-            if (!isDragging) return;
-
+        touchEnd: function(e) {
+            if (!isDragging || TOTAL <= 1) return;
             isDragging = false;
-
             const delta = e.changedTouches[0].clientX - touchX0;
-
             if (Math.abs(delta) > 40) {
-
-                delta < 0 ? CarouselLB.next() : CarouselLB.prev();
-
+                if (delta < 0) {
+                    CarouselLB.next();
+                } else {
+                    CarouselLB.prev();
+                }
             }
-
         }
-
     };
 
-
-
-    // ── Auto-play timer ───────────────────────────────────────────
-
-    function startTimer() {
-
-        stopTimer();
-
-        if (TOTAL <= 1) return;
-
-        timer = setInterval(function() {
-
-            goToSlide(current + 1, 'left');
-
-        }, AUTO_MS);
-
-    }
-
-
-
-    function stopTimer() {
-
-        if (timer) { clearInterval(timer); timer = null; }
-
-    }
-
-
-
-    // ── Pause on hover ────────────────────────────────────────────
-
-    if (viewport) {
-
-        viewport.addEventListener('mouseenter', stopTimer);
-
-        viewport.addEventListener('mouseleave', function() {
-
-            if (playing) startTimer();
-
-        });
-
-    }
-
-
-
-    // ── Keyboard navigation ───────────────────────────────────────
-
+    // Keyboard navigation
     document.addEventListener('keydown', function(e) {
-
         if (lbOverlay && lbOverlay.style.display !== 'none') {
-
             if (e.key === 'ArrowLeft')  CarouselLB.lbPrev();
-
             if (e.key === 'ArrowRight') CarouselLB.lbNext();
-
             if (e.key === 'Escape')     CarouselLB.closeLightbox();
-
-        } else {
-
+        } else if (TOTAL > 1) {
             if (e.key === 'ArrowLeft')  CarouselLB.prev();
-
             if (e.key === 'ArrowRight') CarouselLB.next();
-
         }
-
     });
 
 

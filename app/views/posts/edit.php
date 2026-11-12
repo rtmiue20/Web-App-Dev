@@ -8,13 +8,19 @@ if (!empty($post['images']) && is_array($post['images'])) {
     foreach ($post['images'] as $img) {
         $url = $img['image_url'] ?? '';
         if (!empty($url)) {
-            $editImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+            $editImages[] = [
+                'id' => (int)($img['id'] ?? 0),
+                'url' => str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/')
+            ];
         }
     }
 }
 if (empty($editImages) && !empty($post['image_url'])) {
     $url = $post['image_url'];
-    $editImages[] = str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/');
+    $editImages[] = [
+        'id' => 0,
+        'url' => str_starts_with($url, 'http') ? $url : $baseUrl . '/' . ltrim($url, '/')
+    ];
 }
 ?>
 <div class="app-container" style="max-width: 800px;">
@@ -249,16 +255,28 @@ if (empty($editImages) && !empty($post['image_url'])) {
                     <div class="mb-3">
                         <p class="text-muted small mb-2">
                             <i class="bi bi-images me-1"></i>
-                            Ảnh hiện tại (<?= count($editImages) ?> ảnh) — tải lên ảnh mới sẽ <strong>thêm vào</strong> bên cạnh:
+                            Ảnh hiện tại (<?= count($editImages) ?> ảnh) — bấm biểu tượng thùng rác để gỡ bỏ ảnh:
                         </p>
-                        <div class="d-flex flex-wrap gap-2">
-                            <?php foreach ($editImages as $imgSrc): ?>
-                                <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
-                                     alt="Ảnh bài viết"
-                                     style="width: 90px; height: 64px; object-fit: cover; border-radius: 10px; border: 2px solid rgba(255,255,255,0.15); cursor: zoom-in;"
-                                     onclick="window.open(this.src,'_blank')">
+                        <div class="d-flex flex-wrap gap-2" id="existingImagesList">
+                            <?php foreach ($editImages as $item): ?>
+                                <div class="position-relative" id="existImgCard_<?= $item['id'] ?>" style="width: 95px; height: 70px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(255,255,255,0.18); background: #111; transition: all 0.2s ease;">
+                                    <img src="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"
+                                         alt="Ảnh bài viết"
+                                         style="width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;"
+                                         onclick="window.open(this.src,'_blank')">
+                                    <?php if ($item['id'] > 0): ?>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle d-flex align-items-center justify-content-center"
+                                                style="width: 22px; height: 22px; font-size: 11px; z-index: 5;"
+                                                onclick="toggleDeleteExistingImg(<?= $item['id'] ?>)"
+                                                title="Gỡ ảnh này khỏi bài viết">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             <?php endforeach; ?>
                         </div>
+                        <div id="deletedImagesInputs"></div>
                     </div>
                 <?php endif; ?>
 
@@ -546,52 +564,122 @@ if (empty($editImages) && !empty($post['image_url'])) {
 </div>
 
 <script>
-function previewEditImages(files) {
-    const grid = document.getElementById('editPreviewGrid');
+window.editDataTransfer = new DataTransfer();
+
+function toggleDeleteExistingImg(imgId) {
+    var card = document.getElementById('existImgCard_' + imgId);
+    var container = document.getElementById('deletedImagesInputs');
+    var existingInput = document.getElementById('delInput_' + imgId);
+    if (existingInput) {
+        existingInput.remove();
+        if (card) {
+            card.style.opacity = '1';
+            card.style.filter = '';
+            card.style.borderColor = 'rgba(255,255,255,0.18)';
+        }
+    } else {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'delete_image_ids[]';
+        inp.value = imgId;
+        inp.id = 'delInput_' + imgId;
+        container.appendChild(inp);
+        if (card) {
+            card.style.opacity = '0.35';
+            card.style.filter = 'grayscale(100%)';
+            card.style.borderColor = '#dc3545';
+        }
+    }
+}
+
+function removeEditFile(idxToRemove) {
+    var newDt = new DataTransfer();
+    var curFiles = window.editDataTransfer.files;
+    for (var i = 0; i < curFiles.length; i++) {
+        if (i !== idxToRemove) {
+            newDt.items.add(curFiles[i]);
+        }
+    }
+    window.editDataTransfer = newDt;
+    var input = document.getElementById('editImagesInput');
+    if (input) {
+        input.files = window.editDataTransfer.files;
+    }
+    renderEditPreviews();
+}
+
+function renderEditPreviews() {
+    var grid = document.getElementById('editPreviewGrid');
+    var files = window.editDataTransfer ? window.editDataTransfer.files : [];
+    if (!grid) return;
     grid.innerHTML = '';
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+        var dz = document.getElementById('editDropzone');
+        if (dz) {
+            var span = dz.querySelector('span');
+            if (span) span.textContent = 'Kéo & thả ảnh vào đây hoặc bấm để chọn';
+        }
+        return;
+    }
+
     Array.from(files).forEach(function(file, i) {
         if (!file.type.startsWith('image/')) return;
-        const reader = new FileReader();
+        var reader = new FileReader();
         reader.onload = function(e) {
-            const wrap = document.createElement('div');
-            wrap.style.cssText = 'position:relative; display:inline-block;';
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.cssText = 'width:90px;height:64px;object-fit:cover;border-radius:10px;border:2px solid var(--color-moss);';
-            const badge = document.createElement('span');
-            badge.textContent = (i + 1);
-            badge.style.cssText = 'position:absolute;top:3px;right:3px;background:var(--color-moss);color:#fff;font-size:0.62rem;padding:1px 5px;border-radius:6px;';
-            wrap.appendChild(img);
-            wrap.appendChild(badge);
+            var wrap = document.createElement('div');
+            wrap.className = 'position-relative';
+            wrap.style.cssText = 'width:95px;height:70px;border-radius:12px;overflow:hidden;border:2px solid var(--color-moss, #9bbd55);background:#111;';
+            wrap.innerHTML = 
+                '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;">' +
+                '<span style="position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,0.7);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;">#' + (i + 1) + '</span>' +
+                '<button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle d-flex align-items-center justify-content-center" ' +
+                        'style="width:20px;height:20px;font-size:12px;line-height:1;box-shadow:0 2px 4px rgba(0,0,0,0.4);" ' +
+                        'onclick="removeEditFile(' + i + ')" title="Bỏ chọn ảnh này">&times;</button>';
             grid.appendChild(wrap);
         };
         reader.readAsDataURL(file);
     });
 
-    // Update dropzone text
-    const dz = document.getElementById('editDropzone');
+    var dz = document.getElementById('editDropzone');
     if (dz) {
-        const span = dz.querySelector('span');
-        if (span) span.textContent = files.length + ' ảnh đã chọn — bấm để thay đổi';
+        var span = dz.querySelector('span');
+        if (span) span.textContent = files.length + ' ảnh mới đã chọn — bấm để thêm tiếp';
     }
+}
+
+function previewEditImages(newFiles) {
+    if (!newFiles || newFiles.length === 0) return;
+    Array.from(newFiles).forEach(function(file) {
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ảnh "' + file.name + '" vượt quá 2MB.');
+            return;
+        }
+        var isDup = false;
+        for (var i = 0; i < window.editDataTransfer.files.length; i++) {
+            var f = window.editDataTransfer.files[i];
+            if (f.name === file.name && f.size === file.size && f.lastModified === file.lastModified) {
+                isDup = true; break;
+            }
+        }
+        if (!isDup) {
+            window.editDataTransfer.items.add(file);
+        }
+    });
+    var input = document.getElementById('editImagesInput');
+    if (input) {
+        input.files = window.editDataTransfer.files;
+    }
+    renderEditPreviews();
 }
 
 function handleEditDrop(e) {
     e.preventDefault();
-    const dz = document.getElementById('editDropzone');
+    var dz = document.getElementById('editDropzone');
     if (dz) { dz.style.borderColor = 'rgba(255,255,255,0.25)'; dz.style.background = ''; }
 
-    const input = document.getElementById('editImagesInput');
-    if (!input || !e.dataTransfer?.files?.length) return;
-
-    // Assign dropped files to input
-    const dt = new DataTransfer();
-    Array.from(e.dataTransfer.files).forEach(function(f) {
-        dt.items.add(f);
-    });
-    input.files = dt.files;
-    previewEditImages(input.files);
+    if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+    previewEditImages(e.dataTransfer.files);
 }
 </script>
 

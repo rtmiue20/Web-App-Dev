@@ -140,6 +140,16 @@ class PostController extends Controller {
                 $errors['image'] = $e->getMessage();
             }
         }
+        $cloudUrl = trim((string)($_POST['cloud_image_url'] ?? ''));
+        if ($cloudUrl !== '') {
+            $splitUrls = preg_split('/[\r\n,]+/', $cloudUrl);
+            foreach ($splitUrls as $cUrl) {
+                $cUrl = trim($cUrl);
+                if ($cUrl !== '' && filter_var($cUrl, FILTER_VALIDATE_URL)) {
+                    $imageUrls[] = $cUrl;
+                }
+            }
+        }
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
@@ -445,6 +455,16 @@ class PostController extends Controller {
                 $errors['image'] = $e->getMessage();
             }
         }
+        $cloudUrl = trim((string)($_POST['cloud_image_url'] ?? ''));
+        if ($cloudUrl !== '') {
+            $splitUrls = preg_split('/[\r\n,]+/', $cloudUrl);
+            foreach ($splitUrls as $cUrl) {
+                $cUrl = trim($cUrl);
+                if ($cUrl !== '' && filter_var($cUrl, FILTER_VALIDATE_URL)) {
+                    $imageUrls[] = $cUrl;
+                }
+            }
+        }
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
@@ -491,6 +511,11 @@ class PostController extends Controller {
         );
 
         if ($updated) {
+            // Xóa các ảnh được đánh dấu gỡ bỏ trong post_images (nếu có)
+            if (!empty($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids'])) {
+                $this->posts->deleteImages($id, $_POST['delete_image_ids']);
+            }
+
             // Cập nhật thông tin các dụng cụ hiện có (nếu tác giả sửa đổi trực tiếp)
             $this->processUpdateExistingTools();
 

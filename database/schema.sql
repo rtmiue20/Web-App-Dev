@@ -238,6 +238,7 @@ SELECT
     r.name AS role_name,
     c.name AS category_name,
     (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+    (SELECT COUNT(pi.id) FROM post_images pi WHERE pi.post_id = p.id) AS images_count,
     COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,

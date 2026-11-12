@@ -118,6 +118,7 @@ class Post extends Model {
             // Fallback nếu View vw_post_details chưa được khởi tạo
             $sql = "SELECT p.*, u.username, c.name AS category_name,
                     (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    (SELECT COUNT(pi.id) FROM post_images pi WHERE pi.post_id = p.id) AS images_count,
                     COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
                     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
                     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
@@ -186,6 +187,7 @@ class Post extends Model {
         } catch (PDOException $viewEx) {
             $sql = "SELECT p.*, u.username, c.name AS category_name,
                     (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    (SELECT COUNT(pi.id) FROM post_images pi WHERE pi.post_id = p.id) AS images_count,
                     COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
                     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
                     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
@@ -316,6 +318,7 @@ class Post extends Model {
         } catch (PDOException $viewEx) {
             $sql = "SELECT p.*, u.username, c.name AS category_name,
                     (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+                    (SELECT COUNT(pi.id) FROM post_images pi WHERE pi.post_id = p.id) AS images_count,
                     COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
                     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
                     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
@@ -1016,6 +1019,35 @@ class Post extends Model {
             return true;
         } catch (PDOException $e) {
             error_log('Error adding post images: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Xóa danh sách ảnh cụ thể của một bài viết theo ID ảnh
+     */
+    public function deleteImages(int $postId, array $imageIds): bool {
+        if (empty($imageIds)) {
+            return true;
+        }
+        $cleanIds = [];
+        foreach ($imageIds as $id) {
+            $val = (int)$id;
+            if ($val > 0) {
+                $cleanIds[] = $val;
+            }
+        }
+        if (empty($cleanIds)) {
+            return true;
+        }
+        try {
+            $inPlaceholders = implode(',', array_fill(0, count($cleanIds), '?'));
+            $sql = "DELETE FROM post_images WHERE post_id = ? AND id IN ($inPlaceholders)";
+            $params = array_merge([$postId], $cleanIds);
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            error_log('Error deleting post images: ' . $e->getMessage());
             return false;
         }
     }

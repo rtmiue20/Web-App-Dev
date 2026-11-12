@@ -195,13 +195,91 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
     opacity: 1;
 }
 
-/* Image Thumbnails Strip */
+/* Image Thumbnails Strip & Preview Cards */
 .fb-thumbs-strip {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
     overflow-x: auto;
-    padding: 4px 0 10px;
+    padding: 6px 2px 12px;
     margin-bottom: 0.85rem;
+    scrollbar-width: thin;
+}
+.fb-thumb-card {
+    position: relative;
+    width: 82px;
+    height: 82px;
+    border-radius: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border: 2px solid rgba(155, 189, 85, 0.4);
+    background: #1a1e17;
+}
+.fb-thumb-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+}
+.fb-thumb-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 5;
+    transition: transform 0.15s ease;
+}
+.fb-thumb-del:hover {
+    transform: scale(1.15);
+    background: #dc3545;
+}
+.fb-thumb-idx {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+.fb-thumb-add-btn {
+    width: 82px;
+    height: 82px;
+    border-radius: 14px;
+    border: 2px dashed #9bbd55;
+    background: #f7f9f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: #5c8424;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+.fb-thumb-add-btn:hover {
+    background: #eef4e6;
+    border-color: #5c8424;
+    transform: translateY(-2px);
 }
 .fb-thumb-item {
     width: 72px;
@@ -616,7 +694,10 @@ $escape = static function($value): string { return htmlspecialchars((string) $va
                              style="background: #f7f9f4; border-color: #9bbd55 !important; cursor: pointer; transition: all 0.2s ease;">
                             <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2" style="color: #7aab3a;"></i>
                             <div class="fw-semibold text-dark mb-1" style="font-size: 15px;">Nhấn để chọn ảnh, hoặc kéo thả file vào đây</div>
-                            <div class="small" style="color: #686d62;">Hỗ trợ JPG, PNG, WEBP &lt; 2MB/ảnh. Có thể chọn cùng lúc nhiều ảnh để tạo Album ảnh dã ngoại.</div>
+                            <div class="small mb-2" style="color: #686d62;">Hỗ trợ JPG, PNG, WEBP &lt; 2MB/ảnh. Có thể chọn cùng lúc nhiều ảnh hoặc nhấn thêm nhiều lần để tạo Album ảnh dã ngoại.</div>
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1" onclick="document.getElementById('imagesInput').click()">
+                                <i class="bi bi-plus-circle me-1"></i>Chọn thêm hình ảnh từ máy
+                            </button>
                             <input class="d-none" id="imagesInput" name="images[]" type="file" multiple accept="image/png, image/jpeg, image/webp">
                         </div>
 
@@ -1192,7 +1273,15 @@ function clearImages() {
     var prevBox = document.getElementById('imagePreviewContainer');
     var countBox = document.getElementById('imagePreviewCount');
     var thumbsStrip = document.getElementById('fbThumbsStrip');
-    if (imagesInput) imagesInput.value = '';
+    if (window.composerDataTransfer) {
+        window.composerDataTransfer = new DataTransfer();
+    }
+    if (imagesInput) {
+        imagesInput.value = '';
+        try {
+            if (window.composerDataTransfer) imagesInput.files = window.composerDataTransfer.files;
+        } catch (e) {}
+    }
     if (cloudInput) cloudInput.value = '';
     if (prevBox) { prevBox.innerHTML = ''; prevBox.classList.add('d-none'); }
     if (countBox) countBox.classList.add('d-none');
@@ -1683,8 +1772,27 @@ function escapeHtml(text) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// IMAGE DROPZONE & PREVIEWS
+// IMAGE DROPZONE & MULTI-IMAGE PREVIEWS (Instagram / Facebook Style)
 // ══════════════════════════════════════════════════════════════
+window.composerDataTransfer = new DataTransfer();
+
+window.removeComposerFile = function(indexToRemove) {
+    if (!window.composerDataTransfer) return;
+    var newDt = new DataTransfer();
+    var currentFiles = window.composerDataTransfer.files;
+    for (var i = 0; i < currentFiles.length; i++) {
+        if (i !== indexToRemove) {
+            newDt.items.add(currentFiles[i]);
+        }
+    }
+    window.composerDataTransfer = newDt;
+    var input = document.getElementById('imagesInput');
+    if (input) {
+        input.files = window.composerDataTransfer.files;
+    }
+    window.renderComposerPreviews();
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const dropzone = document.getElementById('imageDropzone');
     const input    = document.getElementById('imagesInput');
@@ -1693,7 +1801,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const thumbsStrip = document.getElementById('fbThumbsStrip');
 
     if (dropzone && input) {
-        dropzone.addEventListener('click', function() { input.click(); });
+        dropzone.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'BUTTON') {
+                input.click();
+            }
+        });
 
         ['dragenter', 'dragover'].forEach(function(ev) {
             dropzone.addEventListener(ev, function(e) {
@@ -1709,61 +1821,126 @@ document.addEventListener('DOMContentLoaded', function() {
                 dropzone.style.borderColor = 'rgba(155, 189, 85, 0.45)';
             });
         });
+
+        function handleNewFiles(fileList) {
+            if (!fileList || fileList.length === 0) return;
+            Array.from(fileList).forEach(function(file) {
+                if (!file.type.startsWith('image/')) return;
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Ảnh "' + file.name + '" vượt quá 2MB. Vui lòng chọn ảnh nhỏ hơn.');
+                    return;
+                }
+                // Tránh thêm ảnh trùng lặp y hệt
+                var isDup = false;
+                for (var i = 0; i < window.composerDataTransfer.files.length; i++) {
+                    var f = window.composerDataTransfer.files[i];
+                    if (f.name === file.name && f.size === file.size && f.lastModified === file.lastModified) {
+                        isDup = true;
+                        break;
+                    }
+                }
+                if (!isDup) {
+                    window.composerDataTransfer.items.add(file);
+                }
+            });
+            input.files = window.composerDataTransfer.files;
+            window.renderComposerPreviews();
+        }
+
         dropzone.addEventListener('drop', function(e) {
             const dt = e.dataTransfer;
             if (dt && dt.files && dt.files.length > 0) {
-                input.files = dt.files;
-                renderPreviews(dt.files);
+                handleNewFiles(dt.files);
             }
         });
+
         input.addEventListener('change', function() {
-            renderPreviews(input.files);
+            if (input.files && input.files.length > 0) {
+                handleNewFiles(input.files);
+            }
         });
 
-        function renderPreviews(files) {
-            if (!files || files.length === 0) {
-                previewContainer.classList.add('d-none');
-                countText.classList.add('d-none');
-                previewContainer.innerHTML = '';
-                thumbsStrip.classList.add('d-none');
-                thumbsStrip.innerHTML = '';
+        window.renderComposerPreviews = function() {
+            var files = window.composerDataTransfer ? window.composerDataTransfer.files : [];
+            var numFiles = files.length;
+
+            if (numFiles === 0) {
+                if (previewContainer) {
+                    previewContainer.classList.add('d-none');
+                    previewContainer.innerHTML = '';
+                }
+                if (countText) {
+                    countText.classList.add('d-none');
+                    countText.innerHTML = '';
+                }
+                if (thumbsStrip) {
+                    thumbsStrip.classList.add('d-none');
+                    thumbsStrip.innerHTML = '';
+                }
                 updateAllChips();
                 return;
             }
-            previewContainer.innerHTML = '';
-            previewContainer.classList.remove('d-none');
-            countText.classList.remove('d-none');
-            countText.innerHTML = `<i class="bi bi-check-circle-fill text-success me-1"></i>Đã chọn <strong>${files.length}</strong> hình ảnh cho bài viết này.`;
 
-            thumbsStrip.innerHTML = '';
-            thumbsStrip.classList.remove('d-none');
+            if (previewContainer) {
+                previewContainer.innerHTML = '';
+                previewContainer.classList.remove('d-none');
+            }
+            if (countText) {
+                countText.classList.remove('d-none');
+                countText.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i>Đã chọn <strong>' + numFiles + '</strong> hình ảnh cho bài viết này.';
+            }
+            if (thumbsStrip) {
+                thumbsStrip.innerHTML = '';
+                thumbsStrip.classList.remove('d-none');
+            }
 
             Array.from(files).forEach(function(file, index) {
                 if (!file.type.startsWith('image/')) return;
-                const reader = new FileReader();
+                var reader = new FileReader();
                 reader.onload = function(e) {
-                    // Previews in modal
-                    const col = document.createElement('div');
-                    col.className = 'col-4 col-sm-3 col-md-2';
-                    col.innerHTML = `
-                        <div class="position-relative rounded-3 overflow-hidden border shadow-sm" style="height: 75px; background: #000;">
-                            <img src="${e.target.result}" alt="Preview ${index+1}" style="width:100%;height:100%;object-fit:cover;">
-                            <span class="badge bg-dark bg-opacity-75 position-absolute bottom-0 start-0 m-1" style="font-size:9px;">#${index+1}</span>
-                        </div>`;
-                    previewContainer.appendChild(col);
+                    var dataUrl = e.target.result;
 
-                    // Thumbnail in main post box
-                    const thumbImg = document.createElement('img');
-                    thumbImg.src = e.target.result;
-                    thumbImg.className = 'fb-thumb-item';
-                    thumbImg.alt = `Thumb ${index+1}`;
-                    thumbImg.onclick = function() { openModal('modalImages'); };
-                    thumbsStrip.appendChild(thumbImg);
+                    // Preview trong Modal
+                    if (previewContainer) {
+                        var col = document.createElement('div');
+                        col.className = 'col-6 col-sm-4 col-md-3';
+                        col.innerHTML = 
+                            '<div class="position-relative rounded-3 overflow-hidden border shadow-sm" style="height: 90px; background: #000;">' +
+                                '<img src="' + dataUrl + '" alt="Ảnh ' + (index+1) + '" style="width:100%;height:100%;object-fit:cover;">' +
+                                '<span class="badge bg-dark bg-opacity-75 position-absolute bottom-0 start-0 m-1" style="font-size:10px;">#' + (index+1) + '</span>' +
+                                '<button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle d-flex align-items-center justify-content-center" ' +
+                                        'style="width:22px;height:22px;font-size:13px;line-height:1;box-shadow:0 2px 5px rgba(0,0,0,0.4);" ' +
+                                        'onclick="removeComposerFile(' + index + ')" title="Xóa ảnh này">&times;</button>' +
+                            '</div>';
+                        previewContainer.appendChild(col);
+                    }
+
+                    // Preview trong Composer Card chính
+                    if (thumbsStrip) {
+                        var card = document.createElement('div');
+                        card.className = 'fb-thumb-card';
+                        card.innerHTML = 
+                            '<img src="' + dataUrl + '" alt="Thumb ' + (index+1) + '" onclick="openModal(\'modalImages\')">' +
+                            '<span class="fb-thumb-idx">#' + (index+1) + '</span>' +
+                            '<button type="button" class="fb-thumb-del" onclick="event.stopPropagation(); removeComposerFile(' + index + ');" title="Xóa ảnh này">&times;</button>';
+                        thumbsStrip.appendChild(card);
+
+                        // Nếu là item cuối cùng, thêm nút "+ Thêm ảnh"
+                        if (index === numFiles - 1) {
+                            var addBtn = document.createElement('div');
+                            addBtn.className = 'fb-thumb-add-btn';
+                            addBtn.title = 'Chọn thêm ảnh từ máy';
+                            addBtn.onclick = function() { input.click(); };
+                            addBtn.innerHTML = '<i class="bi bi-plus-lg fs-5"></i><span>Thêm ảnh</span>';
+                            thumbsStrip.appendChild(addBtn);
+                        }
+                    }
                 };
                 reader.readAsDataURL(file);
             });
+
             updateAllChips();
-        }
+        };
     }
 
     // Region dropdown handler

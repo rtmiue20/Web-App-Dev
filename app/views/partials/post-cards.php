@@ -60,7 +60,12 @@ $defaultImages = [
                         </h2>
                     </div>
 
-                    <div class="card-image-box">
+                    <div class="card-image-box position-relative">
+                        <?php if (($post['images_count'] ?? 0) > 1): ?>
+                            <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill px-2 py-1 text-white shadow-sm" style="font-size: 11px; z-index: 2; backdrop-filter: blur(4px);" title="Bài viết có <?= (int)$post['images_count'] ?> ảnh">
+                                <i class="bi bi-collection-fill me-1"></i><?= (int)$post['images_count'] ?>
+                            </span>
+                        <?php endif; ?>
                         <img src="<?= htmlspecialchars($img, ENT_QUOTES, 'UTF-8') ?>" 
                              alt="<?= htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8') ?>"
                              loading="lazy">
