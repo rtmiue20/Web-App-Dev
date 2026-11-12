@@ -76,7 +76,9 @@ class OutdoorController extends Controller
         $tripType = trim((string) ($_POST['trip_type'] ?? ''));
         $items = array_values(array_filter(
             array_map('trim', preg_split('/\R/', (string) ($_POST['items'] ?? '')) ?: []),
-            static fn(string $item): bool => $item !== ''
+            function (string $item): bool {
+                return $item !== '';
+            }
         ));
         $errors = [];
         if (mb_strlen($title) < 3 || mb_strlen($title) > 120) {
@@ -85,7 +87,10 @@ class OutdoorController extends Controller
         if ($tripType === '' || mb_strlen($tripType) > 60) {
             $errors['trip_type'] = 'Vui lòng nhập loại chuyến đi (tối đa 60 ký tự).';
         }
-        if (count($items) < 1 || count($items) > 50 || count(array_filter($items, static fn($item) => mb_strlen($item) > 120)) > 0) {
+        $hasOverlongItem = count(array_filter($items, function ($item): bool {
+            return mb_strlen($item) > 120;
+        })) > 0;
+        if (count($items) < 1 || count($items) > 50 || $hasOverlongItem) {
             $errors['items'] = 'Nhập từ 1 đến 50 món đồ, mỗi dòng không quá 120 ký tự.';
         }
 
