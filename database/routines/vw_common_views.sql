@@ -25,6 +25,7 @@ SELECT
     p.lng,
     p.status,
     p.created_at,
+    COALESCE(p.views_count, 0) AS views_count,
     u.username,
     u.avatar_path,
     r.name AS role_name,

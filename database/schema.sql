@@ -51,6 +51,7 @@ CREATE TABLE posts (
   lat         DECIMAL(10, 7) NULL,
   lng         DECIMAL(10, 7) NULL,
   status      ENUM('pending', 'published', 'rejected', 'hidden') NOT NULL DEFAULT 'pending',
+  views_count INT UNSIGNED NOT NULL DEFAULT 0,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FULLTEXT idx_posts_fulltext (title, content, location),
   FOREIGN KEY (user_id)     REFERENCES users(id)      ON DELETE CASCADE,
@@ -195,9 +196,12 @@ INSERT INTO users (username, email, password_hash, role_id) VALUES
   ('minh',  'minh@forum.local',  'hash_demo', 1),
   ('lan',   'lan@forum.local',   'hash_demo', 1);
 INSERT INTO categories (name, description) VALUES
-  ('Cắm trại', 'Kinh nghiệm cắm trại'),
-  ('Trekking', 'Leo núi, đi rừng'),
-  ('Dụng cụ',  'Review đồ dã ngoại');
+  ('Cắm trại & Glamping', 'Kinh nghiệm hạ trại, chọn bãi cắm ven hồ, cắm trại rừng thông & dã ngoại gia đình.'),
+  ('Trekking & Leo núi', 'Chinh phục đỉnh cao, săn mây, băng rừng và khám phá những cung đường mạo hiểm.'),
+  ('Dụng cụ & Đồ phượt', 'Đánh giá và chia sẻ kinh nghiệm chọn lều, túi ngủ, bếp ga, balo, dao sinh tồn.'),
+  ('Kỹ năng sinh tồn', 'Kỹ năng nhóm lửa, lọc nước, sơ cứu ngoài trời, định vị bản đồ GPS và ứng phó thời tiết.'),
+  ('Kinh nghiệm chuyến đi', 'Cẩm nang lịch trình thực tế, review bãi cắm, chi phí, tọa độ đẹp và kinh nghiệm di chuyển.'),
+  ('Bạn đồng hành & Ghép xe', 'Rủ rê đồng đội, kết nối phượt thủ, ghép xe máy & ô tô cho các chuyến dã ngoại cuối tuần.');
 INSERT INTO posts (user_id, category_id, title, content, location) VALUES
   (2, 1, 'Cắm trại Đà Lạt', 'Chia sẻ kinh nghiệm...', 'Đà Lạt'),
   (2, 2, 'Trekking Tà Năng', 'Lịch trình 2 ngày...', 'Lâm Đồng'),
@@ -230,11 +234,13 @@ SELECT
     p.lng,
     p.status,
     p.created_at,
+    COALESCE(p.views_count, 0) AS views_count,
     u.username,
     u.avatar_path,
     r.name AS role_name,
     c.name AS category_name,
     (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url,
+    (SELECT COUNT(pi.id) FROM post_images pi WHERE pi.post_id = p.id) AS images_count,
     COALESCE((SELECT SUM(l.vote) FROM post_likes l WHERE l.post_id = p.id), 0) AS vote_score,
     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = 1) AS upvotes,
     (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id AND l.vote = -1) AS downvotes,
@@ -935,7 +941,23 @@ BEGIN
     LEFT JOIN users u ON u.id = p.user_id
     LEFT JOIN roles r ON r.id = u.role_id
     WHERE (p_category_id IS NULL OR p.category_id = p_category_id)
-      AND p.is_shared = 1
+      AND (
+          EXISTS (
+              SELECT 1
+              FROM post_products pp
+              INNER JOIN posts po ON po.id = pp.post_id
+              WHERE pp.product_id = p.id
+                AND po.status = 'published'
+          )
+          OR (
+              p.is_shared = 1
+              AND (
+                  r.name IN ('admin', 'moderator')
+                  OR p.user_id IS NULL
+                  OR NOT EXISTS (SELECT 1 FROM post_products pp2 WHERE pp2.product_id = p.id)
+              )
+          )
+      )
     ORDER BY p.id DESC;
 END$$
 

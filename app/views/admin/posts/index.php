@@ -104,11 +104,9 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
     <div class="nature-card mb-4" style="border-radius: 24px; padding: 1.25rem 1.75rem;">
         <div class="row align-items-center g-3">
             <div class="col-12 col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3 text-muted">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" id="postSearchInput" class="form-control border-start-0 rounded-end-pill py-2 shadow-none" placeholder="Tìm nhanh theo tiêu đề hoặc tên tác giả...">
+                <div class="admin-search-pill">
+                    <i class="bi bi-search admin-search-icon"></i>
+                    <input type="text" id="postSearchInput" class="admin-search-input" placeholder="Tìm nhanh theo tiêu đề hoặc tên tác giả...">
                 </div>
             </div>
             <div class="col-12 col-md-6 text-md-end text-muted small">
@@ -290,6 +288,7 @@ $defaultThumb = $baseUrl . '/assets/img/tent-forest.png';
                                 </td>
                                 <td class="text-center small text-muted">
                                     <div class="d-inline-flex align-items-center gap-2">
+                                        <span title="Lượt xem"><i class="bi bi-eye-fill text-secondary me-1"></i><?= number_format((int)($post['views_count'] ?? 0)) ?></span>
                                         <span title="Lượt thích"><i class="bi bi-heart-fill text-danger me-1"></i><?= (int)($post['likes'] ?? 0) ?></span>
                                         <span title="Bình luận"><i class="bi bi-chat-dots-fill text-primary me-1"></i><?= (int)($post['comments_count'] ?? 0) ?></span>
                                     </div>

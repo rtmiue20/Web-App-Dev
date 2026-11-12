@@ -140,6 +140,16 @@ class PostController extends Controller {
                 $errors['image'] = $e->getMessage();
             }
         }
+        $cloudUrl = trim((string)($_POST['cloud_image_url'] ?? ''));
+        if ($cloudUrl !== '') {
+            $splitUrls = preg_split('/[\r\n,]+/', $cloudUrl);
+            foreach ($splitUrls as $cUrl) {
+                $cUrl = trim($cUrl);
+                if ($cUrl !== '' && filter_var($cUrl, FILTER_VALIDATE_URL)) {
+                    $imageUrls[] = $cUrl;
+                }
+            }
+        }
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
@@ -205,6 +215,15 @@ class PostController extends Controller {
             // Lưu liên kết dụng cụ của chuyến đi vào bảng post_products
             if (!empty($selectedProductIds)) {
                 $this->products->syncPostProducts($postId, $selectedProductIds);
+                if ($status === 'published') {
+                    $idListStr = implode(',', array_map('intval', $selectedProductIds));
+                    if ($idListStr !== '') {
+                        try {
+                            Database::execute("UPDATE products SET is_shared = 1 WHERE id IN ({$idListStr})");
+                        } catch (Throwable $e) {
+                        }
+                    }
+                }
             }
 
             if (class_exists('Notification')) {
@@ -275,6 +294,17 @@ class PostController extends Controller {
             return;
         }
 
+        // Tăng số mắt xem (views_count) khi bài viết đã xuất bản (tránh spam F5 trong cùng phiên làm việc)
+        if ($postStatus === 'published') {
+            $viewedPosts = (array)Session::get('viewed_posts', []);
+            if (!in_array($id, $viewedPosts, true)) {
+                $this->posts->incrementViews($id);
+                $viewedPosts[] = $id;
+                Session::set('viewed_posts', $viewedPosts);
+                $post['views_count'] = ((int)($post['views_count'] ?? 0)) + 1;
+            }
+        }
+
         $currentUserId = Auth::check() ? (int)Auth::id() : 0;
         $commentsTree = $this->comments->getTreeByPostId($id, $currentUserId);
         $totalComments = $this->comments->countByPost($id);
@@ -291,10 +321,19 @@ class PostController extends Controller {
         $authorGamification = Gamification::calculate($authorId);
         $placeReviews = new PlaceReview();
 
+        // Tối ưu hóa Web Service Thời tiết Open-Meteo: lấy dữ liệu từ cache hoặc cURL Multi để SSR
+        // Giúp giao diện bài viết hiển thị thời tiết NGAY TỨC THÌ (0ms), không bị kẹt spinner loading
+        $initialWeather = null;
+        if (!empty($post['lat']) && !empty($post['lng'])) {
+            $weatherService = new WeatherService();
+            $initialWeather = $weatherService->getForecast((float)$post['lat'], (float)$post['lng']);
+        }
+
         $this->render('posts/show', [
             'title'                => $post['title'],
             'post'                 => $post,
-            'placeReviews' => $placeReviews->getByPost($id),
+            'initialWeather'       => $initialWeather,
+            'placeReviews'         => $placeReviews->getByPost($id),
             'placeRating' => $placeReviews->getSummary($id),
             'tools'                => $tools,
             'comments'             => $commentsTree,
@@ -445,6 +484,16 @@ class PostController extends Controller {
                 $errors['image'] = $e->getMessage();
             }
         }
+        $cloudUrl = trim((string)($_POST['cloud_image_url'] ?? ''));
+        if ($cloudUrl !== '') {
+            $splitUrls = preg_split('/[\r\n,]+/', $cloudUrl);
+            foreach ($splitUrls as $cUrl) {
+                $cUrl = trim($cUrl);
+                if ($cUrl !== '' && filter_var($cUrl, FILTER_VALIDATE_URL)) {
+                    $imageUrls[] = $cUrl;
+                }
+            }
+        }
 
         if (!empty($errors)) {
             $categoriesList = $this->categories->getAll();
@@ -491,6 +540,11 @@ class PostController extends Controller {
         );
 
         if ($updated) {
+            // Xóa các ảnh được đánh dấu gỡ bỏ trong post_images (nếu có)
+            if (!empty($_POST['delete_image_ids']) && is_array($_POST['delete_image_ids'])) {
+                $this->posts->deleteImages($id, $_POST['delete_image_ids']);
+            }
+
             // Cập nhật thông tin các dụng cụ hiện có (nếu tác giả sửa đổi trực tiếp)
             $this->processUpdateExistingTools();
 
@@ -505,6 +559,15 @@ class PostController extends Controller {
 
             // Cập nhật danh sách dụng cụ của bài viết trong post_products
             $this->products->syncPostProducts($id, $selectedProductIds);
+            if (($post['status'] ?? '') === 'published') {
+                $idListStr = implode(',', array_map('intval', $selectedProductIds));
+                if ($idListStr !== '') {
+                    try {
+                        Database::execute("UPDATE products SET is_shared = 1 WHERE id IN ({$idListStr})");
+                    } catch (Throwable $e) {
+                    }
+                }
+            }
 
             if (class_exists('Notification')) {
                 $currentUserId = (int)Auth::id();
@@ -603,8 +666,11 @@ class PostController extends Controller {
                     );
                 }
             }
+            $redirectTarget = (!empty($_POST['redirect']) && $_POST['redirect'] === 'profile')
+                ? '/profile?tab=posts'
+                : '/posts';
             Session::flash('success', 'Đã xóa bài viết thành công!');
-            $this->redirect('/posts');
+            $this->redirect($redirectTarget);
         } else {
             Session::flash('error', 'Không thể xóa bài viết. Vui lòng thử lại.');
             $this->redirect('/posts/' . $id);
@@ -696,7 +762,7 @@ class PostController extends Controller {
 
         $count = count($names);
         for ($i = 0; $i < $count; $i++) {
-            $name = trim((string)($names[$i] ?? ''));
+            $name = trim(trim((string)($names[$i] ?? '')), " \t\n\r\0\x0B,;");
             if ($name === '') {
                 continue;
             }
@@ -711,7 +777,7 @@ class PostController extends Controller {
 
             $desc = trim((string)($descs[$i] ?? ''));
             $imgUrl = trim((string)($imageUrls[$i] ?? ''));
-            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+            $isShared = (!isset($sharedList[$i]) || (string)$sharedList[$i] === '1' || $sharedList[$i] === 1) ? 1 : 0;
 
             // Kiểm tra upload file ảnh từ máy
             if (!empty($_FILES['custom_tool_file']['name'][$i]) && ($_FILES['custom_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
@@ -780,7 +846,7 @@ class PostController extends Controller {
                 continue;
             }
 
-            $name = trim((string)($names[$i] ?? ''));
+            $name = trim(trim((string)($names[$i] ?? '')), " \t\n\r\0\x0B,;");
             if ($name === '') {
                 continue;
             }
@@ -795,7 +861,7 @@ class PostController extends Controller {
 
             $desc = trim((string)($descs[$i] ?? ''));
             $imgUrl = trim((string)($imageUrls[$i] ?? ''));
-            $isShared = (isset($sharedList[$i]) && ((string)$sharedList[$i] === '1' || $sharedList[$i] === 1)) ? 1 : 0;
+            $isShared = (!isset($sharedList[$i]) || (string)$sharedList[$i] === '1' || $sharedList[$i] === 1) ? 1 : 0;
 
             if (!empty($_FILES['existing_tool_file']['name'][$i]) && ($_FILES['existing_tool_file']['error'][$i] ?? null) === UPLOAD_ERR_OK) {
                 $singleFile = [
@@ -817,6 +883,9 @@ class PostController extends Controller {
 
             $current = $this->products->findById($pId);
             $catId = $current['category_id'] ?? null;
+            if ($imgUrl === '' && !empty($current['image_url'])) {
+                $imgUrl = $current['image_url'];
+            }
 
             $this->products->update(
                 $pId,

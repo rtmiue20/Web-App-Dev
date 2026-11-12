@@ -53,7 +53,17 @@ function asset(string $path): string
 
 function upload_url(?string $path): ?string
 {
-    return $path ? base_url(ltrim($path, '/')) : null;
+    if (!$path) {
+        return null;
+    }
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+    $clean = ltrim($path, '/');
+    if (!str_starts_with($clean, 'uploads/') && !str_starts_with($clean, 'assets/')) {
+        $clean = 'uploads/' . $clean;
+    }
+    return base_url($clean);
 }
 
 function csrf_token(): string

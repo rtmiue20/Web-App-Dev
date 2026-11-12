@@ -66,13 +66,35 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
 
         <?php if (is_array($currentUser)): ?>
             <!-- User Profile Link -->
+            <?php 
+            $navPendingCount = 0;
+            try {
+                $navUid = (int)($currentUser['id'] ?? 0);
+                if ($navUid > 0 && class_exists('Database')) {
+                    $navPendingCount = (int)Database::queryValue(
+                        "SELECT COUNT(*) FROM posts WHERE user_id = :uid AND status = 'pending'",
+                        ['uid' => $navUid]
+                    );
+                }
+            } catch (Throwable $e) {}
+            ?>
             <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" 
                class="dock-user-badge <?= $isActive('/profile') ? 'active' : '' ?>">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
+                <?php if (!empty($currentUser['avatar_path'])): ?>
+                    <img src="<?= htmlspecialchars(upload_url($currentUser['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" 
+                         alt="Avatar" class="rounded-circle object-fit-cover flex-shrink-0" width="22" height="22" style="border: 1.5px solid rgba(155, 189, 85, 0.7); margin-left: -2px;">
+                <?php else: ?>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                <?php endif; ?>
                 <span><?= htmlspecialchars($currentUser['username'] ?? 'Cá nhân', ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if ($navPendingCount > 0): ?>
+                    <span class="badge rounded-pill bg-warning text-dark ms-1 fw-bold" style="font-size: 10.5px; padding: 2px 7px;" title="Bạn có <?= $navPendingCount ?> bài viết đang chờ duyệt">
+                        <?= $navPendingCount ?> ⏳
+                    </span>
+                <?php endif; ?>
                 <?php if (class_exists('Auth') && Auth::isGuest($currentUser)): ?>
                     <span class="badge rounded-pill text-bg-secondary ms-1" style="font-size: 9.5px; padding: 2px 6px;">GUEST</span>
                 <?php endif; ?>
@@ -140,7 +162,7 @@ $isActive = function (string $path) use ($currentUri, $baseUrl): bool {
             </div>
         </div>
         <div class="floating-notif-footer">
-            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile" class="floating-notif-link">
+            <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/profile?tab=activity" class="floating-notif-link">
                 <i class="bi bi-clock-history me-1"></i>Xem hoạt động cá nhân
             </a>
         </div>
