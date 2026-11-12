@@ -37,7 +37,12 @@ class ChatbotService
         }
 
         if ($this->apiKey === '') {
-            $envKey = getenv('GEMINI_API_KEY') ?: getenv('API_KEY') ?: '';
+            $envKey = getenv('GEMINI_API_KEY')
+                ?: getenv('API_KEY')
+                ?: ($_ENV['GEMINI_API_KEY'] ?? '')
+                ?: ($_ENV['API_KEY'] ?? '')
+                ?: ($_SERVER['GEMINI_API_KEY'] ?? '')
+                ?: ($_SERVER['API_KEY'] ?? '');
             if ($envKey !== '') {
                 $this->apiKey = trim((string)$envKey);
             }
