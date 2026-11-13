@@ -9,11 +9,11 @@ class ChatbotService
 {
     private string $apiKey;
     private array $candidateModels = [
-        'gemini-3.5-flash',
-        'gemini-3.5-flash-lite',
-        'gemini-3.8-flash',
-        'gemini-flash-latest',
-        'gemini-flash-lite-latest',
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro',
     ];
 
     public function __construct()
