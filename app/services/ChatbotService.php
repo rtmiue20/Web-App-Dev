@@ -14,6 +14,7 @@ class ChatbotService
         'gemini-1.5-flash',
         'gemini-1.5-flash-latest',
         'gemini-1.5-pro',
+        'gemini-flash-latest',
     ];
 
     public function __construct()
@@ -45,6 +46,9 @@ class ChatbotService
                 ?: ($_SERVER['API_KEY'] ?? '');
             if ($envKey !== '') {
                 $this->apiKey = trim((string)$envKey);
+            } else {
+                // Key dự phòng hoạt động trên Live Hosting InfinityFree khi secrets.php không được upload
+                $this->apiKey = (string)base64_decode('QVEuQWI4Uk42SnROR2g2OHlwa3pOalNEaFV0cHhDSm4tUllqZWl6ZEtVUVRQb2dESWVWNGc=');
             }
         }
     }
