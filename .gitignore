@@ -48,3 +48,12 @@ storage/sessions/*
 *.lock
 *.log
 temp_fix_test.txt
+outdoor_project.zip
+database/full_database_backup.sql
+chay_web_online.bat
+config/database.hosting.php
+_staging/
+
+config/database.php
+config/database.hosting.php
+config/secrets.php

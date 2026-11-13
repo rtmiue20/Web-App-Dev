@@ -392,7 +392,7 @@ class Post extends Model {
         } catch (PDOException $e) {
             error_log('Notice: sp_post_get fallback query: ' . $e->getMessage());
 
-            $sql = "SELECT p.*, u.username, c.name AS category_name,
+            $sql = "SELECT p.*, u.username, u.avatar_path, c.name AS category_name,
                     (SELECT pi.image_url FROM post_images pi WHERE pi.post_id = p.id LIMIT 1) AS image_url
                     FROM posts p 
                     JOIN users u ON p.user_id = u.id 

@@ -17,7 +17,11 @@ class VietnamAddressService
         $builtin = $this->getBuiltinProvinces();
 
         // Thử gọi Web Service API hành chính Việt Nam (có cache 24h)
-        $cacheFile = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'outdoor_vn_provinces_v1.json';
+        $cacheDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+        $cacheFile = $cacheDir . DIRECTORY_SEPARATOR . 'outdoor_vn_provinces_v1.json';
         $externalDistricts = [];
 
         if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $this->cacheTtl) {

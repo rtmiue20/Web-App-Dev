@@ -254,16 +254,17 @@ const ForumAjax = {
     const safeUsernameAttr = String(cm.username || 'Thành viên').replace(/'/g, "\\'");
 
     const avatarUrl = this.formatAvatarUrl(cm.avatar_path);
+    const initialChar = String(cm.username || 'U').charAt(0).toUpperCase();
     const authorAvatarHtml = avatarUrl
-      ? `<img src="${avatarUrl}" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="22" height="22" style="margin-right: 4px;">`
-      : '<i class="bi bi-person-fill me-1"></i>';
+      ? `<img src="${avatarUrl}" alt="" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="28" height="28" style="border: 1.5px solid rgba(155, 189, 85, 0.6); margin-right: 8px;" onerror="this.outerHTML='<div class=\\'rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-semibold flex-shrink-0 shadow-sm\\' style=\\'width: 28px; height: 28px; background: linear-gradient(135deg, #3d6333, #6d934b); font-size: 12px; border: 1.5px solid rgba(155, 189, 85, 0.7); margin-right: 8px;\\'>${initialChar}</div>';">`
+      : `<div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-semibold flex-shrink-0 shadow-sm" style="width: 28px; height: 28px; background: linear-gradient(135deg, #3d6333, #6d934b); font-size: 12px; border: 1.5px solid rgba(155, 189, 85, 0.7); margin-right: 8px;">${initialChar}</div>`;
 
     threadWrap.innerHTML = `
       <div class="comment-card" id="comment-item-${cm.id}">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
           <div class="d-flex align-items-center flex-wrap">
             <span class="comment-author d-inline-flex align-items-center">
-              ${authorAvatarHtml}${cm.username || 'Bạn'}
+              ${authorAvatarHtml}<span style="color: var(--color-moss, #3d6333); font-weight: 600; font-size: 14px;">${cm.username || 'Bạn'}</span>
             </span>
             ${roleBadgeHtml}
             ${replyToHtml}
@@ -1767,6 +1768,42 @@ const ForumAjax = {
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1';
     const detectedLanIp = window.LAN_IP || '192.168.1.4';
+    const wifiNoticeEl = document.getElementById('qrModalWifiNotice');
+    const publicNoticeEl = document.getElementById('qrModalPublicNotice');
+    const customCollapseWrapper = document.getElementById('qrCustomUrlCollapseWrapper');
+
+    // Quản lý hiển thị theo môi trường:
+    // Trên Hosting / Domain thật (outdoor-forum.rf.gd): Link công khai, ai quét cũng được (4G/5G/Wi-Fi) -> Ẩn cảnh báo Wi-Fi & IP
+    // Trên Localhost máy tính: Hiện hướng dẫn Wi-Fi & LAN IP để điện thoại cùng Wi-Fi quét mở
+    if (isLocalhost) {
+      if (wifiNoticeEl) {
+        wifiNoticeEl.classList.remove('d-none');
+        wifiNoticeEl.style.display = 'flex';
+      }
+      if (publicNoticeEl) {
+        publicNoticeEl.classList.add('d-none');
+        publicNoticeEl.style.display = 'none';
+      }
+      if (customCollapseWrapper) {
+        customCollapseWrapper.classList.remove('d-none');
+      }
+    } else {
+      if (wifiNoticeEl) {
+        wifiNoticeEl.classList.add('d-none');
+        wifiNoticeEl.style.display = 'none';
+      }
+      if (publicNoticeEl) {
+        publicNoticeEl.classList.remove('d-none');
+        publicNoticeEl.style.display = 'flex';
+      }
+      if (customCollapseWrapper) {
+        customCollapseWrapper.classList.add('d-none');
+      }
+      if (modeSwitchBox) {
+        modeSwitchBox.classList.add('d-none');
+        modeSwitchBox.style.display = 'none';
+      }
+    }
 
     if (isLocalhost && detectedLanIp && detectedLanIp !== '127.0.0.1') {
       try {
@@ -1782,7 +1819,7 @@ const ForumAjax = {
     if (openLinkBtn) openLinkBtn.href = effectiveQrUrl;
 
     const noticeIpEl = document.getElementById('qrModalNoticeIp');
-    if (noticeIpEl) {
+    if (noticeIpEl && isLocalhost) {
       noticeIpEl.textContent = (detectedLanIp || '192.168.1.4') + ':' + (window.location.port || '8000');
     }
 
@@ -1882,7 +1919,7 @@ const ForumAjax = {
           const d = result.data;
           this._qrModalData = d;
 
-          if (d.lan_ip) {
+          if (isLocalhost && d.is_localhost && d.lan_ip) {
             window.LAN_IP = d.lan_ip;
             if (noticeIpEl) {
               noticeIpEl.textContent = d.lan_ip + ':' + (window.location.port || '8000');
@@ -1894,9 +1931,9 @@ const ForumAjax = {
             imgEl.src = d.qr_data_uri;
           }
 
-          // Bật khung chuyển đổi và đồng bộ trạng thái nút
+          // Bật khung chuyển đổi và đồng bộ trạng thái nút (CHỈ KHI CHẠY LOCALHOST)
           if (modeSwitchBox) {
-            if (d.is_localhost && d.lan_ip && d.lan_url !== d.original_url) {
+            if (isLocalhost && d.is_localhost && d.lan_ip && d.lan_url !== d.original_url) {
               modeSwitchBox.classList.remove('d-none');
               modeSwitchBox.style.display = 'block';
               const btnLan = document.getElementById('btnQrModeLan');
@@ -1906,6 +1943,7 @@ const ForumAjax = {
               }
               this.switchQrUrlMode('lan');
             } else {
+              modeSwitchBox.classList.add('d-none');
               modeSwitchBox.style.display = 'none';
             }
           }

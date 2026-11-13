@@ -9,6 +9,16 @@ $escape = function ($value): string {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 };
 
+$authorAvatar = null;
+if (!empty($post['avatar_path'])) {
+    $authorAvatar = upload_url($post['avatar_path']);
+} else {
+    $authorUserObj = (new User())->findById((int)($post['user_id'] ?? 0));
+    if ($authorUserObj && $authorUserObj->getAvatarPath()) {
+        $authorAvatar = upload_url($authorUserObj->getAvatarPath());
+    }
+}
+
 
 
 // ── Collect gallery images ──────────────────────────────────────────
@@ -263,9 +273,25 @@ $galleryCount = count($galleryImages);
 
         <div class="post-meta-bar">
 
-            <span>
+            <span class="d-inline-flex align-items-center gap-1.5">
 
-                <i class="bi bi-person-circle me-1"></i>
+                <?php if ($authorAvatar): ?>
+                    <img src="<?= htmlspecialchars($authorAvatar, ENT_QUOTES, 'UTF-8') ?>" 
+                         alt="Avatar" 
+                         class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" 
+                         width="22" height="22" 
+                         style="border: 1.5px solid rgba(155, 189, 85, 0.6); margin-right: 2px;"
+                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-inline-flex');">
+                    <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-semibold flex-shrink-0 shadow-sm" 
+                         style="width: 22px; height: 22px; background: linear-gradient(135deg, #3d6333, #6d934b); font-size: 11px; border: 1.5px solid rgba(155, 189, 85, 0.7); margin-right: 2px;">
+                        <?= strtoupper(mb_substr($post['username'] ?? 'U', 0, 1)) ?>
+                    </div>
+                <?php else: ?>
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-semibold flex-shrink-0 shadow-sm" 
+                         style="width: 22px; height: 22px; background: linear-gradient(135deg, #3d6333, #6d934b); font-size: 11px; border: 1.5px solid rgba(155, 189, 85, 0.7); margin-right: 2px;">
+                        <?= strtoupper(mb_substr($post['username'] ?? 'U', 0, 1)) ?>
+                    </div>
+                <?php endif; ?>
 
                 <strong><?= htmlspecialchars($post['username'] ?? 'Tác giả', ENT_QUOTES, 'UTF-8') ?></strong>
 
@@ -851,7 +877,7 @@ $galleryCount = count($galleryImages);
 
         <?php 
 
-        $authorUser = (new User())->findById((int)$post['user_id']);
+        $authorUser = $authorUserObj ?? (new User())->findById((int)$post['user_id']);
 
         if ($authorUser):
 
@@ -1370,6 +1396,60 @@ $galleryCount = count($galleryImages);
 
                 </form>
 
+                <script>
+                /* Star rating widget độc lập: chạy ngay sau HTML, không phụ thuộc script khác */
+                (function () {
+                    var widget = document.getElementById('starRatingWidget');
+                    var input = document.getElementById('place-rating-input');
+                    var label = document.getElementById('starRatingLabel');
+                    if (!widget || !input || !label || widget.getAttribute('data-bound') === '1') return;
+                    widget.setAttribute('data-bound', '1');
+
+                    var labels = {1: '1 sao - Không tốt', 2: '2 sao - Chưa tốt', 3: '3 sao - Bình thường', 4: '4 sao - Tốt', 5: '5 sao - Rất tốt'};
+                    var stars = widget.querySelectorAll('.star-item');
+
+                    function paint(val) {
+                        val = parseInt(val, 10) || 5;
+                        for (var i = 0; i < stars.length; i++) {
+                            var on = parseInt(stars[i].getAttribute('data-value'), 10) <= val;
+                            stars[i].classList.toggle('bi-star-fill', on);
+                            stars[i].classList.toggle('bi-star', !on);
+                            stars[i].style.color = on ? '#ff9800' : '#cbd5e1';
+                        }
+                        label.textContent = labels[val] || '';
+                    }
+
+                    function starFrom(target) {
+                        return target && target.closest ? target.closest('.star-item') : null;
+                    }
+
+                    widget.addEventListener('mouseover', function (e) {
+                        var s = starFrom(e.target);
+                        if (s) paint(s.getAttribute('data-value'));
+                    });
+                    widget.addEventListener('mouseleave', function () { paint(input.value); });
+                    widget.addEventListener('click', function (e) {
+                        var s = starFrom(e.target);
+                        if (!s) return;
+                        e.preventDefault();
+                        input.value = s.getAttribute('data-value');
+                        paint(input.value);
+                    });
+                    widget.addEventListener('touchstart', function (e) {
+                        var t = e.touches[0];
+                        var s = starFrom(document.elementFromPoint(t.clientX, t.clientY));
+                        if (s) { input.value = s.getAttribute('data-value'); paint(input.value); }
+                    }, { passive: true });
+                    widget.addEventListener('touchmove', function (e) {
+                        var t = e.touches[0];
+                        var s = starFrom(document.elementFromPoint(t.clientX, t.clientY));
+                        if (s) { input.value = s.getAttribute('data-value'); paint(input.value); }
+                    }, { passive: true });
+
+                    paint(input.value || 5);
+                })();
+                </script>
+
             <?php elseif ($isLoggedIn && Auth::isGuest()): ?>
 
                 <div class="d-flex align-items-center gap-2 mt-3 mb-0 p-3 rounded-4" style="background: rgba(155, 189, 85, 0.12); border: 1px solid rgba(155, 189, 85, 0.28);">
@@ -1584,14 +1664,27 @@ $galleryCount = count($galleryImages);
 
                             <div class="d-flex align-items-center flex-wrap">
 
-                                <span class="comment-author d-inline-flex align-items-center gap-1.5">
+                                <span class="comment-author d-inline-flex align-items-center gap-2">
 
                                     <?php if (!empty($cm['avatar_path'])): ?>
-                                        <img src="<?= htmlspecialchars(upload_url($cm['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" alt="" class="rounded-circle object-fit-cover shadow-sm border flex-shrink-0" width="22" height="22">
+                                        <img src="<?= htmlspecialchars(upload_url($cm['avatar_path']), ENT_QUOTES, 'UTF-8') ?>" 
+                                             alt="<?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?>" 
+                                             class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" 
+                                             width="28" height="28" 
+                                             style="border: 1.5px solid rgba(155, 189, 85, 0.6);"
+                                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none'); this.nextElementSibling.classList.add('d-inline-flex');">
+                                        <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-semibold flex-shrink-0 shadow-sm" 
+                                             style="width: 28px; height: 28px; background: linear-gradient(135deg, #3d6333, #6d934b); font-size: 12px; border: 1.5px solid rgba(155, 189, 85, 0.7);">
+                                            <?= strtoupper(mb_substr($cmUsername ?: 'U', 0, 1)) ?>
+                                        </div>
                                     <?php else: ?>
-                                        <i class="bi bi-person-fill me-1"></i>
+                                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-semibold flex-shrink-0 shadow-sm" 
+                                             style="width: 28px; height: 28px; background: linear-gradient(135deg, #3d6333, #6d934b); font-size: 12px; border: 1.5px solid rgba(155, 189, 85, 0.7);"
+                                             title="<?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= strtoupper(mb_substr($cmUsername ?: 'U', 0, 1)) ?>
+                                        </div>
                                     <?php endif; ?>
-                                    <span><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="fw-semibold" style="font-size: 14px; color: var(--color-moss, #3d6333);"><?= htmlspecialchars($cmUsername, ENT_QUOTES, 'UTF-8') ?></span>
 
                                 </span>
 
@@ -2428,23 +2521,23 @@ function submitComment() {
 
 document.addEventListener('DOMContentLoaded', function() {
 
-    if (window.initToolMarquees) {
+    try {
+        if (window.initToolMarquees) {
+            window.initToolMarquees();
+        }
+    } catch (err) { console.warn('initToolMarquees error:', err); }
 
-        window.initToolMarquees();
-
-    }
-
-    if (window.ForumAjax) {
-
-        window.ForumAjax.startCommentPolling(<?= (int)$post['id'] ?>);
-
-    }
+    try {
+        if (window.ForumAjax) {
+            window.ForumAjax.startCommentPolling(<?= (int)$post['id'] ?>);
+        }
+    } catch (err) { console.warn('startCommentPolling error:', err); }
 
     const weatherElem = document.getElementById('weather-info');
 
     const weatherPanel = document.getElementById('weather-forecast-panel');
 
-    if (weatherElem || weatherPanel) {
+    if ((weatherElem || weatherPanel) && window.ForumAjax) {
 
         <?php if (!empty($post['lat']) && !empty($post['lng'])): ?>
 
@@ -2471,7 +2564,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var ratingInput = document.getElementById('place-rating-input');
     var ratingLabel = document.getElementById('starRatingLabel');
 
-    if (starWidget && ratingInput && ratingLabel) {
+    if (starWidget && ratingInput && ratingLabel && starWidget.getAttribute('data-bound') !== '1') {
         var stars = starWidget.querySelectorAll('.star-item');
         var labels = {
             1: '1 sao - Không tốt',
