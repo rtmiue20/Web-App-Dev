@@ -455,60 +455,88 @@ document.addEventListener('DOMContentLoaded', function () {
         var sendStartTime = Date.now();
         var minThinkingMs = 2000;
 
-        var baseUrl = window.BASE_URL || '';
+        var baseUrl = (window.BASE_URL || '').replace(/\/+$/, '');
         var postData = JSON.stringify({
             message: msg,
             history: chatHistory
         });
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', baseUrl + '/api/chat', true);
-        xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        // Danh sách endpoint dự phòng. Ưu tiên /api/ai-assistant để tránh bộ lọc từ khóa 'chat' trên hosting miễn phí (như InfinityFree)
+        var endpoints = [
+            baseUrl + '/api/ai-assistant',
+            baseUrl + '/api/forum-ai',
+            baseUrl + '/api/chat'
+        ];
 
-        xhr.onload = function () {
-            var elapsed = Date.now() - sendStartTime;
-            var remainingDelay = Math.max(0, minThinkingMs - elapsed);
+        function finalizeUI() {
+            if (typingEl) {
+                typingEl.style.display = 'none';
+            }
+            if (sendBtn) {
+                sendBtn.disabled = false;
+            }
+        }
 
-            setTimeout(function () {
-                if (typingEl) {
-                    typingEl.style.display = 'none';
-                }
-                if (sendBtn) {
-                    sendBtn.disabled = false;
-                }
+        function trySend(index) {
+            if (index >= endpoints.length) {
+                var elapsed = Date.now() - sendStartTime;
+                var remainingDelay = Math.max(0, minThinkingMs - elapsed);
+                setTimeout(function () {
+                    finalizeUI();
+                    appendMessage('bot', 'Đã xảy ra lỗi kết nối mạng. Bạn vui lòng kiểm tra lại đường truyền nhé!');
+                }, remainingDelay);
+                return;
+            }
+
+            var targetUrl = endpoints[index];
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', targetUrl, true);
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.onload = function () {
+                var elapsed = Date.now() - sendStartTime;
+                var remainingDelay = Math.max(0, minThinkingMs - elapsed);
 
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        var res = JSON.parse(xhr.responseText);
-                        var botReply = res.reply || 'Cảm ơn câu hỏi của bạn. Forum AI chúc bạn có chuyến dã ngoại tuyệt vời!';
-                        appendMessage('bot', botReply);
-                        chatHistory.push({ sender: 'bot', text: botReply });
-                    } catch (e) {
-                        appendMessage('bot', 'Hệ thống đang xử lý, bạn thử lại sau giây lát nhé!');
-                    }
+                    setTimeout(function () {
+                        finalizeUI();
+                        try {
+                            var res = JSON.parse(xhr.responseText);
+                            var botReply = res.reply || 'Cảm ơn câu hỏi của bạn. Forum AI chúc bạn có chuyến dã ngoại tuyệt vời!';
+                            appendMessage('bot', botReply);
+                            chatHistory.push({ sender: 'bot', text: botReply });
+                        } catch (e) {
+                            appendMessage('bot', 'Hệ thống đang xử lý, bạn thử lại sau giây lát nhé!');
+                        }
+                    }, remainingDelay);
+                } else if (index + 1 < endpoints.length) {
+                    trySend(index + 1);
                 } else {
-                    appendMessage('bot', 'Không thể kết nối với máy chủ Forum AI. Vui lòng thử lại sau!');
+                    setTimeout(function () {
+                        finalizeUI();
+                        appendMessage('bot', 'Không thể kết nối với máy chủ Forum AI. Vui lòng thử lại sau!');
+                    }, remainingDelay);
                 }
-            }, remainingDelay);
-        };
+            };
 
-        xhr.onerror = function () {
-            var elapsed = Date.now() - sendStartTime;
-            var remainingDelay = Math.max(0, minThinkingMs - elapsed);
-
-            setTimeout(function () {
-                if (typingEl) {
-                    typingEl.style.display = 'none';
+            xhr.onerror = function () {
+                if (index + 1 < endpoints.length) {
+                    trySend(index + 1);
+                } else {
+                    var elapsed = Date.now() - sendStartTime;
+                    var remainingDelay = Math.max(0, minThinkingMs - elapsed);
+                    setTimeout(function () {
+                        finalizeUI();
+                        appendMessage('bot', 'Đã xảy ra lỗi kết nối mạng. Bạn vui lòng kiểm tra lại đường truyền nhé!');
+                    }, remainingDelay);
                 }
-                if (sendBtn) {
-                    sendBtn.disabled = false;
-                }
-                appendMessage('bot', 'Đã xảy ra lỗi kết nối mạng. Bạn vui lòng kiểm tra lại đường truyền nhé!');
-            }, remainingDelay);
-        };
+            };
 
-        xhr.send(postData);
+            xhr.send(postData);
+        }
+
+        trySend(0);
     }
 
     formEl.addEventListener('submit', function (e) {

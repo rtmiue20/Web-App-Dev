@@ -276,6 +276,10 @@ class App
 
             // Trợ lý Dã ngoại AI Chatbot (Google Gemini API & Knowledge Base)
             $chatbot = new ChatbotController();
+            $apiRouter->post('/ai-assistant', [$chatbot, 'message']);
+            $apiRouter->get('/ai-assistant', [$chatbot, 'message']);
+            $apiRouter->post('/forum-ai', [$chatbot, 'message']);
+            $apiRouter->get('/forum-ai', [$chatbot, 'message']);
             $apiRouter->post('/chat', [$chatbot, 'message']);
             $apiRouter->get('/chat', [$chatbot, 'message']);
 
