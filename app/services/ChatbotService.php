@@ -121,35 +121,48 @@ class ChatbotService
 
         $encodedPayload = json_encode($payload);
 
+        // Phát hiện loại key: AQ. = OAuth Bearer token, AIzaSy = API key thông thường
+        $isOAuthKey = str_starts_with($this->apiKey, 'AQ.');
+
         foreach ($this->candidateModels as $modelName) {
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key=" . urlencode($this->apiKey);
+            $baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent";
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $encodedPayload);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json; charset=utf-8'
-            ]);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            // Thử Bearer token trước nếu là OAuth key
+            $attemptsForModel = $isOAuthKey
+                ? [
+                    ['url' => $baseUrl, 'headers' => ['Content-Type: application/json; charset=utf-8', 'Authorization: Bearer ' . $this->apiKey]],
+                    ['url' => $baseUrl . '?key=' . urlencode($this->apiKey), 'headers' => ['Content-Type: application/json; charset=utf-8']],
+                ]
+                : [
+                    ['url' => $baseUrl . '?key=' . urlencode($this->apiKey), 'headers' => ['Content-Type: application/json; charset=utf-8']],
+                ];
 
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
+            foreach ($attemptsForModel as $attempt) {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $attempt['url']);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $encodedPayload);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $attempt['headers']);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-            if ($curlError === '' && $httpCode === 200 && $response) {
-                $json = json_decode($response, true);
-                if (!empty($json['candidates'][0]['content']['parts'][0]['text'])) {
-                    $replyText = trim($json['candidates'][0]['content']['parts'][0]['text']);
-                    return [
-                        'success' => true,
-                        'reply' => $replyText,
-                        'source' => 'gemini_ai',
-                        'model' => 'Google Gemini AI (' . $modelName . ')'
-                    ];
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
+
+                if ($curlError === '' && $httpCode === 200 && $response) {
+                    $json = json_decode($response, true);
+                    if (!empty($json['candidates'][0]['content']['parts'][0]['text'])) {
+                        $replyText = trim($json['candidates'][0]['content']['parts'][0]['text']);
+                        return [
+                            'success' => true,
+                            'reply'   => $replyText,
+                            'source'  => 'gemini_ai',
+                            'model'   => 'Google Gemini AI (' . $modelName . ')'
+                        ];
+                    }
                 }
             }
         }

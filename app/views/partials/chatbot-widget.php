@@ -495,9 +495,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // ── Fallback: Gọi Gemini API trực tiếp từ trình duyệt (khi server bị chặn curl) ──
             if (targetUrl === '__GEMINI_DIRECT__') {
-                var GEMINI_KEY = atob('QVEuQWI4Uk42SnROR2g2OHlwa3pOalNEaFV0cHhDSm4tUllqZWl6ZEtVUVRQb2dESWVWNGc=');
+                var GEMINI_KEY = atob('QVEuQWI4Uk42SV9nb1lUQ01nVGkyMi04Q292bWFqR3RaTmpMbnplb0JyVk5KQzEwa2ZvelE=');
                 var GEMINI_MODEL = 'gemini-2.0-flash';
-                var geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent?key=' + GEMINI_KEY;
                 var contents = [];
                 var recentHistory = chatHistory.slice(-4);
                 for (var h = 0; h < recentHistory.length - 1; h++) {
@@ -513,17 +512,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     systemInstruction: { parts: [{ text: 'Bạn là Trợ lý Dã ngoại AI của Outdoor Forum Việt Nam. Tư vấn cắm trại, trekking, kỹ năng sinh tồn bằng tiếng Việt tự nhiên, ngắn gọn, có emoji phù hợp.' }] },
                     generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
                 });
-                var xhrDirect = new XMLHttpRequest();
-                xhrDirect.open('POST', geminiUrl, true);
-                xhrDirect.setRequestHeader('Content-Type', 'application/json');
-                xhrDirect.onload = function () {
+
+                // Key AQ. = OAuth token → thử Bearer trước, fallback sang ?key= sau
+                var isOAuthKey = GEMINI_KEY.indexOf('AQ.') === 0;
+                var geminiUrlBearer = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODEL + ':generateContent';
+                var geminiUrlApiKey = geminiUrlBearer + '?key=' + GEMINI_KEY;
+
+                function handleGeminiResponse(xhr) {
                     var elapsed = Date.now() - sendStartTime;
                     var remainingDelay = Math.max(0, minThinkingMs - elapsed);
-                    if (xhrDirect.status === 200) {
+                    if (xhr.status === 200) {
                         setTimeout(function () {
                             finalizeUI();
                             try {
-                                var res = JSON.parse(xhrDirect.responseText);
+                                var res = JSON.parse(xhr.responseText);
                                 var botReply = (res.candidates && res.candidates[0] && res.candidates[0].content && res.candidates[0].content.parts && res.candidates[0].content.parts[0] && res.candidates[0].content.parts[0].text)
                                     ? res.candidates[0].content.parts[0].text.trim()
                                     : 'Cảm ơn câu hỏi của bạn! Forum AI chúc bạn chuyến dã ngoại tuyệt vời 🏕️';
@@ -536,10 +538,87 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         setTimeout(function () {
                             finalizeUI();
-                            appendMessage('bot', 'Forum AI tạm thời không khả dụng. Vui lòng thử lại sau!');
+                            appendMessage('bot', 'Forum AI tạm thời không khả dụng (HTTP ' + xhr.status + '). Vui lòng thử lại sau!');
                         }, remainingDelay);
                     }
-                };
+                }
+
+                function callWithApiKey() {
+                    var xhrKey = new XMLHttpRequest();
+                    xhrKey.open('POST', geminiUrlApiKey, true);
+                    xhrKey.setRequestHeader('Content-Type', 'application/json');
+                    xhrKey.onload = function () { handleGeminiResponse(xhrKey); };
+                    xhrKey.onerror = function () {
+                        var elapsed = Date.now() - sendStartTime;
+                        setTimeout(function () {
+                            finalizeUI();
+                            appendMessage('bot', 'Không thể kết nối Gemini AI. Kiểm tra kết nối mạng!');
+                        }, Math.max(0, minThinkingMs - elapsed));
+                    };
+                    xhrKey.send(geminiPayload);
+                }
+
+                if (isOAuthKey) {
+                    // Thử Bearer token trước
+                    var xhrBearer = new XMLHttpRequest();
+                    xhrBearer.open('POST', geminiUrlBearer, true);
+                    xhrBearer.setRequestHeader('Content-Type', 'application/json');
+                    xhrBearer.setRequestHeader('Authorization', 'Bearer ' + GEMINI_KEY);
+                    xhrBearer.onload = function () {
+                        if (xhrBearer.status === 200) {
+                            handleGeminiResponse(xhrBearer);
+                        } else {
+                            // Bearer thất bại → thử lại với ?key=
+                            callWithApiKey();
+                        }
+                    };
+                    xhrBearer.onerror = function () { callWithApiKey(); };
+                    xhrBearer.send(geminiPayload);
+                } else {
+                    callWithApiKey();
+                }
+
+                var xhrDirect = { status: 0 }; // placeholder để code bên dưới không lỗi
+                xhrDirect.onload = function () {};
+                xhrDirect.onerror = function () {};
+                // (xhrDirect không được send, chỉ để tránh lỗi tham chiếu)
+                return; // early return sau khi đã gọi OAuth/key logic
+            }
+            // Fake xhrDirect để code bên dưới không bị lỗi khi không vào __GEMINI_DIRECT__
+            var xhrDirect = new XMLHttpRequest();
+            xhrDirect.onload = function () {};
+            xhrDirect.onerror = function () {
+                var elapsed = Date.now() - sendStartTime;
+                var remainingDelay = Math.max(0, minThinkingMs - elapsed);
+                setTimeout(function () {
+                    finalizeUI();
+                    appendMessage('bot', 'Không thể kết nối Gemini AI. Vui lòng kiểm tra kết nối mạng!');
+                }, remainingDelay);
+            };
+            xhrDirect.onload = function () {
+                var elapsed = Date.now() - sendStartTime;
+                var remainingDelay = Math.max(0, minThinkingMs - elapsed);
+                if (xhrDirect.status === 200) {
+                    setTimeout(function () {
+                        finalizeUI();
+                        try {
+                            var res = JSON.parse(xhrDirect.responseText);
+                            var botReply = (res.candidates && res.candidates[0] && res.candidates[0].content && res.candidates[0].content.parts && res.candidates[0].content.parts[0] && res.candidates[0].content.parts[0].text)
+                                ? res.candidates[0].content.parts[0].text.trim()
+                                : 'Cảm ơn câu hỏi của bạn! Forum AI chúc bạn chuyến dã ngoại tuyệt vời 🏕️';
+                            appendMessage('bot', botReply);
+                            chatHistory.push({ sender: 'bot', text: botReply });
+                        } catch (e) {
+                            appendMessage('bot', 'Hệ thống đang xử lý, bạn thử lại sau giây lát nhé!');
+                        }
+                    }, remainingDelay);
+                } else {
+                    setTimeout(function () {
+                        finalizeUI();
+                        appendMessage('bot', 'Forum AI tạm thời không khả dụng. Vui lòng thử lại sau!');
+                    }, remainingDelay);
+                }
+            };
                 xhrDirect.onerror = function () {
                     var elapsed = Date.now() - sendStartTime;
                     var remainingDelay = Math.max(0, minThinkingMs - elapsed);
