@@ -259,6 +259,9 @@ class WeatherService extends BaseService
             $humidity = (int)($current['relative_humidity_2m'] ?? 75);
             $feelsLike = round((float)($current['apparent_temperature'] ?? $temp));
         }
+        $uvIndex = $uvCurrentRaw !== null ? round((float)$uvCurrentRaw, 1) : 5.5;
+        $uvMaxDaily = $uvMaxDailyRaw !== null ? round((float)$uvMaxDailyRaw, 1) : max($uvIndex, 6.5);
+        $uvMeta = $this->evaluateUvIndex($uvIndex, $uvMaxDaily);
 
         // Chỉ số tia cực tím (UV Index): lấy từ current hoặc air_quality current hoặc daily max
         $uvCurrentRaw = $current['uv_index'] ?? $airCurrent['uv_index'] ?? null;
