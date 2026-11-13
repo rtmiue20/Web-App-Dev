@@ -278,10 +278,14 @@ class App
             $chatbot = new ChatbotController();
             $apiRouter->post('/ai-assistant', [$chatbot, 'message']);
             $apiRouter->get('/ai-assistant', [$chatbot, 'message']);
+            $apiRouter->post('/ai-assistant.php', [$chatbot, 'message']);
+            $apiRouter->get('/ai-assistant.php', [$chatbot, 'message']);
             $apiRouter->post('/forum-ai', [$chatbot, 'message']);
             $apiRouter->get('/forum-ai', [$chatbot, 'message']);
             $apiRouter->post('/chat', [$chatbot, 'message']);
             $apiRouter->get('/chat', [$chatbot, 'message']);
+            $apiRouter->post('/chat.php', [$chatbot, 'message']);
+            $apiRouter->get('/chat.php', [$chatbot, 'message']);
 
             // Tin tức RSS (XML -> JSON)
 

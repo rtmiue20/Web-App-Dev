@@ -461,11 +461,13 @@ document.addEventListener('DOMContentLoaded', function () {
             history: chatHistory
         });
 
-        // Danh sách endpoint dự phòng. Ưu tiên /api/ai-assistant để tránh bộ lọc từ khóa 'chat' trên hosting miễn phí (như InfinityFree)
+        // Danh sách endpoint dự phòng. Ưu tiên file vật lý .php để hoạt động hoàn hảo trên mọi Web Server / Hosting miễn phí (như InfinityFree)
         var endpoints = [
+            baseUrl + '/api/ai-assistant.php',
+            baseUrl + '/api/chat.php',
             baseUrl + '/api/ai-assistant',
-            baseUrl + '/api/forum-ai',
-            baseUrl + '/api/chat'
+            baseUrl + '/api/chat',
+            baseUrl + '/api/forum-ai'
         ];
 
         function finalizeUI() {

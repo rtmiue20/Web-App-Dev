@@ -1367,12 +1367,13 @@ $galleryCount = count($galleryImages);
                                  id="starRatingWidget"
                                  role="radiogroup" 
                                  aria-label="Đánh giá số sao"
+                                 onmouseleave="window.resetPostRating && window.resetPostRating()"
                                  style="cursor: pointer; user-select: none; font-size: 26px; line-height: 1;">
-                                <i class="bi bi-star-fill star-item" data-value="1" title="1 sao - Không tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
-                                <i class="bi bi-star-fill star-item" data-value="2" title="2 sao - Chưa tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
-                                <i class="bi bi-star-fill star-item" data-value="3" title="3 sao - Bình thường" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
-                                <i class="bi bi-star-fill star-item" data-value="4" title="4 sao - Tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
-                                <i class="bi bi-star-fill star-item" data-value="5" title="5 sao - Rất tốt" style="color: #ff9800; transition: transform 0.15s ease, color 0.15s ease;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="1" onclick="window.selectPostRating && window.selectPostRating(1)" onmouseenter="window.hoverPostRating && window.hoverPostRating(1)" title="1 sao - Không tốt" style="color: #ff9800; cursor: pointer; transition: transform 0.15s ease, color 0.15s ease; padding: 2px;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="2" onclick="window.selectPostRating && window.selectPostRating(2)" onmouseenter="window.hoverPostRating && window.hoverPostRating(2)" title="2 sao - Chưa tốt" style="color: #ff9800; cursor: pointer; transition: transform 0.15s ease, color 0.15s ease; padding: 2px;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="3" onclick="window.selectPostRating && window.selectPostRating(3)" onmouseenter="window.hoverPostRating && window.hoverPostRating(3)" title="3 sao - Bình thường" style="color: #ff9800; cursor: pointer; transition: transform 0.15s ease, color 0.15s ease; padding: 2px;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="4" onclick="window.selectPostRating && window.selectPostRating(4)" onmouseenter="window.hoverPostRating && window.hoverPostRating(4)" title="4 sao - Tốt" style="color: #ff9800; cursor: pointer; transition: transform 0.15s ease, color 0.15s ease; padding: 2px;"></i>
+                                <i class="bi bi-star-fill star-item" data-value="5" onclick="window.selectPostRating && window.selectPostRating(5)" onmouseenter="window.hoverPostRating && window.hoverPostRating(5)" title="5 sao - Rất tốt" style="color: #ff9800; cursor: pointer; transition: transform 0.15s ease, color 0.15s ease; padding: 2px;"></i>
                             </div>
                             <span class="fw-bold small text-dark" id="starRatingLabel" style="min-width: 110px;">5 sao - Rất tốt</span>
                         </div>
@@ -1397,56 +1398,58 @@ $galleryCount = count($galleryImages);
                 </form>
 
                 <script>
-                /* Star rating widget độc lập: chạy ngay sau HTML, không phụ thuộc script khác */
                 (function () {
-                    var widget = document.getElementById('starRatingWidget');
-                    var input = document.getElementById('place-rating-input');
-                    var label = document.getElementById('starRatingLabel');
-                    if (!widget || !input || !label || widget.getAttribute('data-bound') === '1') return;
-                    widget.setAttribute('data-bound', '1');
-
                     var labels = {1: '1 sao - Không tốt', 2: '2 sao - Chưa tốt', 3: '3 sao - Bình thường', 4: '4 sao - Tốt', 5: '5 sao - Rất tốt'};
-                    var stars = widget.querySelectorAll('.star-item');
+                    function getElements() {
+                        return {
+                            input: document.getElementById('place-rating-input'),
+                            label: document.getElementById('starRatingLabel'),
+                            widget: document.getElementById('starRatingWidget')
+                        };
+                    }
 
-                    function paint(val) {
+                    window.renderPostStars = function (val) {
+                        var els = getElements();
+                        if (!els.widget) return;
                         val = parseInt(val, 10) || 5;
+                        var stars = els.widget.querySelectorAll('.star-item');
                         for (var i = 0; i < stars.length; i++) {
-                            var on = parseInt(stars[i].getAttribute('data-value'), 10) <= val;
-                            stars[i].classList.toggle('bi-star-fill', on);
-                            stars[i].classList.toggle('bi-star', !on);
-                            stars[i].style.color = on ? '#ff9800' : '#cbd5e1';
+                            var sVal = parseInt(stars[i].getAttribute('data-value'), 10);
+                            var active = sVal <= val;
+                            if (active) {
+                                stars[i].className = 'bi bi-star-fill star-item';
+                                stars[i].style.color = '#ff9800';
+                            } else {
+                                stars[i].className = 'bi bi-star star-item';
+                                stars[i].style.color = '#cbd5e1';
+                            }
                         }
-                        label.textContent = labels[val] || '';
-                    }
+                        if (els.label && labels[val]) {
+                            els.label.textContent = labels[val];
+                        }
+                    };
 
-                    function starFrom(target) {
-                        return target && target.closest ? target.closest('.star-item') : null;
-                    }
+                    window.hoverPostRating = function (val) {
+                        window.renderPostStars(val);
+                    };
 
-                    widget.addEventListener('mouseover', function (e) {
-                        var s = starFrom(e.target);
-                        if (s) paint(s.getAttribute('data-value'));
-                    });
-                    widget.addEventListener('mouseleave', function () { paint(input.value); });
-                    widget.addEventListener('click', function (e) {
-                        var s = starFrom(e.target);
-                        if (!s) return;
-                        e.preventDefault();
-                        input.value = s.getAttribute('data-value');
-                        paint(input.value);
-                    });
-                    widget.addEventListener('touchstart', function (e) {
-                        var t = e.touches[0];
-                        var s = starFrom(document.elementFromPoint(t.clientX, t.clientY));
-                        if (s) { input.value = s.getAttribute('data-value'); paint(input.value); }
-                    }, { passive: true });
-                    widget.addEventListener('touchmove', function (e) {
-                        var t = e.touches[0];
-                        var s = starFrom(document.elementFromPoint(t.clientX, t.clientY));
-                        if (s) { input.value = s.getAttribute('data-value'); paint(input.value); }
-                    }, { passive: true });
+                    window.resetPostRating = function () {
+                        var els = getElements();
+                        var current = els.input ? (els.input.value || 5) : 5;
+                        window.renderPostStars(current);
+                    };
 
-                    paint(input.value || 5);
+                    window.selectPostRating = function (val) {
+                        var els = getElements();
+                        val = parseInt(val, 10) || 5;
+                        if (els.input) {
+                            els.input.value = val;
+                        }
+                        window.renderPostStars(val);
+                    };
+
+                    // Khởi tạo trạng thái ban đầu
+                    window.renderPostStars(5);
                 })();
                 </script>
 
@@ -2559,101 +2562,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }
 
-    // Star Rating Widget interaction (App Store drag & click style)
-    var starWidget = document.getElementById('starRatingWidget');
-    var ratingInput = document.getElementById('place-rating-input');
-    var ratingLabel = document.getElementById('starRatingLabel');
-
-    if (starWidget && ratingInput && ratingLabel && starWidget.getAttribute('data-bound') !== '1') {
-        var stars = starWidget.querySelectorAll('.star-item');
-        var labels = {
-            1: '1 sao - Không tốt',
-            2: '2 sao - Chưa tốt',
-            3: '3 sao - Bình thường',
-            4: '4 sao - Tốt',
-            5: '5 sao - Rất tốt'
-        };
-
-        function updateStars(val) {
-            val = parseInt(val, 10) || 5;
-            for (var i = 0; i < stars.length; i++) {
-                var sVal = parseInt(stars[i].getAttribute('data-value'), 10);
-                if (sVal <= val) {
-                    stars[i].classList.remove('bi-star');
-                    stars[i].classList.add('bi-star-fill');
-                    stars[i].style.color = '#ff9800';
-                } else {
-                    stars[i].classList.remove('bi-star-fill');
-                    stars[i].classList.add('bi-star');
-                    stars[i].style.color = '#cbd5e1';
-                }
-            }
-            if (labels[val]) {
-                ratingLabel.textContent = labels[val];
-            }
-        }
-
-        // Set initial state
-        updateStars(ratingInput.value || 5);
-
-        for (var j = 0; j < stars.length; j++) {
-            (function(star) {
-                star.addEventListener('mouseenter', function() {
-                    var hVal = this.getAttribute('data-value');
-                    updateStars(hVal);
-                });
-
-                star.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var cVal = this.getAttribute('data-value');
-                    ratingInput.value = cVal;
-                    updateStars(cVal);
-                });
-            })(stars[j]);
-        }
-
-        starWidget.addEventListener('mouseleave', function() {
-            updateStars(ratingInput.value);
-        });
-
-        // Touch / drag support across stars
-        var isDragging = false;
-        function getStarFromPoint(x, y) {
-            var el = document.elementFromPoint(x, y);
-            if (el && el.classList.contains('star-item')) {
-                return el;
-            }
-            if (el && el.closest('.star-item')) {
-                return el.closest('.star-item');
-            }
-            return null;
-        }
-
-        starWidget.addEventListener('touchstart', function(e) {
-            isDragging = true;
-            var touch = e.touches[0];
-            var star = getStarFromPoint(touch.clientX, touch.clientY);
-            if (star) {
-                var val = star.getAttribute('data-value');
-                ratingInput.value = val;
-                updateStars(val);
-            }
-        }, { passive: true });
-
-        starWidget.addEventListener('touchmove', function(e) {
-            if (!isDragging) return;
-            var touch = e.touches[0];
-            var star = getStarFromPoint(touch.clientX, touch.clientY);
-            if (star) {
-                var val = star.getAttribute('data-value');
-                ratingInput.value = val;
-                updateStars(val);
-            }
-        }, { passive: true });
-
-        starWidget.addEventListener('touchend', function() {
-            isDragging = false;
-        });
+    // Star Rating Widget interaction: Được xử lý độc lập bởi window.selectPostRating
+    if (window.renderPostStars && document.getElementById('place-rating-input')) {
+        window.renderPostStars(document.getElementById('place-rating-input').value || 5);
     }
 
 });
