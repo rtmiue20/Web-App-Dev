@@ -1,27 +1,19 @@
-# Chặn thực thi mọi kịch bản phía máy chủ trong thư mục uploads (Security Hardening)
-Options -Indexes -ExecCGI
+# Cho phép người dùng xem trực tiếp các file ảnh
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Allow from all
+    </IfModule>
+</FilesMatch>
 
-<IfModule mod_php.c>
-    php_flag engine off
-</IfModule>
-<IfModule mod_php7.c>
-    php_flag engine off
-</IfModule>
-<IfModule mod_php8.c>
-    php_flag engine off
-</IfModule>
-
-<FilesMatch "\.(php|php[0-9]|phtml|phar|pl|py|cgi|sh|exe|bat|cmd|svg|html|htm|js)$">
+# Chặn tuyệt đối thực thi mã nguồn phía server (PHP, CGI, EXE)
+<FilesMatch "\.(php|php[0-9]|phtml|phar|pl|py|cgi|sh|exe|bat|cmd)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
     <IfModule !mod_authz_core.c>
-        Order allow,deny
         Deny from all
     </IfModule>
 </FilesMatch>
-
-<IfModule mod_headers.c>
-    Header set X-Content-Type-Options "nosniff"
-</IfModule>
-
