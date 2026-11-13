@@ -36,7 +36,11 @@ class WeatherService extends BaseService
         $cleanDate = trim($forecastDate);
 
         $cacheKey = 'outdoor_weather_v2_' . md5($roundedLat . '_' . $roundedLng . '_' . $cleanDate);
-        $cacheFile = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . $cacheKey . '.json';
+        $cacheDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+        $cacheFile = $cacheDir . DIRECTORY_SEPARATOR . $cacheKey . '.json';
 
         $staleData = null;
 
@@ -89,10 +93,14 @@ class WeatherService extends BaseService
         $airUrl = 'https://air-quality-api.open-meteo.com/v1/air-quality?' . http_build_query($airQuery);
 
         // 4. Thực hiện gọi song song (cURL Multi) cả 2 API để giảm thời gian phản hồi từ ~4s xuống ~1.2s
-        $parallelResults = $this->fetchUrlsParallel([
-            'forecast' => $forecastUrl,
-            'air'      => $airUrl
-        ]);
+        try {
+            $parallelResults = $this->fetchUrlsParallel([
+                'forecast' => $forecastUrl,
+                'air'      => $airUrl
+            ]);
+        } catch (Throwable $e) {
+            $parallelResults = ['forecast' => null, 'air' => null];
+        }
 
         $rawForecast = $parallelResults['forecast'] ?? null;
         $rawAir = $parallelResults['air'] ?? null;
@@ -251,9 +259,6 @@ class WeatherService extends BaseService
             $humidity = (int)($current['relative_humidity_2m'] ?? 75);
             $feelsLike = round((float)($current['apparent_temperature'] ?? $temp));
         }
-        $uvIndex = $uvCurrentRaw !== null ? round((float)$uvCurrentRaw, 1) : 5.5;
-        $uvMaxDaily = $uvMaxDailyRaw !== null ? round((float)$uvMaxDailyRaw, 1) : max($uvIndex, 6.5);
-        $uvMeta = $this->evaluateUvIndex($uvIndex, $uvMaxDaily);
 
         // Chỉ số tia cực tím (UV Index): lấy từ current hoặc air_quality current hoặc daily max
         $uvCurrentRaw = $current['uv_index'] ?? $airCurrent['uv_index'] ?? null;

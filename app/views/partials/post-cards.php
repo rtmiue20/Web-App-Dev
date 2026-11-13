@@ -69,7 +69,8 @@ $defaultImages = [
                         <?php endif; ?>
                         <img src="<?= htmlspecialchars($img, ENT_QUOTES, 'UTF-8') ?>" 
                              alt="<?= htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8') ?>"
-                             loading="lazy">
+                             loading="lazy"
+                             onerror="this.onerror=null;this.src='<?= htmlspecialchars($defaultImages[$idx % count($defaultImages)], ENT_QUOTES, 'UTF-8') ?>';">
                         <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/posts/<?= $postId ?>" 
                            class="card-action-btn"
                            aria-label="Xem chi tiết: <?= htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8') ?>">

@@ -43,7 +43,7 @@ class Comment extends Model {
     public function getByPostId(int $postId, int $currentUserId = 0): array {
         try {
             $sql = "SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at,
-                           u.username, r.name AS role_name,
+                           u.username, u.avatar_path, r.name AS role_name,
                            (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) AS likes_count,
                            (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.user_id = :current_user_id) AS user_liked
                     FROM comments c
@@ -163,7 +163,7 @@ class Comment extends Model {
     public function findById(int $id): ?array {
         try {
             $rows = Database::query(
-                "SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at, u.username
+                "SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.created_at, u.username, u.avatar_path
                  FROM comments c
                  JOIN users u ON u.id = c.user_id
                  WHERE c.id = :id

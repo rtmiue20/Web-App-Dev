@@ -127,10 +127,10 @@ Một thành viên làm máy host (chạy XAMPP chứa database), các bạn cò
 
 | STT | Họ tên | Vai trò | Phụ trách |
 |---|---|---|---|
-| 1 | Nguyễn Văn Minh Triều | Nhóm trưởng | Xây dựng kiến trúc hệ thống, Thiết kế Database - Routines, Thiết kế UI mẫu, FR11 + khung core/, database/, admin layout, Các tính năng nâng cao |
-| 2 | Ngô Trọng Phúc | Thành viên | FR03, FR04, FR05, FR13, Các tính năng nâng cao |
-| 3 | Nguyễn Phúc Vương | Thành viên | FR06, FR07, FR08, FR09, FR12, Các tính năng nâng cao |
-| 4 | Triệu Nguyễn Huỳnh Khang | Thành viên |FR01, FR02, FR14, FR10|
+| 1 | Nguyễn Văn Minh Triều | Nhóm trưởng | _(điền)_ |
+| 2 | Ngô Trọng Phúc | Thành viên | _(điền)_ |
+| 3 | Nguyễn Phúc Vương | Thành viên | _(điền)_ |
+| 4 | Triệu Nguyễn Huỳnh Khang | Thành viên | _(điền)_ |
 
 Cơ sở dữ liệu được chia đều: mỗi thành viên thiết kế 2 bảng (tổng 8 bảng).
 

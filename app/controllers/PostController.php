@@ -325,8 +325,12 @@ class PostController extends Controller {
         // Giúp giao diện bài viết hiển thị thời tiết NGAY TỨC THÌ (0ms), không bị kẹt spinner loading
         $initialWeather = null;
         if (!empty($post['lat']) && !empty($post['lng'])) {
-            $weatherService = new WeatherService();
-            $initialWeather = $weatherService->getForecast((float)$post['lat'], (float)$post['lng']);
+            try {
+                $weatherService = new WeatherService();
+                $initialWeather = $weatherService->getForecast((float)$post['lat'], (float)$post['lng']);
+            } catch (Throwable $wEx) {
+                $initialWeather = null;
+            }
         }
 
         $this->render('posts/show', [
