@@ -55,14 +55,17 @@ class QrCodeService extends BaseService
     ): array {
         $cleanSize = max(150, min(500, $size));
         $normalizedUrl = $this->normalizeShareUrl($targetUrl);
-        $lanUrl = $this->buildLanUrl($normalizedUrl);
-        $lanIp = $this->detectLocalLanIp();
-        $isLocalhost = $this->isLocalhostUrl($normalizedUrl) && ($lanUrl !== $normalizedUrl);
+        $isLocalhost = $this->isLocalhostUrl($normalizedUrl);
+        $lanIp = $isLocalhost ? $this->detectLocalLanIp() : null;
+        $lanUrl = ($isLocalhost && $lanIp && $lanIp !== '127.0.0.1') ? $this->buildLanUrl($normalizedUrl) : $normalizedUrl;
+        $isLanApplicable = $isLocalhost && ($lanUrl !== $normalizedUrl);
 
         // Khi chạy trên localhost / máy tính phát triển:
         // ĐIỆN THOẠI KHÔNG THỂ TRUY CẬP LOCALHOST (sẽ trỏ ngược vào 127.0.0.1 của điện thoại).
-        // Do đó, URL chính mặc định để mã hóa QR phải là $lanUrl (IP Wi-Fi nội bộ) để điện thoại quét mở được ngay!
-        $primaryTargetUrl = $isLocalhost ? $lanUrl : $normalizedUrl;
+        // Do đó, URL chính mặc định để mã hóa QR phải là $lanUrl (IP Wi-Fi nội bộ) để điện thoại cùng Wi-Fi quét mở được.
+        // Nhưng khi chạy trên Hosting / Domain công khai thực tế (vd outdoor-forum.rf.gd):
+        // URL chính LUÔN LÀ $normalizedUrl công khai để bất kỳ ai dù ở bất kỳ mạng nào (4G, 5G, Wi-Fi) quét cũng mở được ngay!
+        $primaryTargetUrl = $isLanApplicable ? $lanUrl : $normalizedUrl;
 
         // 1. Xây dựng URL gọi REST API QuickChart QR (kèm API Key) mã hóa $primaryTargetUrl
         $quickChartParams = [
@@ -119,7 +122,7 @@ class QrCodeService extends BaseService
             'original_url'       => $normalizedUrl,
             'share_url'          => $primaryTargetUrl,
             'lan_url'            => $lanUrl,
-            'lan_ip'             => $lanIp,
+            'lan_ip'             => $isLanApplicable ? $lanIp : null,
             'is_localhost'       => $isLocalhost,
             'size'               => $cleanSize,
             'qr_image_url'       => $quickChartUrl,
@@ -142,7 +145,11 @@ class QrCodeService extends BaseService
     private function fetchQrDataUri(string $primaryUrl, string $fallbackUrl, string $rawText, int $size): ?string
     {
         $cacheKey = 'outdoor_qr_' . md5($rawText . '_' . $size . '_' . $this->apiKey);
-        $cacheFile = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . $cacheKey . '.txt';
+        $cacheDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+        $cacheFile = $cacheDir . DIRECTORY_SEPARATOR . $cacheKey . '.txt';
 
         if (is_file($cacheFile) && (time() - (int)@filemtime($cacheFile)) < $this->cacheTtl) {
             $cached = @file_get_contents($cacheFile);

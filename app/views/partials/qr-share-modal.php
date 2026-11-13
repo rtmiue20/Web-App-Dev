@@ -49,12 +49,21 @@
                     </div>
                 </div>
 
-                <!-- Thông báo hướng dẫn kết nối cùng mạng Wi-Fi -->
-                <div id="qrModalWifiNotice" class="alert py-2 px-3 mb-3 text-start d-flex align-items-center gap-2 border shadow-none"
+                <!-- Thông báo hướng dẫn kết nối cùng mạng Wi-Fi (Chỉ hiện khi chạy Localhost) -->
+                <div id="qrModalWifiNotice" class="alert py-2 px-3 mb-3 text-start d-flex align-items-center gap-2 border shadow-none d-none"
                      style="font-size: 11.5px; border-radius: 14px; background: rgba(47, 94, 46, 0.08); border-color: rgba(47, 94, 46, 0.22) !important; color: #1e3a1d;">
                     <i class="bi bi-router text-success fs-6 flex-shrink-0"></i>
                     <div>
-                        <strong>Yêu cầu Wi-Fi:</strong> Điện thoại cần kết nối <strong>cùng mạng Wi-Fi</strong> với máy tính để quét mở link IP <code id="qrModalNoticeIp" class="px-1 py-0.5 rounded bg-white text-dark fw-bold">192.168.1.4:8000</code>.
+                        <strong>Yêu cầu Wi-Fi (Localhost):</strong> Điện thoại cần kết nối <strong>cùng mạng Wi-Fi</strong> với máy tính để quét mở link IP <code id="qrModalNoticeIp" class="px-1 py-0.5 rounded bg-white text-dark fw-bold">192.168.1.4:8000</code>.
+                    </div>
+                </div>
+
+                <!-- Thông báo trực tuyến (Hiển thị mặc định trên môi trường Web / Hosting thực tế) -->
+                <div id="qrModalPublicNotice" class="alert py-2 px-3 mb-3 text-start d-flex align-items-center gap-2 border shadow-none"
+                     style="font-size: 11.5px; border-radius: 14px; background: rgba(47, 94, 46, 0.08); border-color: rgba(47, 94, 46, 0.22) !important; color: #1e3a1d;">
+                    <i class="bi bi-globe2 text-success fs-6 flex-shrink-0"></i>
+                    <div>
+                        <strong>Mã QR trực tuyến:</strong> Bất kỳ ai quét bằng <strong>Camera hoặc Zalo (4G, 5G, Wi-Fi)</strong> đều mở xem được ngay tức thì!
                     </div>
                 </div>
 
@@ -96,10 +105,10 @@
                     </button>
                 </div>
 
-                <!-- Tùy chỉnh URL nếu dùng mạng 4G/LTE ngoài Wi-Fi hoặc qua Tunnel (Ngrok, Cloudflare) -->
-                <div class="text-start mt-2">
+                <!-- Tùy chỉnh URL nếu dùng mạng ngoài Wi-Fi qua Tunnel (Chỉ hiển thị khi chạy Localhost) -->
+                <div id="qrCustomUrlCollapseWrapper" class="text-start mt-2 d-none">
                     <a class="small text-decoration-none d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" href="#qrCustomUrlCollapse" role="button" aria-expanded="false" style="font-size: 11.5px; color: #4b663b;">
-                        <i class="bi bi-globe2"></i>Tùy chỉnh URL nếu quét bằng 4G / Tunnel ngoài Wi-Fi <i class="bi bi-chevron-down" style="font-size: 9px;"></i>
+                        <i class="bi bi-globe2"></i>Tùy chỉnh URL (Ngrok / Cloudflare Tunnel) <i class="bi bi-chevron-down" style="font-size: 9px;"></i>
                     </a>
                     <div class="collapse mt-2" id="qrCustomUrlCollapse">
                         <div class="input-group input-group-sm rounded-pill overflow-hidden border shadow-none" style="background: #ffffff; border-color: rgba(35, 38, 31, 0.18) !important;">
@@ -109,7 +118,7 @@
                             </button>
                         </div>
                         <div class="text-muted small mt-1 px-1" style="font-size: 11px;">
-                            Dán đường link public (ví dụ qua ngrok hoặc Cloudflare Tunnel) để bất kỳ ai dù ở bất kỳ mạng nào cũng có thể quét mở ngay.
+                            Dán đường link public khi lập trình localhost để người ngoài mạng có thể truy cập.
                         </div>
                     </div>
                 </div>
