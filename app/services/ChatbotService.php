@@ -47,7 +47,7 @@ class ChatbotService
                 $this->apiKey = trim((string)$envKey);
             } else {
                 // Key dự phòng hoạt động trên Live Hosting InfinityFree khi secrets.php không được upload
-                $this->apiKey = (string)base64_decode('QVEuQWI4Uk42SnROR2g2OHlwa3pOalNEaFV0cHhDSm4tUllqZWl6ZEtVUVRQb2dESWVWNGc=');
+                $this->apiKey = (string)base64_decode('QVEuQWI4Uk42Slp0b25zdDlTUzhTU2JIeVRLZG5DdnBaS0NQa0gxZllDd0prUlVycWI4amc=');
             }
         }
     }

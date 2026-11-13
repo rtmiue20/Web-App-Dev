@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // ── Fallback: Gọi Gemini API trực tiếp từ trình duyệt (khi server bị chặn curl) ──
             if (targetUrl === '__GEMINI_DIRECT__') {
-                var GEMINI_KEY = atob('QVEuQWI4Uk42SV9nb1lUQ01nVGkyMi04Q292bWFqR3RaTmpMbnplb0JyVk5KQzEwa2ZvelE=');
+                var GEMINI_KEY = atob('QVEuQWI4Uk42Slp0b25zdDlTUzhTU2JIeVRLZG5DdnBaS0NQa0gxZllDd0prUlVycWI4amc=');
                 var GEMINI_MODEL = 'gemini-2.0-flash';
                 var contents = [];
                 var recentHistory = chatHistory.slice(-4);
@@ -536,6 +536,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         }, remainingDelay);
                     } else {
+                        // Log lỗi ra console để debug
+                        try {
+                            var errRes = JSON.parse(xhr.responseText);
+                            var errMsg = (errRes.error && errRes.error.message) ? errRes.error.message : xhr.responseText.substring(0, 200);
+                            console.error('[Forum AI Debug] HTTP ' + xhr.status + ':', errMsg);
+                        } catch(e) {
+                            console.error('[Forum AI Debug] HTTP ' + xhr.status + ':', xhr.responseText.substring(0, 200));
+                        }
                         setTimeout(function () {
                             finalizeUI();
                             appendMessage('bot', 'Forum AI tạm thời không khả dụng (HTTP ' + xhr.status + '). Vui lòng thử lại sau!');
